@@ -573,12 +573,12 @@ start_dashboard() {
         sleep 1
     fi
 
-    # Start Python HTTP server
+    # Start Python HTTP server from .loki/ root so it can serve queue/ and state/
     log_step "Starting dashboard server..."
     (
-        cd .loki/dashboard
+        cd .loki
         python3 -m http.server $DASHBOARD_PORT --bind 127.0.0.1 2>&1 | while read line; do
-            echo "[dashboard] $line" >> ../logs/dashboard.log
+            echo "[dashboard] $line" >> logs/dashboard.log
         done
     ) &
     DASHBOARD_PID=$!
@@ -587,11 +587,11 @@ start_dashboard() {
 
     if kill -0 $DASHBOARD_PID 2>/dev/null; then
         log_info "Dashboard started (PID: $DASHBOARD_PID)"
-        log_info "Dashboard: ${CYAN}http://127.0.0.1:$DASHBOARD_PORT${NC}"
+        log_info "Dashboard: ${CYAN}http://127.0.0.1:$DASHBOARD_PORT/dashboard/index.html${NC}"
 
         # Open in browser (macOS)
         if [[ "$OSTYPE" == "darwin"* ]]; then
-            open "http://127.0.0.1:$DASHBOARD_PORT" 2>/dev/null || true
+            open "http://127.0.0.1:$DASHBOARD_PORT/dashboard/index.html" 2>/dev/null || true
         fi
         return 0
     else
