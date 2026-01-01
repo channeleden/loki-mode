@@ -5,6 +5,36 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2025-12-31
+
+### Added
+- **Context Memory Management System** - Inspired by Continuous-Claude-v2:
+  - **Ledger-based state preservation** - Save state to `.loki/memory/ledgers/` instead of letting context degrade through compaction
+  - **Agent Handoff System** - Clean context transfer between agents at `.loki/memory/handoffs/`
+  - **Session Learnings** - Extract patterns and learnings to `.loki/memory/learnings/`
+  - **Compound Rules** - Promote proven patterns to permanent rules at `.loki/rules/`
+  - **Context Clear Signals** - Agent can request context reset via `.loki/signals/CONTEXT_CLEAR_REQUESTED`
+
+- **Memory Directory Structure**:
+  ```
+  .loki/memory/
+  ├── ledgers/     # Current state per agent
+  ├── handoffs/    # Agent-to-agent transfers
+  └── learnings/   # Extracted patterns
+  .loki/rules/     # Permanent proven rules
+  .loki/signals/   # Inter-process communication
+  ```
+
+- **Context Injection on Resume** - Wrapper now loads ledger and handoff context when resuming iterations
+
+### Changed
+- Prompts now include memory management instructions
+- Wrapper initializes memory directory structure
+- Build prompt includes ledger/handoff content for continuity
+
+### Philosophy
+Instead of "degrade gracefully through compression", Loki Mode now uses "reset cleanly with memory preservation" - ensuring perfect context continuity across unlimited iterations.
+
 ## [2.9.1] - 2025-12-31
 
 ### Fixed

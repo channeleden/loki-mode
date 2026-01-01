@@ -197,6 +197,303 @@ EOF
 
 **IMPORTANT:** The dashboard refreshes every 5 seconds and shows task counts and details from these files. Users are watching the dashboard in real-time!
 
+## Context Memory Management
+
+**CRITICAL:** Long-running autonomous sessions WILL hit context limits. Instead of letting Claude's compaction degrade context quality (summaries of summaries), Loki Mode uses **ledger-based state preservation**.
+
+### Philosophy: Clear, Don't Compact
+
+```
+❌ BAD: Let context auto-compact → Lossy summaries → Signal degradation → Confusion
+✅ GOOD: Save state → Clear context → Resume fresh with ledger → Perfect continuity
+```
+
+### Context Ledger System
+
+Every agent maintains a ledger at `.loki/memory/ledgers/LEDGER-{agent-id}.md`:
+
+```markdown
+# Loki Mode Context Ledger
+Agent: eng-backend-01
+Session: 2025-12-31T10:30:00Z
+Iteration: 47
+
+## Current Goal
+Implement user authentication with JWT tokens
+
+## Completed Work
+- [x] Created User model with password hashing (src/models/user.ts)
+- [x] Implemented /auth/register endpoint (src/routes/auth.ts:15-45)
+- [x] Added JWT signing utility (src/utils/jwt.ts)
+- [x] Unit tests for registration (src/tests/auth.test.ts) - 12 passing
+
+## In Progress
+- [ ] Implement /auth/login endpoint
+- [ ] Add refresh token rotation
+
+## Key Decisions Made
+1. Using bcrypt for password hashing (12 rounds)
+2. JWT expiry: 15min access, 7day refresh
+3. Storing refresh tokens in Redis (not DB)
+
+## Active Files (with line references)
+- src/routes/auth.ts:50 - Next: login endpoint
+- src/middleware/auth.ts:1 - Need to create
+
+## Blockers
+None
+
+## Next Actions
+1. Implement login endpoint at src/routes/auth.ts:50
+2. Create auth middleware for protected routes
+3. Add integration tests for auth flow
+```
+
+### When to Save Ledger (Context Checkpoints)
+
+Save ledger and consider clearing context when:
+
+1. **Before complex operations** - Large code generation, multi-file refactors
+2. **After completing a major task** - Feature done, moving to next
+3. **Every 10-15 tool uses** - Proactive checkpointing
+4. **Before spawning subagents** - Clean handoff
+5. **When context feels "heavy"** - Slow responses, repeated information
+
+**Ledger Save Protocol:**
+```bash
+# 1. Write current state to ledger
+Write .loki/memory/ledgers/LEDGER-{agent-id}.md with current state
+
+# 2. Update orchestrator with checkpoint
+Update .loki/state/orchestrator.json lastCheckpoint timestamp
+
+# 3. If context is heavy, signal wrapper script
+Create .loki/signals/CONTEXT_CLEAR_REQUESTED
+
+# 4. Wrapper script will:
+#    - Save session output
+#    - Clear context (/clear equivalent)
+#    - Resume with ledger loaded
+```
+
+### Agent Handoff System
+
+When one agent finishes and passes work to another, create a **handoff document**:
+
+**Location:** `.loki/memory/handoffs/{from-agent}-to-{to-agent}-{timestamp}.md`
+
+```markdown
+# Agent Handoff Document
+
+## Handoff Metadata
+- From: eng-backend-01
+- To: eng-qa-01
+- Timestamp: 2025-12-31T14:30:00Z
+- Related Task: task-auth-001
+
+## Work Completed
+Implemented complete authentication system with:
+- User registration with email verification
+- Login with JWT access + refresh tokens
+- Password reset flow
+- Rate limiting on auth endpoints
+
+## Files Modified (with specific changes)
+| File | Lines | Change |
+|------|-------|--------|
+| src/routes/auth.ts | 1-180 | Complete auth routes |
+| src/models/user.ts | 1-45 | User model with bcrypt |
+| src/middleware/auth.ts | 1-60 | JWT verification middleware |
+| src/utils/jwt.ts | 1-35 | Token signing/verification |
+
+## Test Status
+- Unit tests: 24 passing, 0 failing
+- Integration tests: NOT YET WRITTEN (handoff to QA)
+
+## What Successor Needs to Do
+1. Write integration tests for all auth endpoints
+2. Test edge cases: expired tokens, invalid passwords, rate limits
+3. Security review: check for injection, timing attacks
+4. Load test: verify rate limiting works under pressure
+
+## Context for Successor
+- Using bcrypt with 12 rounds (intentionally slow)
+- Refresh tokens stored in Redis with 7-day TTL
+- Access tokens are stateless JWT (15min expiry)
+- Rate limit: 5 login attempts per minute per IP
+
+## Known Issues / Tech Debt
+- TODO: Add 2FA support (out of scope for now)
+- FIXME: Email verification uses sync sending (should be async)
+
+## Relevant Learnings
+- bcrypt.compare is async - don't forget await
+- Redis connection pooling is critical for performance
+```
+
+### Session Learnings Extraction
+
+After each major task completion, extract learnings to `.loki/memory/learnings/`:
+
+```markdown
+# Session Learning: Authentication Implementation
+
+## Date: 2025-12-31
+## Task: Implement JWT Authentication
+## Outcome: SUCCESS
+
+## What Worked Well
+1. Starting with failing tests (TDD) caught edge cases early
+2. Using established libraries (bcrypt, jsonwebtoken) vs rolling own
+3. Checking documentation before implementing (JWT best practices)
+
+## What Didn't Work
+1. Initially forgot to handle token expiry - caught in testing
+2. First attempt used sync bcrypt - blocked event loop
+3. Tried to store too much in JWT payload - token too large
+
+## Patterns Discovered
+1. Always hash passwords with bcrypt, never SHA/MD5
+2. Keep JWT payload minimal (user ID only)
+3. Use refresh token rotation for security
+4. Rate limit auth endpoints aggressively
+
+## Apply to Future Tasks
+- [ ] When implementing any auth: follow this pattern
+- [ ] When using bcrypt: always use async methods
+- [ ] When using JWT: keep payload under 1KB
+
+## Code Snippets to Reuse
+```typescript
+// Secure password hashing
+const hashPassword = async (password: string): Promise<string> => {
+  return bcrypt.hash(password, 12);
+};
+```
+```
+
+### Memory Directory Structure
+
+```
+.loki/memory/
+├── ledgers/                    # Current state per agent
+│   ├── LEDGER-orchestrator.md
+│   ├── LEDGER-eng-backend-01.md
+│   └── LEDGER-eng-qa-01.md
+├── handoffs/                   # Agent-to-agent transfers
+│   ├── eng-backend-01-to-eng-qa-01-20251231T143000Z.md
+│   └── eng-qa-01-to-ops-deploy-01-20251231T160000Z.md
+├── learnings/                  # Extracted patterns
+│   ├── 2025-12-31-auth-implementation.md
+│   └── 2025-12-31-database-optimization.md
+└── index.sqlite                # FTS5 searchable index (optional)
+```
+
+### Context-Aware Subagent Dispatch
+
+When spawning subagents via Task tool, include relevant context:
+
+```markdown
+[Task tool call]
+- description: "Implement login endpoint"
+- prompt: |
+    ## Context from Ledger
+    [Include relevant sections from current ledger]
+
+    ## Handoff from Previous Agent
+    [Include handoff document if this is a continuation]
+
+    ## Relevant Learnings
+    [Include applicable learnings from .loki/memory/learnings/]
+
+    ## Your Task
+    Implement the /auth/login endpoint following the patterns established
+    in the handoff document.
+
+    ## When Complete
+    1. Update your ledger at .loki/memory/ledgers/LEDGER-{your-id}.md
+    2. Create handoff document if passing to next agent
+    3. Extract learnings if you discovered new patterns
+```
+
+### Compound Learnings (Permanent Rules)
+
+When a pattern is proven across multiple tasks, promote it to a **permanent rule**:
+
+**Location:** `.loki/rules/`
+
+```markdown
+# Rule: JWT Authentication Pattern
+Confidence: HIGH (validated in 5+ tasks)
+Created: 2025-12-31
+
+## When This Applies
+Any task involving user authentication or API authorization
+
+## The Rule
+1. Use bcrypt (12+ rounds) for password hashing
+2. Keep JWT payload minimal (user ID, roles only)
+3. Use short-lived access tokens (15min) + refresh tokens (7 days)
+4. Store refresh tokens server-side (Redis) for revocation
+5. Rotate refresh tokens on each use
+6. Rate limit auth endpoints (5/min/IP)
+
+## Why
+- Prevents rainbow table attacks (bcrypt)
+- Reduces token theft impact (short expiry)
+- Enables session revocation (server-side refresh)
+- Prevents brute force (rate limiting)
+
+## Anti-Patterns to Avoid
+- Never store passwords as SHA256/MD5
+- Never put sensitive data in JWT payload
+- Never use long-lived access tokens
+- Never trust client-side token expiry checks
+```
+
+### Memory Search (When Resuming Work)
+
+Before starting new work, search existing memory:
+
+```python
+# Search for relevant handoffs, learnings, and rules
+def search_memory(query: str) -> List[str]:
+    results = []
+
+    # 1. Check rules first (highest priority)
+    for rule in glob('.loki/rules/*.md'):
+        if matches(rule, query):
+            results.append(f"RULE: {rule}")
+
+    # 2. Search learnings
+    for learning in glob('.loki/memory/learnings/*.md'):
+        if matches(learning, query):
+            results.append(f"LEARNING: {learning}")
+
+    # 3. Search recent handoffs
+    for handoff in sorted(glob('.loki/memory/handoffs/*.md'), reverse=True)[:10]:
+        if matches(handoff, query):
+            results.append(f"HANDOFF: {handoff}")
+
+    return results
+```
+
+### Context Continuity Protocol
+
+**On Session Start (Resume from wrapper):**
+1. Load orchestrator state from `.loki/state/orchestrator.json`
+2. Load relevant agent ledger from `.loki/memory/ledgers/`
+3. Check for pending handoffs in `.loki/memory/handoffs/`
+4. Search learnings for current task type
+5. Resume from last checkpoint
+
+**On Session End (Before context clear):**
+1. Update current ledger with final state
+2. Create handoff if work passes to another agent
+3. Extract learnings if patterns discovered
+4. Update orchestrator state with checkpoint timestamp
+5. Signal wrapper that context can be cleared
+
 ## Codebase Analysis Mode (No PRD Provided)
 
 When Loki Mode is invoked WITHOUT a PRD, it operates in **Codebase Analysis Mode**:

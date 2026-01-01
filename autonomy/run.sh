@@ -226,6 +226,9 @@ init_loki_dir() {
     mkdir -p .loki/queue
     mkdir -p .loki/state/checkpoints
     mkdir -p .loki/artifacts/{releases,reports,backups}
+    mkdir -p .loki/memory/{ledgers,handoffs,learnings}
+    mkdir -p .loki/rules
+    mkdir -p .loki/signals
 
     # Initialize queue files if they don't exist
     for queue in pending in-progress completed failed dead-letter; do
@@ -757,6 +760,54 @@ check_max_iterations() {
     return 1
 }
 
+# Check if context clear was requested by agent
+check_context_clear_signal() {
+    if [ -f ".loki/signals/CONTEXT_CLEAR_REQUESTED" ]; then
+        log_info "Context clear signal detected from agent"
+        rm -f ".loki/signals/CONTEXT_CLEAR_REQUESTED"
+        return 0
+    fi
+    return 1
+}
+
+# Load latest ledger content for context injection
+load_ledger_context() {
+    local ledger_content=""
+
+    # Find most recent ledger
+    local latest_ledger=$(ls -t .loki/memory/ledgers/LEDGER-*.md 2>/dev/null | head -1)
+
+    if [ -n "$latest_ledger" ] && [ -f "$latest_ledger" ]; then
+        ledger_content=$(cat "$latest_ledger" | head -100)
+        echo "$ledger_content"
+    fi
+}
+
+# Load recent handoffs for context
+load_handoff_context() {
+    local handoff_content=""
+
+    # Find most recent handoff (last 24 hours)
+    local recent_handoff=$(find .loki/memory/handoffs -name "*.md" -mtime -1 2>/dev/null | head -1)
+
+    if [ -n "$recent_handoff" ] && [ -f "$recent_handoff" ]; then
+        handoff_content=$(cat "$recent_handoff" | head -80)
+        echo "$handoff_content"
+    fi
+}
+
+# Load relevant learnings
+load_learnings_context() {
+    local learnings=""
+
+    # Get recent learnings (last 7 days)
+    for learning in $(find .loki/memory/learnings -name "*.md" -mtime -7 2>/dev/null | head -5); do
+        learnings+="$(head -30 "$learning")\n---\n"
+    done
+
+    echo -e "$learnings"
+}
+
 #===============================================================================
 # Save/Load Wrapper State
 #===============================================================================
@@ -835,17 +886,34 @@ build_prompt() {
     # Codebase Analysis Mode - when no PRD provided
     local analysis_instruction="CODEBASE_ANALYSIS_MODE: No PRD. FIRST: Analyze codebase - scan structure, read package.json/requirements.txt, examine README. THEN: Generate PRD at .loki/generated-prd.md. FINALLY: Execute SDLC phases."
 
+    # Context Memory Instructions
+    local memory_instruction="CONTEXT MEMORY: Save state to .loki/memory/ledgers/LEDGER-orchestrator.md before complex operations. Create handoffs at .loki/memory/handoffs/ when passing work to subagents. Extract learnings to .loki/memory/learnings/ after completing tasks. Check .loki/rules/ for established patterns. If context feels heavy, create .loki/signals/CONTEXT_CLEAR_REQUESTED and the wrapper will reset context with your ledger preserved."
+
+    # Load existing context if resuming
+    local context_injection=""
+    if [ $retry -gt 0 ]; then
+        local ledger=$(load_ledger_context)
+        local handoff=$(load_handoff_context)
+
+        if [ -n "$ledger" ]; then
+            context_injection="PREVIOUS_LEDGER_STATE: $ledger"
+        fi
+        if [ -n "$handoff" ]; then
+            context_injection="$context_injection RECENT_HANDOFF: $handoff"
+        fi
+    fi
+
     if [ $retry -eq 0 ]; then
         if [ -n "$prd" ]; then
-            echo "Loki Mode with PRD at $prd. $rar_instruction $completion_instruction $sdlc_instruction $autonomous_suffix"
+            echo "Loki Mode with PRD at $prd. $rar_instruction $memory_instruction $completion_instruction $sdlc_instruction $autonomous_suffix"
         else
-            echo "Loki Mode. $analysis_instruction $rar_instruction $completion_instruction $sdlc_instruction $autonomous_suffix"
+            echo "Loki Mode. $analysis_instruction $rar_instruction $memory_instruction $completion_instruction $sdlc_instruction $autonomous_suffix"
         fi
     else
         if [ -n "$prd" ]; then
-            echo "Loki Mode - Resume iteration #$iteration (retry #$retry). PRD: $prd. Check .loki/state/ for progress. $rar_instruction $completion_instruction $sdlc_instruction $autonomous_suffix"
+            echo "Loki Mode - Resume iteration #$iteration (retry #$retry). PRD: $prd. $context_injection $rar_instruction $memory_instruction $completion_instruction $sdlc_instruction $autonomous_suffix"
         else
-            echo "Loki Mode - Resume iteration #$iteration (retry #$retry). Check .loki/state/ for progress. Use .loki/generated-prd.md if exists. $rar_instruction $completion_instruction $sdlc_instruction $autonomous_suffix"
+            echo "Loki Mode - Resume iteration #$iteration (retry #$retry). $context_injection Use .loki/generated-prd.md if exists. $rar_instruction $memory_instruction $completion_instruction $sdlc_instruction $autonomous_suffix"
         fi
     fi
 }
