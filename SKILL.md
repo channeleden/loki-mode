@@ -910,6 +910,350 @@ await geminiAgent.callTool('loki://business/generate-docs', {
 });
 ```
 
+## Claude Code Best Practices
+
+**CRITICAL:** Apply advanced Claude Code patterns for maximum effectiveness.
+
+### Tool-Based Architecture & Context Management
+
+**Codebase Analysis on Bootstrap:**
+
+When Loki Mode initializes, create a comprehensive codebase summary:
+
+```bash
+# Generate CLAUDE.md during bootstrap
+cat > "$PROJECT_ROOT/CLAUDE.md" << 'EOF'
+# Project: [Project Name from PRD]
+Generated: [timestamp]
+Loki Mode Version: [version]
+
+## Project Summary
+[1-2 paragraph overview of what this project does]
+
+## Architecture
+- **Frontend**: [framework, key patterns]
+- **Backend**: [framework, API style, authentication]
+- **Database**: [type, schema highlights]
+- **Infrastructure**: [deployment target, CI/CD]
+
+## Key Files & Directories
+- `src/`: Main source code
+  - `api/`: REST API endpoints
+  - `components/`: React components
+  - `services/`: Business logic
+  - `models/`: Data models
+- `tests/`: Test suites
+- `.loki/`: Loki Mode state and artifacts
+- `.loki/specs/openapi.yaml`: API specification (SOURCE OF TRUTH)
+
+## Critical Patterns
+- Authentication: JWT tokens with refresh
+- Error handling: ApiError class with status codes
+- State management: Redux with TypeScript
+- Testing: Jest + React Testing Library
+
+## Recent Changes
+[Auto-updated by agents on significant changes]
+
+## Known Issues
+[Links to GitHub issues or .loki/logs/]
+EOF
+```
+
+**This file is included in EVERY Claude request for persistent context.**
+
+### Three Memory Levels
+
+**Level 1: Project Memory (`.loki/CONTINUITY.md` + `CLAUDE.md`)**
+- Shared with all agents
+- Committed to git
+- Contains: working memory, architecture, patterns
+
+**Level 2: Agent-Specific Memory (`.loki/memory/ledgers/`)**
+- Per-agent state
+- Not committed (in `.gitignore`)
+- Contains: agent's local context, current task
+
+**Level 3: Global Memory (`.loki/rules/`)**
+- Permanent validated patterns
+- Committed to git
+- Contains: compound rules promoted from learnings
+
+### Plan Mode Pattern
+
+**When to Use Plan Mode:**
+- Multi-file refactoring
+- Architecture decisions
+- Complex feature implementation
+- Unclear scope
+
+**Plan Mode Workflow:**
+
+```markdown
+## AGENT INSTRUCTION: Use Plan Mode for this task
+
+Before implementing, YOU MUST:
+
+1. **Research Phase** (read-only)
+   - Use Grep/Glob to find ALL relevant files
+   - Read key files identified
+   - Understand existing patterns
+   - Identify dependencies
+
+2. **Planning Phase** (no code changes yet)
+   - Create detailed implementation plan
+   - List ALL files to be modified
+   - Identify potential issues/conflicts
+   - Estimate impact (breaking changes?)
+
+3. **Review Plan** (checkpoint)
+   - Present plan to user OR
+   - Write plan to .loki/plans/task-{id}.md
+   - Get approval before proceeding
+
+4. **Implementation Phase** (only after plan approved)
+   - Execute plan step by step
+   - Update CONTINUITY.md after each step
+   - Run tests after each file change
+```
+
+### Thinking Mode for Complex Logic
+
+**Trigger extended reasoning with "Ultra think" prefix:**
+
+```markdown
+Ultra think: How should we handle rate limiting across 37 parallel agents without hitting API limits?
+
+[Claude will use extended reasoning budget to analyze edge cases, trade-offs, and nuanced solutions]
+```
+
+**Use for:**
+- Subtle bugs requiring deep analysis
+- Performance optimization decisions
+- Security vulnerability assessment
+- Complex architectural trade-offs
+
+### Hooks System (Quality Gates)
+
+**Pre-Tool-Use Hooks** - Block execution if checks fail:
+
+```bash
+# .loki/hooks/pre-write.sh
+#!/bin/bash
+# Runs BEFORE any Write/Edit tool is used
+# Exit code 2 = BLOCK the write
+
+FILE="$1"
+
+# Block writes to generated files
+if grep -q "// AUTO-GENERATED - DO NOT EDIT" "$FILE" 2>/dev/null; then
+  echo "ERROR: Cannot edit auto-generated file: $FILE"
+  exit 2
+fi
+
+# Block if file doesn't match spec
+if [[ "$FILE" == src/api/* ]]; then
+  if ! npx openapi-validator validate "$FILE" .loki/specs/openapi.yaml; then
+    echo "ERROR: Implementation doesn't match spec"
+    exit 2
+  fi
+fi
+
+exit 0
+```
+
+**Post-Tool-Use Hooks** - Auto-fix issues after tool execution:
+
+```bash
+# .loki/hooks/post-write.sh
+#!/bin/bash
+# Runs AFTER any Write/Edit tool completes
+# Cannot block, but can provide feedback
+
+FILE="$1"
+
+# TypeScript type checking
+if [[ "$FILE" == *.ts || "$FILE" == *.tsx ]]; then
+  ERRORS=$(npx tsc --noEmit 2>&1)
+  if [ $? -ne 0 ]; then
+    echo "TYPE ERRORS DETECTED:"
+    echo "$ERRORS"
+    echo ""
+    echo "Please fix these type errors in the next iteration."
+  fi
+fi
+
+# Auto-format
+if [[ "$FILE" == *.ts || "$FILE" == *.tsx || "$FILE" == *.js ]]; then
+  npx prettier --write "$FILE"
+fi
+
+# Update CLAUDE.md if architecture changed
+if [[ "$FILE" == src/api/* || "$FILE" == src/models/* ]]; then
+  echo "[$(date)] Modified $FILE - architecture may need update" >> .loki/logs/claude-md-updates.log
+fi
+
+exit 0
+```
+
+**Hook Configuration:**
+
+```bash
+# Enable hooks in autonomy/run.sh
+export LOKI_HOOKS_ENABLED=true
+export LOKI_PRE_WRITE_HOOK=".loki/hooks/pre-write.sh"
+export LOKI_POST_WRITE_HOOK=".loki/hooks/post-write.sh"
+```
+
+### Problem-Solving Workflow (3-Step Pattern)
+
+**For every non-trivial task, use this workflow:**
+
+```markdown
+## Step 1: Identify & Analyze Relevant Files
+
+GOAL: Understand the codebase context BEFORE planning
+
+1. Use Grep to find relevant code:
+   - Search for similar functionality
+   - Find where this feature should integrate
+   - Identify existing patterns to follow
+
+2. Read identified files (use Read tool)
+
+3. Create mental model:
+   - What patterns exist?
+   - What conventions are followed?
+   - What dependencies are used?
+
+4. Update CONTINUITY.md with findings
+
+## Step 2: Request Planning (NO CODE YET)
+
+GOAL: Create detailed plan BEFORE writing code
+
+1. Describe the feature/fix in detail
+2. Request implementation plan from Claude
+3. Claude should produce:
+   - List of files to modify
+   - Sequence of changes
+   - Potential issues/conflicts
+   - Test strategy
+
+4. Review plan for completeness
+
+## Step 3: Implement the Plan
+
+GOAL: Execute plan systematically
+
+1. Implement changes file by file
+2. Run tests after each file
+3. Update CONTINUITY.md with progress
+4. Fix issues as they arise
+5. Complete decision report when done
+```
+
+### Test-Driven Development Pattern
+
+**Alternative workflow for new features:**
+
+```markdown
+## TDD Workflow with Claude
+
+### Phase 1: Context Gathering
+- Read relevant existing code
+- Understand patterns and conventions
+- Review spec (.loki/specs/openapi.yaml)
+
+### Phase 2: Test Design
+**Ask Claude:** "Based on the spec and existing patterns, suggest tests for [feature]"
+
+Claude will propose:
+- Unit tests (edge cases, error handling)
+- Integration tests (API contract validation)
+- E2E tests (user workflows)
+
+Select which tests to implement first.
+
+### Phase 3: Test Implementation
+**Ask Claude:** "Implement the [selected tests]"
+
+Run tests → They should FAIL (red phase)
+
+### Phase 4: Implementation
+**Ask Claude:** "Implement code to make these tests pass"
+
+- Claude writes minimal code to pass tests
+- Run tests → GREEN
+- Refactor if needed
+- Repeat for next test suite
+```
+
+### Deduplication Hook Pattern
+
+**Prevent "AI slop" with automated duplicate detection:**
+
+```bash
+# .loki/hooks/post-write-deduplicate.sh
+#!/bin/bash
+
+FILE="$1"
+DIR=$(dirname "$FILE")
+
+# Launch separate Claude instance to check for duplicates
+# (avoids interfering with main agent's context)
+claude --no-interactive --one-shot "
+Read all files in $DIR and check if $FILE contains code that duplicates
+existing functionality. If duplicates found, suggest which existing function
+to use instead. Output JSON:
+{
+  \"hasDuplicates\": true/false,
+  \"duplicateOf\": \"path/to/existing/file.ts:functionName\",
+  \"recommendation\": \"Use existing function instead\"
+}
+" > /tmp/dedup-check.json
+
+HAS_DUP=$(cat /tmp/dedup-check.json | jq -r '.hasDuplicates')
+if [ "$HAS_DUP" == "true" ]; then
+  RECOMMENDATION=$(cat /tmp/dedup-check.json | jq -r '.recommendation')
+  echo "DUPLICATE CODE DETECTED: $RECOMMENDATION"
+  echo "Please refactor to use existing function in next iteration."
+fi
+
+exit 0
+```
+
+### Performance Optimization Example
+
+**Real-world pattern from course:**
+
+```markdown
+Claude analyzed Chalk library (429M weekly downloads):
+1. Used benchmarks to identify bottlenecks
+2. Profiling tools to measure performance
+3. Created todo list of optimization opportunities
+4. Implemented fixes systematically
+5. Result: 3.9x throughput improvement
+
+Apply to Loki Mode:
+- Profile critical paths (task dispatch, queue operations)
+- Identify N+1 queries in state reads
+- Optimize file I/O (batch reads/writes)
+- Cache frequently accessed data (specs, rules)
+```
+
+### Best Practices Summary
+
+1. **Build incrementally** - Plan mode for architecture, small steps for implementation
+2. **Maintain context** - Update CLAUDE.md and CONTINUITY.md continuously
+3. **Verify outputs** - Use hooks for automated quality checks
+4. **Prevent duplicates** - Deduplication hooks before shipping
+5. **Test first** - TDD workflow prevents regressions
+6. **Think deeply** - Use "Ultra think" for complex decisions
+7. **Block bad writes** - Pre-tool-use hooks enforce quality gates
+
+**"Claude Code functions best as flexible assistant that grows with team needs through tool expansion rather than fixed functionality"**
+
 ### Perpetual Improvement Loop
 
 **A product is NEVER truly complete.** There are always:
@@ -1942,6 +2286,12 @@ done
 │   ├── orchestrator.ts          # MCP client coordinator
 │   ├── registry.yaml            # GitHub MCP Registry manifest
 │   └── external-integrations.ts # Third-party MCP servers
+├── hooks/                       # Quality gate hooks
+│   ├── pre-write.sh             # Block writes that violate rules
+│   ├── post-write.sh            # Auto-fix after writes (type check, format)
+│   └── post-write-deduplicate.sh # Duplicate code detection
+├── plans/                       # Implementation plans (Plan Mode output)
+│   └── task-{id}.md             # Detailed plan before implementation
 ├── state/
 │   ├── orchestrator.json       # Master state
 │   ├── agents/                  # Per-agent state files
@@ -1999,7 +2349,7 @@ set -euo pipefail
 LOKI_ROOT=".loki"
 
 # Create directory structure
-mkdir -p "$LOKI_ROOT"/{specs,mcp/servers,state/{agents,checkpoints,locks},queue,messages/{inbox,outbox,broadcast},logs/{agents,decisions,archive,static-analysis},config,prompts,artifacts/{releases,reports,metrics,backups},scripts}
+mkdir -p "$LOKI_ROOT"/{specs,mcp/servers,hooks,plans,state/{agents,checkpoints,locks},queue,messages/{inbox,outbox,broadcast},logs/{agents,decisions,archive,static-analysis},config,prompts,artifacts/{releases,reports,metrics,backups},scripts}
 
 # Initialize queue files
 for f in pending in-progress completed failed dead-letter; do

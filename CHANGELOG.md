@@ -5,6 +5,94 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.14.0] - 2026-01-02
+
+### Added
+- **Claude Code Best Practices** - Integrated patterns from "Claude Code in Action" course:
+
+  **CLAUDE.md Generation:**
+  - Comprehensive codebase summary generated on bootstrap
+  - Included in EVERY Claude request for persistent context
+  - Contains: project summary, architecture, key files, critical patterns
+  - Auto-updated by agents on significant changes
+
+  **Three Memory Levels:**
+  1. **Project Memory**: `.loki/CONTINUITY.md` + `CLAUDE.md` (shared, committed)
+  2. **Agent Memory**: `.loki/memory/ledgers/` (per-agent, not committed)
+  3. **Global Memory**: `.loki/rules/` (permanent patterns, committed)
+
+  **Plan Mode Pattern:**
+  - Research phase (read-only, find all relevant files)
+  - Planning phase (create detailed plan, NO code yet)
+  - Review checkpoint (get approval before implementing)
+  - Implementation phase (execute plan systematically)
+  - Use for: multi-file refactoring, architecture decisions, complex features
+
+  **Thinking Mode:**
+  - Trigger with "Ultra think" prefix
+  - Extended reasoning budget for complex logic
+  - Use for: subtle bugs, performance optimization, security assessment, architectural trade-offs
+
+- **Hooks System (Quality Gates)**:
+
+  **Pre-Tool-Use Hooks** - Block execution (exit code 2):
+  - Prevent writes to auto-generated files
+  - Validate implementation matches spec before write
+  - Example: `.loki/hooks/pre-write.sh`
+
+  **Post-Tool-Use Hooks** - Auto-fix after execution:
+  - Type checking (TypeScript/mypy) with auto-fix feedback
+  - Auto-formatting (Prettier, Black, gofmt)
+  - Update CLAUDE.md on architecture changes
+  - Example: `.loki/hooks/post-write.sh`
+
+  **Deduplication Hook** - Prevent AI slop:
+  - Launches separate Claude instance to detect duplicates
+  - Suggests existing functions to reuse
+  - Example: `.loki/hooks/post-write-deduplicate.sh`
+
+- **Problem-Solving Workflows**:
+
+  **3-Step Pattern** (for non-trivial tasks):
+  1. Identify & Analyze: Grep/Read relevant files, create mental model
+  2. Request Planning: Describe feature, get implementation plan (NO CODE)
+  3. Implement Plan: Execute systematically, test after each file
+
+  **Test-Driven Development Pattern:**
+  1. Context Gathering: Read code, understand patterns, review spec
+  2. Test Design: Ask Claude to suggest tests based on spec
+  3. Test Implementation: Implement tests → FAIL (red phase)
+  4. Implementation: Write code to pass tests → GREEN → refactor
+
+- **Performance Optimization Pattern**:
+  - Profile critical paths (benchmarks, profiling tools)
+  - Create todo list of optimization opportunities
+  - Implement fixes systematically
+  - Real example: Chalk library 3.9x throughput improvement
+
+### Changed
+- **Directory Structure** - Added:
+  - `.loki/hooks/` - Pre/post tool-use hooks for quality gates
+  - `.loki/plans/` - Implementation plans (Plan Mode output)
+
+- **Bootstrap Script** - Creates hooks/ and plans/ directories
+
+- **RAR Cycle** - Enhanced with Claude Code patterns:
+  - REASON: Read CONTINUITY.md + CLAUDE.md
+  - ACT: Use hooks for quality gates
+  - REFLECT: Update CONTINUITY.md + CLAUDE.md
+
+### Best Practices
+1. **Build incrementally** - Plan mode for architecture, small steps for implementation
+2. **Maintain context** - Update CLAUDE.md and CONTINUITY.md continuously
+3. **Verify outputs** - Use hooks for automated quality checks
+4. **Prevent duplicates** - Deduplication hooks before shipping
+5. **Test first** - TDD workflow prevents regressions
+6. **Think deeply** - Use "Ultra think" for complex decisions
+7. **Block bad writes** - Pre-tool-use hooks enforce quality gates
+
+**"Claude Code functions best as flexible assistant that grows with team needs through tool expansion rather than fixed functionality"**
+
 ## [2.13.0] - 2026-01-02
 
 ### Added
