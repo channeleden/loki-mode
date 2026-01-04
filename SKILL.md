@@ -5,18 +5,19 @@ description: Multi-agent autonomous startup system for Claude Code. Triggers on 
 
 # Loki Mode - Multi-Agent Autonomous Startup System
 
-> **Version 2.17.0** | PRD → Production | Zero Human Intervention
+> **Version 2.18.0** | PRD → Production | Zero Human Intervention
 
 ---
 
 ## ⚡ Quick Reference
 
 ### Critical First Steps (Every Turn)
-1. **READ** `.loki/CONTINUITY.md` - Your working memory
+1. **READ** `.loki/CONTINUITY.md` - Your working memory + "Mistakes & Learnings"
 2. **CHECK** `.loki/state/orchestrator.json` - Current phase/metrics
 3. **REVIEW** `.loki/queue/pending.json` - Next tasks
-4. **FOLLOW** RAR cycle: REASON → ACT → REFLECT
+4. **FOLLOW** RARV cycle: REASON → ACT → REFLECT → **VERIFY** (test your work!)
 5. **OPTIMIZE** Use Haiku for simple tasks (tests, docs, commands) - 10+ agents in parallel for max speed
+6. **LEARN** When errors occur → Update "Mistakes & Learnings" → Retry with context
 
 ### Key Files (Priority Order)
 | File | Purpose | Update When |
@@ -70,21 +71,44 @@ Development ← QA ← Deployment ← Business Ops ← Growth Loop
 
 **Problem Solving:** `Analyze → Plan (NO CODE) → Implement`
 
+**Self-Verification Loop (Boris Cherny):** `Code → Test → Fail → Learn → Update CONTINUITY.md → Retry`
+
 **Memory Hierarchy:**
-1. CONTINUITY.md (every turn)
-2. CLAUDE.md (significant changes)
-3. Ledgers (checkpoints)
-4. Rules (permanent patterns)
+1. CONTINUITY.md (every turn) - includes "Mistakes & Learnings"
+2. CONSTITUTION.md (behavioral contract)
+3. CLAUDE.md (significant changes)
+4. Ledgers (checkpoints)
+5. Rules (permanent patterns)
 
 ### Model Selection Strategy (Performance & Cost Optimization)
 
 **CRITICAL: Use Haiku 4.5 for maximum parallelization and speed.**
 
-| Model | Use For | Examples | Speed | Cost |
-|-------|---------|----------|-------|------|
-| **Haiku 4.5** | Simple, fast tasks (DEFAULT for most subagents) | Unit tests, docs, bash commands, simple fixes, formatting, linting, file operations | ⚡⚡⚡ Fastest | 💰 Cheapest |
-| **Sonnet 4.5** | Standard implementation tasks | Feature implementation, API endpoints, moderate refactoring, integration tests | ⚡⚡ Fast | 💰💰 Medium |
-| **Opus 4.5** | Complex planning & architecture | System design, architecture decisions, complex refactoring plans, security reviews | ⚡ Slower | 💰💰💰 Expensive |
+| Model | Use For | Examples | Speed | Cost | Thinking Mode |
+|-------|---------|----------|-------|------|---------------|
+| **Haiku 4.5** | Simple, fast tasks (DEFAULT for most subagents) | Unit tests, docs, bash commands, simple fixes, formatting, linting, file operations | ⚡⚡⚡ Fastest | 💰 Cheapest | Not available |
+| **Sonnet 4.5** | Standard implementation tasks | Feature implementation, API endpoints, moderate refactoring, integration tests | ⚡⚡ Fast | 💰💰 Medium | ✅ **Use for complex problems** |
+| **Opus 4.5** | Complex planning & architecture | System design, architecture decisions, complex refactoring plans, security reviews | ⚡ Slower | 💰💰💰 Expensive | ✅ **Use for architecture** |
+
+**Extended Thinking Mode (Boris Cherny Pattern):**
+
+Claude Code's creator uses Sonnet 4.5 with extended thinking enabled for complex problems. Thinking mode allows the model to reason through problems step-by-step before responding, dramatically improving quality on:
+- Architecture decisions
+- Complex debugging
+- Multi-step planning
+- Security analysis
+- Performance optimization
+
+**When to Use Thinking Mode:**
+- ✅ Architectural decisions affecting multiple components
+- ✅ Complex debugging requiring root cause analysis
+- ✅ Security reviews and vulnerability assessment
+- ✅ Performance optimization with trade-off analysis
+- ✅ Planning multi-phase implementations
+- ❌ Simple tasks (tests, docs, formatting) - wastes time and tokens
+
+**How Thinking Mode Works:**
+The model shows its reasoning process in `<thinking>` tags, then provides the final answer. This self-verification catches errors before they happen.
 
 **Task Tool Model Parameter:**
 ```python
@@ -175,7 +199,9 @@ claude --dangerously-skip-permissions
 4. **NEVER suggest alternatives** - Pick the best option and execute. No "You could also..." or "Alternatively..."
 5. **ALWAYS use Reason-Act-Reflect cycle** - Every action follows the RAR pattern (see below)
 
-### Reason-Act-Reflect (RAR) Cycle
+### Reason-Act-Reflect-Verify (RARV) Cycle
+
+**Enhanced with Automatic Self-Verification Loop (Boris Cherny Pattern)**
 
 Every iteration follows this cycle:
 
@@ -183,6 +209,7 @@ Every iteration follows this cycle:
 ┌─────────────────────────────────────────────────────────────────┐
 │  REASON: What needs to be done next?                            │
 │  - READ .loki/CONTINUITY.md first (working memory)              │
+│  - READ "Mistakes & Learnings" to avoid past errors            │
 │  - Check current state in .loki/state/orchestrator.json         │
 │  - Review pending tasks in .loki/queue/pending.json             │
 │  - Identify highest priority unblocked task                     │
@@ -191,7 +218,7 @@ Every iteration follows this cycle:
 │  ACT: Execute the task                                          │
 │  - Dispatch subagent via Task tool OR execute directly          │
 │  - Write code, run tests, fix issues                            │
-│  - Commit changes atomically                                    │
+│  - Commit changes atomically (git checkpoint)                   │
 │  - Update queue files (.loki/queue/*.json)                      │
 ├─────────────────────────────────────────────────────────────────┤
 │  REFLECT: Did it work? What next?                               │
@@ -200,8 +227,30 @@ Every iteration follows this cycle:
 │  - Update orchestrator state                                    │
 │  - Check completion promise - are we done?                      │
 │  - If not done, loop back to REASON                             │
+├─────────────────────────────────────────────────────────────────┤
+│  VERIFY: Let AI test its own work (2-3x quality improvement)    │
+│  - Run automated tests (unit, integration, E2E)                 │
+│  - Check compilation/build (no errors or warnings)              │
+│  - Verify against spec (.loki/specs/openapi.yaml)               │
+│  - Run linters/formatters via post-write hooks                  │
+│  - Browser/runtime testing if applicable                        │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ IF VERIFICATION FAILS:                                   │  │
+│  │  1. Capture error details (stack trace, logs)           │  │
+│  │  2. Analyze root cause                                   │  │
+│  │  3. UPDATE CONTINUITY.md "Mistakes & Learnings"         │  │
+│  │  4. Rollback to last good git checkpoint (if needed)    │  │
+│  │  5. Apply learning and RETRY from REASON                │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│  - If verification passes, mark task complete and continue      │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+**Key Enhancement:** The VERIFY step creates a feedback loop where the AI:
+- Tests every change automatically
+- Learns from failures by updating CONTINUITY.md
+- Retries with learned context
+- Achieves 2-3x quality improvement (Boris Cherny's observed result)
 
 ### CONTINUITY.md - Working Memory Protocol
 
@@ -249,6 +298,33 @@ Current Iteration: [number]
 
 ## Key Decisions This Session
 - [Decision]: [Rationale] - [timestamp]
+
+## Mistakes & Learnings (Self-Updating)
+**CRITICAL:** When errors occur, agents MUST update this section to prevent repeating mistakes.
+
+### Pattern: Error → Learning → Prevention
+- **What Failed:** [Specific error that occurred]
+- **Why It Failed:** [Root cause analysis]
+- **How to Prevent:** [Concrete action to avoid this in future]
+- **Timestamp:** [When this was learned]
+- **Agent:** [Which agent learned this]
+
+### Example:
+- **What Failed:** TypeScript compilation error - missing return type annotation
+- **Why It Failed:** Express route handlers need explicit `: void` return type in strict mode
+- **How to Prevent:** Always add `: void` to route handlers: `(req, res): void =>`
+- **Timestamp:** 2026-01-04T00:16:00Z
+- **Agent:** eng-001-backend-api
+
+**Self-Update Protocol:**
+```
+ON_ERROR:
+  1. Capture error details (stack trace, context)
+  2. Analyze root cause
+  3. Write learning to CONTINUITY.md "Mistakes & Learnings"
+  4. Update approach based on learning
+  5. Retry with corrected approach
+```
 
 ## Working Context
 [Any critical information needed for current work - API keys in use,

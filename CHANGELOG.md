@@ -5,6 +5,75 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.18.0] - 2026-01-04
+
+### Added
+- **Self-Updating Learning System** - Agents learn from mistakes automatically (SKILL.md:253-278):
+  - "Mistakes & Learnings" section in CONTINUITY.md template
+  - Error → Learning → Prevention pattern
+  - Self-update protocol: capture error, analyze root cause, write learning, retry
+  - Example format with timestamp, agent ID, what failed, why, how to prevent
+  - Prevents repeating same errors across agent spawns
+
+- **Automatic Self-Verification Loop (RARV Cycle)** - 2-3x quality improvement (SKILL.md:178-229):
+  - Enhanced RAR to RARV: Reason → Act → Reflect → **Verify**
+  - VERIFY step runs automated tests after every change
+  - Feedback loop: Test → Fail → Learn → Update CONTINUITY.md → Retry
+  - Rollback to last good git checkpoint on verification failure
+  - Achieves 2-3x quality improvement (Boris Cherny's observed result)
+  - AI tests its own work automatically
+
+- **Extended Thinking Mode Guidance** - For complex problems (SKILL.md:89-107):
+  - Added "Thinking Mode" column to model selection table
+  - Sonnet 4.5 with thinking for complex debugging, architecture
+  - Opus 4.5 with thinking for system design, security reviews
+  - When to use: architecture decisions, complex debugging, security analysis
+  - When NOT to use: simple tasks (wastes time and tokens)
+  - How it works: Model shows reasoning in `<thinking>` tags
+
+### Changed
+- **RARV Cycle** - Enhanced from RAR to include VERIFY step (SKILL.md:178):
+  - Added "READ Mistakes & Learnings" to REASON step
+  - Added "git checkpoint" note to ACT step
+  - Added complete VERIFY step with failure handling protocol
+  - Loop back to REASON on verification failure with learned context
+
+- **Quick Reference** - Updated with new patterns (SKILL.md:14-20):
+  - Step 1: Read CONTINUITY.md + "Mistakes & Learnings"
+  - Step 4: RARV cycle (added VERIFY)
+  - Step 6: NEW - Learn from errors pattern
+  - Essential Patterns: Added "Self-Verification Loop (Boris Cherny)"
+  - Memory Hierarchy: Added CONSTITUTION.md, noted "Mistakes & Learnings"
+
+- **Model Selection Table** - Added Thinking Mode column (SKILL.md:83-87):
+  - Haiku: Not available
+  - Sonnet: "Use for complex problems"
+  - Opus: "Use for architecture"
+
+### Inspired By
+**Boris Cherny (Creator of Claude Code) - "Max Setup" Pattern:**
+- Self-updating CLAUDE.md based on mistakes (we adapted to CONTINUITY.md)
+- Let AI test its own work (2-3x quality improvement observed)
+- Extended thinking mode for complex problems
+- "Less prompting, more systems. Parallelize + standardize + verify."
+
+### Impact
+- **Quality Improvement:** 2-3x (from automatic self-verification loop)
+- **Error Reduction:** Mistakes logged and prevented from repeating
+- **Learning System:** Agents build institutional knowledge over time
+- **Debugging Speed:** Extended thinking improves complex problem-solving
+
+### Migration Notes
+Existing `.loki/` projects automatically benefit from:
+- Enhanced RARV cycle (no changes needed)
+- Self-verification loop (runs automatically on task completion)
+- Extended thinking (agents will use when appropriate)
+
+To fully utilize:
+1. Add "Mistakes & Learnings" section to CONTINUITY.md (see template)
+2. Enable automatic testing in VERIFY step
+3. Use extended thinking mode for complex tasks
+
 ## [2.17.0] - 2026-01-04
 
 ### Added
