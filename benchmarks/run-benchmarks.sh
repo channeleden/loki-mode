@@ -960,7 +960,11 @@ run_swebench() {
     download_swebench
 
     if [ "$EXECUTE_MODE" = true ]; then
-        run_swebench_execute
+        if [ "$LOKI_MODE" = true ]; then
+            run_swebench_loki
+        else
+            run_swebench_execute
+        fi
     else
         run_swebench_setup
     fi
@@ -1197,6 +1201,406 @@ SWEBENCH_EXECUTE
     log_success "SWE-bench patch generation complete"
     log_info "Results: $RESULTS_DIR/swebench-results.json"
     log_info "Predictions: $RESULTS_DIR/swebench-predictions.json"
+}
+
+#===============================================================================
+# Loki Mode Multi-Agent SWE-bench Benchmark
+# Uses: Architect -> Engineer -> QA -> Reviewer with RARV cycle
+#===============================================================================
+
+run_swebench_loki() {
+    log_info "Executing SWE-bench Lite with Loki Mode Multi-Agent System..."
+    log_info "Model: $CLAUDE_MODEL | Retries: $MAX_RETRIES | Limit: ${PROBLEM_LIMIT:-all}"
+    log_info "Agents: Architect -> Engineer -> QA -> Reviewer (RARV cycle)"
+
+    # Check if swebench is installed
+    if ! python3 -c "import swebench" 2>/dev/null; then
+        log_warning "SWE-bench package not installed. Installing..."
+        pip install -q swebench datasets
+    fi
+
+    export PROBLEM_LIMIT PROBLEM_TIMEOUT CLAUDE_MODEL MAX_RETRIES
+
+    python3 << 'SWEBENCH_LOKI'
+import json
+import subprocess
+import os
+import sys
+import time
+import re
+from datetime import datetime
+
+try:
+    from datasets import load_dataset
+except ImportError:
+    subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', 'swebench', 'datasets'])
+    from datasets import load_dataset
+
+SCRIPT_DIR = os.environ.get('SCRIPT_DIR', '.')
+RESULTS_DIR = os.environ.get('RESULTS_DIR', './results')
+PROBLEM_LIMIT = int(os.environ.get('PROBLEM_LIMIT', '0'))
+PROBLEM_TIMEOUT = int(os.environ.get('PROBLEM_TIMEOUT', '300'))
+CLAUDE_MODEL = os.environ.get('CLAUDE_MODEL', 'sonnet')
+MAX_RETRIES = int(os.environ.get('MAX_RETRIES', '3'))
+
+results_file = f"{RESULTS_DIR}/swebench-loki-results.json"
+patches_dir = f"{RESULTS_DIR}/swebench-loki-patches"
+os.makedirs(patches_dir, exist_ok=True)
+
+print(f"\n{'='*70}")
+print(f"  LOKI MODE Multi-Agent SWE-bench Lite Benchmark")
+print(f"  Limit: {PROBLEM_LIMIT if PROBLEM_LIMIT > 0 else 'all'} | Model: {CLAUDE_MODEL} | Max Retries: {MAX_RETRIES}")
+print(f"  Agent Pipeline: Architect -> Engineer -> QA -> Reviewer")
+print(f"{'='*70}\n")
+
+# Load dataset
+print("Loading SWE-bench Lite dataset...")
+try:
+    dataset = load_dataset("princeton-nlp/SWE-bench_Lite", split="test")
+    problems = list(dataset)
+    if PROBLEM_LIMIT > 0:
+        problems = problems[:PROBLEM_LIMIT]
+    print(f"Loaded {len(problems)} problems")
+except Exception as e:
+    print(f"Error loading dataset: {e}")
+    sys.exit(1)
+
+def call_agent(agent_name, prompt, timeout=PROBLEM_TIMEOUT):
+    """Call a Loki Mode agent with a specific role."""
+    try:
+        result = subprocess.run(
+            ['claude', '-p', prompt, '--model', CLAUDE_MODEL],
+            capture_output=True,
+            text=True,
+            timeout=timeout
+        )
+        return result.stdout.strip(), None
+    except subprocess.TimeoutExpired:
+        return None, "TIMEOUT"
+    except Exception as e:
+        return None, str(e)
+
+def architect_agent(problem):
+    """Architect: Analyze the issue and design the fix approach."""
+    prompt = f'''You are the ARCHITECT AGENT analyzing a GitHub issue.
+
+REPOSITORY: {problem["repo"]}
+ISSUE:
+{problem["problem_statement"]}
+
+HINTS:
+{problem.get("hints_text", "No hints available.")}
+
+Your job:
+1. Understand what the issue is about
+2. Identify which file(s) likely need to be changed
+3. Describe the fix approach (2-3 sentences)
+4. Note any edge cases
+
+Output a brief analysis (5-7 lines max) with:
+- What the bug/issue is
+- Files likely affected
+- Fix strategy
+
+Keep it concise - the Engineer agent will generate the patch.'''
+
+    return call_agent("Architect", prompt, timeout=60)
+
+def engineer_agent(problem, architect_analysis):
+    """Engineer: Generate the patch based on architect's analysis."""
+    prompt = f'''You are the ENGINEER AGENT generating a patch for a GitHub issue.
+
+REPOSITORY: {problem["repo"]}
+ISSUE:
+{problem["problem_statement"]}
+
+ARCHITECT'S ANALYSIS:
+{architect_analysis}
+
+Generate a git patch (unified diff format) that fixes this issue.
+
+IMPORTANT:
+1. Output ONLY the patch in unified diff format
+2. Include proper file paths with a/ and b/ prefixes
+3. Include @@ line numbers
+4. No explanations, no markdown code blocks, just raw patch
+
+Example format:
+--- a/path/to/file.py
++++ b/path/to/file.py
+@@ -10,6 +10,7 @@
+ existing line
++new line
+ existing line
+
+Generate the patch now:'''
+
+    return call_agent("Engineer", prompt)
+
+def qa_agent(patch):
+    """QA: Validate the patch format."""
+    if not patch:
+        return {"valid": False, "error": "Empty patch"}
+
+    # Check for basic patch structure
+    has_diff_header = "---" in patch and "+++" in patch
+    has_hunk_header = "@@" in patch
+    has_changes = "+" in patch or "-" in patch
+
+    # Check for markdown wrapping (common error)
+    is_wrapped = patch.startswith("```")
+
+    if is_wrapped:
+        return {"valid": False, "error": "Patch wrapped in markdown code blocks"}
+
+    if not has_diff_header:
+        return {"valid": False, "error": "Missing diff headers (--- and +++)"}
+
+    if not has_hunk_header:
+        return {"valid": False, "error": "Missing hunk headers (@@)"}
+
+    if not has_changes:
+        return {"valid": False, "error": "No actual changes in patch"}
+
+    # Check for proper file paths
+    if "a/" not in patch or "b/" not in patch:
+        return {"valid": False, "error": "Missing a/ or b/ path prefixes"}
+
+    return {"valid": True, "error": None}
+
+def reviewer_agent(problem, patch, qa_result):
+    """Reviewer: Analyze patch issues and suggest fixes."""
+    if qa_result["valid"]:
+        return {"approved": True, "feedback": "Patch format is valid"}
+
+    prompt = f'''You are the CODE REVIEWER AGENT. The generated patch has format issues.
+
+ISSUE:
+{problem["problem_statement"][:500]}
+
+CURRENT PATCH:
+{patch[:1000] if patch else "Empty"}
+
+FORMAT ERROR:
+{qa_result["error"]}
+
+Provide brief feedback (2-3 lines) on how to fix the patch format:
+- What's wrong
+- How to fix it'''
+
+    feedback, error = call_agent("Reviewer", prompt, timeout=30)
+    return {"approved": False, "feedback": feedback or qa_result["error"], "error": error}
+
+def engineer_fix_agent(problem, patch, feedback, attempt):
+    """Engineer: Fix the patch based on reviewer feedback."""
+    prompt = f'''You are the ENGINEER AGENT. Your previous patch had format issues.
+
+ISSUE:
+{problem["problem_statement"][:500]}
+
+PREVIOUS PATCH:
+{patch[:1000] if patch else "Empty"}
+
+REVIEWER FEEDBACK:
+{feedback}
+
+ATTEMPT: {attempt}/{MAX_RETRIES}
+
+Generate a CORRECTED patch in proper unified diff format.
+Output ONLY the raw patch - no explanations, no markdown.
+
+--- a/path/to/file.py
++++ b/path/to/file.py
+@@ -line,count +line,count @@
+...'''
+
+    return call_agent("Engineer-Fix", prompt)
+
+def clean_patch(patch):
+    """Clean up patch by removing markdown wrapping."""
+    if not patch:
+        return patch
+
+    if patch.startswith("```"):
+        lines = patch.split("\n")
+        # Remove first and last lines if they're markdown
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        patch = "\n".join(lines)
+
+    return patch.strip()
+
+def solve_with_loki_mode(problem):
+    """Solve SWE-bench problem using Loki Mode multi-agent system."""
+    instance_id = problem["instance_id"]
+    agent_trace = []
+
+    # Step 1: Architect analyzes the issue
+    architect_analysis, error = architect_agent(problem)
+    agent_trace.append({"agent": "Architect", "output": architect_analysis[:200] if architect_analysis else None, "error": error})
+
+    if error:
+        return {
+            "instance_id": instance_id,
+            "model_patch": None,
+            "error": f"Architect failed: {error}",
+            "attempts": 1,
+            "agent_trace": agent_trace
+        }
+
+    # Step 2: Engineer generates patch
+    patch, error = engineer_agent(problem, architect_analysis)
+    agent_trace.append({"agent": "Engineer", "output": patch[:200] if patch else None, "error": error})
+
+    if error or not patch:
+        return {
+            "instance_id": instance_id,
+            "model_patch": None,
+            "error": f"Engineer failed: {error}",
+            "attempts": 1,
+            "agent_trace": agent_trace
+        }
+
+    patch = clean_patch(patch)
+
+    # RARV Loop: QA -> Reviewer -> Engineer-Fix
+    for attempt in range(1, MAX_RETRIES + 1):
+        # Step 3: QA validates patch format
+        qa_result = qa_agent(patch)
+        agent_trace.append({"agent": "QA", "valid": qa_result["valid"], "error": qa_result.get("error")})
+
+        if qa_result["valid"]:
+            return {
+                "instance_id": instance_id,
+                "model_patch": patch,
+                "error": None,
+                "attempts": attempt,
+                "agent_trace": agent_trace
+            }
+
+        if attempt >= MAX_RETRIES:
+            break
+
+        # Step 4: Reviewer analyzes issues
+        review = reviewer_agent(problem, patch, qa_result)
+        agent_trace.append({"agent": "Reviewer", "feedback": review["feedback"][:200] if review.get("feedback") else None})
+
+        # Step 5: Engineer fixes patch
+        new_patch, error = engineer_fix_agent(problem, patch, review["feedback"], attempt + 1)
+        agent_trace.append({"agent": f"Engineer-Fix-{attempt+1}", "output": new_patch[:200] if new_patch else None, "error": error})
+
+        if new_patch and not error:
+            patch = clean_patch(new_patch)
+
+    # Return even if format isn't perfect - let SWE-bench evaluator handle it
+    return {
+        "instance_id": instance_id,
+        "model_patch": patch,
+        "error": f"Format issues after {MAX_RETRIES} attempts",
+        "attempts": MAX_RETRIES,
+        "agent_trace": agent_trace
+    }
+
+# Run benchmark
+results = {
+    "benchmark": "SWE-bench-LokiMode",
+    "mode": "multi-agent",
+    "version": "1.0",
+    "timestamp": datetime.now().isoformat(),
+    "model": CLAUDE_MODEL,
+    "max_retries": MAX_RETRIES,
+    "total_problems": len(problems),
+    "predictions": []
+}
+
+start_time = time.time()
+generated_count = 0
+fixed_by_rarv = 0
+error_count = 0
+total_attempts = 0
+
+for i, problem in enumerate(problems):
+    instance_id = problem["instance_id"]
+
+    print(f"[{i+1}/{len(problems)}] {instance_id}...", end=" ", flush=True)
+
+    result = solve_with_loki_mode(problem)
+    total_attempts += result["attempts"]
+
+    # Save patch
+    patch_file = f"{patches_dir}/{instance_id.replace('/', '_')}.patch"
+    with open(patch_file, 'w') as f:
+        f.write(f"# {instance_id}\n")
+        f.write(f"# Loki Mode Multi-Agent Patch\n")
+        f.write(f"# Attempts: {result['attempts']}\n\n")
+        if result["model_patch"]:
+            f.write(result["model_patch"])
+
+    if result["model_patch"] and not (result.get("error") or "").startswith("Format"):
+        generated_count += 1
+        if result["attempts"] > 1:
+            fixed_by_rarv += 1
+            print(f"\033[0;32mGENERATED\033[0m (fixed on attempt {result['attempts']})")
+        else:
+            print(f"\033[0;32mGENERATED\033[0m")
+    elif result["model_patch"]:
+        generated_count += 1
+        print(f"\033[0;33mGENERATED\033[0m (format issues)")
+    else:
+        error_count += 1
+        print(f"\033[0;31mERROR\033[0m - {result.get('error', 'Unknown')[:40]}")
+
+    # Add to predictions
+    results["predictions"].append({
+        "instance_id": instance_id,
+        "model_patch": result["model_patch"] or "",
+        "model_name_or_path": f"loki-mode-{CLAUDE_MODEL}",
+        "attempts": result["attempts"]
+    })
+
+elapsed_time = time.time() - start_time
+
+# Save results
+results["generated"] = generated_count
+results["fixed_by_rarv"] = fixed_by_rarv
+results["errors"] = error_count
+results["avg_attempts"] = total_attempts / len(problems) if problems else 0
+results["elapsed_time"] = elapsed_time
+
+with open(results_file, 'w') as f:
+    json.dump(results, f, indent=2)
+
+# Save predictions for SWE-bench evaluator
+predictions_file = f"{RESULTS_DIR}/swebench-loki-predictions.json"
+with open(predictions_file, 'w') as f:
+    json.dump(results["predictions"], f, indent=2)
+
+gen_rate = (generated_count / len(problems)) * 100 if problems else 0
+
+print(f"\n{'='*70}")
+print(f"  LOKI MODE SWE-BENCH RESULTS")
+print(f"{'='*70}")
+print(f"  Generated:    {generated_count}/{len(problems)} ({gen_rate:.1f}%)")
+print(f"  Fixed by RARV: {fixed_by_rarv}")
+print(f"  Errors:       {error_count}/{len(problems)}")
+print(f"  Avg Attempts: {results['avg_attempts']:.2f}")
+print(f"  Time:         {elapsed_time:.1f}s ({elapsed_time/len(problems):.1f}s avg)")
+print(f"{'='*70}")
+print(f"\n  Comparison:")
+print(f"  - Direct Claude:             99.67% patch gen")
+print(f"  - Loki Mode (multi-agent):   {gen_rate:.1f}% patch gen")
+print(f"{'='*70}")
+print(f"\n  Next Step: Run SWE-bench evaluator")
+print(f"  python -m swebench.harness.run_evaluation \\")
+print(f"    --predictions {predictions_file}")
+print(f"{'='*70}\n")
+SWEBENCH_LOKI
+
+    log_success "Loki Mode SWE-bench patch generation complete"
+    log_info "Results: $RESULTS_DIR/swebench-loki-results.json"
+    log_info "Predictions: $RESULTS_DIR/swebench-loki-predictions.json"
 }
 
 #===============================================================================
