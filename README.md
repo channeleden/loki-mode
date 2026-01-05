@@ -4,11 +4,24 @@
 
 [![Claude Code](https://img.shields.io/badge/Claude-Code-orange)](https://claude.ai)
 [![Agent Types](https://img.shields.io/badge/Agent%20Types-37-blue)]()
+[![HumanEval](https://img.shields.io/badge/HumanEval-98.17%25%20Pass%401-brightgreen)](benchmarks/results/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > **PRD → Deployed Product in Zero Human Intervention**
 >
 > Loki Mode transforms a Product Requirements Document into a fully built, tested, deployed, and revenue-generating product while you sleep. No manual steps. No intervention. Just results.
+
+---
+
+## Benchmark Results
+
+| Benchmark | Score | vs. Competition |
+|-----------|-------|-----------------|
+| **HumanEval** | **98.17% Pass@1** | +10.5% vs MetaGPT (85.9%) |
+| Model | Claude Opus 4.5 | |
+| Problems Solved | 161/164 | |
+
+See [benchmarks/results/](benchmarks/results/) for full methodology and solutions.
 
 ---
 
