@@ -5,6 +5,61 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.27.0] - 2026-01-06
+
+### Added - 2025 Research-Backed Enhancements
+
+**Research sources analyzed:**
+- [Awesome Agentic Patterns](https://github.com/nibzard/awesome-agentic-patterns) - 105 production patterns
+- [Multi-Agent Collaboration Mechanisms Survey](https://arxiv.org/abs/2501.06322)
+- [CONSENSAGENT Anti-Sycophancy Framework](https://aclanthology.org/2025.findings-acl.1141/)
+- [GoalAct Hierarchical Planning](https://arxiv.org/abs/2504.16563)
+- [A-Mem/MIRIX Memory Systems](https://arxiv.org/html/2502.12110v11)
+- [Multi-Agent Reflexion (MAR)](https://arxiv.org/html/2512.20845)
+- [Iter-VF Verification](https://arxiv.org/html/2511.21734v1)
+
+**New Memory Architecture:**
+- **Episodic Memory** (`.loki/memory/episodic/`) - Specific interaction traces with timestamps
+- **Semantic Memory** (`.loki/memory/semantic/`) - Generalized patterns and anti-patterns
+- **Procedural Memory** (`.loki/memory/skills/`) - Learned action sequences
+- **Episodic-to-Semantic Consolidation** - Automatic pattern extraction (MemGPT/Voyager pattern)
+- **Zettelkasten-Style Linking** - Atomic notes with relation links (A-Mem pattern)
+
+**Anti-Sycophancy Protocol (CONSENSAGENT):**
+- **Blind Review Mode** - Reviewers cannot see each other's findings initially
+- **Devil's Advocate Reviewer** - Runs on unanimous approval to catch missed issues
+- **Heterogeneous Team Composition** - Different personalities/expertise per reviewer
+- **Research finding:** 30% fewer false positives with blind review + devil's advocate
+
+**Hierarchical Planning (GoalAct/TMS):**
+- **Global Planning** - Maintains overall goal and strategy
+- **High-Level Skills** - Decomposition into searching, coding, testing, writing, deploying
+- **Local Execution** - Specific actions within skill context
+- **Research finding:** 12% improvement in success rate
+
+**Iter-VF Verification Pattern:**
+- Verify extracted answer only (not whole reasoning chain)
+- Markovian retry process prevents context overflow
+- Fresh context with just error info on failure
+
+**New Reference Files:**
+- `references/advanced-patterns.md` (453 lines) - All 2025 research patterns
+- `references/memory-system.md` (437 lines) - Enhanced memory architecture
+
+### Changed
+- SKILL.md updated to v2.27.0 with research citations
+- Quality gates now include anti-sycophancy checks
+- Directory structure includes episodic/semantic/skills memory layers
+- Essential patterns include Memory Consolidation and Hierarchical Planning
+
+### Research Impact Summary
+| Enhancement | Source | Improvement |
+|-------------|--------|-------------|
+| Blind Review + Devil's Advocate | CONSENSAGENT | 30% fewer false positives |
+| Heterogeneous Teams | A-HMAD | 4-6% accuracy improvement |
+| Hierarchical Planning | GoalAct | 12% success rate improvement |
+| Episodic-to-Semantic | MemGPT | Genuine cross-session learning |
+
 ## [2.26.0] - 2026-01-05
 
 ### Added - Official SWE-bench Submission Support
