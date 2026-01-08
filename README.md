@@ -504,9 +504,35 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-- Inspired by [LerianStudio/ring](https://github.com/LerianStudio/ring) subagent-driven-development pattern
-- Built for the [Claude Code](https://claude.ai) ecosystem
-- Powered by Anthropic's Claude models (Sonnet, Haiku, Opus)
+Loki Mode incorporates research and patterns from leading AI labs and practitioners:
+
+### Research Foundation
+
+| Source | Key Contribution |
+|--------|------------------|
+| [Anthropic: Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) | Evaluator-optimizer pattern, parallelization |
+| [Anthropic: Constitutional AI](https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback) | Self-critique against principles |
+| [DeepMind: Scalable Oversight via Debate](https://deepmind.google/research/publications/34920/) | Debate-based verification |
+| [DeepMind: SIMA 2](https://deepmind.google/blog/sima-2-an-agent-that-plays-reasons-and-learns-with-you-in-virtual-3d-worlds/) | Self-improvement loop |
+| [OpenAI: Agents SDK](https://openai.github.io/openai-agents-python/) | Guardrails, tripwires, tracing |
+| [NVIDIA ToolOrchestra](https://github.com/NVlabs/ToolOrchestra) | Efficiency metrics, reward signals |
+| [CONSENSAGENT (ACL 2025)](https://aclanthology.org/2025.findings-acl.1141/) | Anti-sycophancy, blind review |
+| [GoalAct](https://arxiv.org/abs/2504.16563) | Hierarchical planning |
+
+### Practitioner Insights
+
+- **Boris Cherny** (Claude Code creator) - Self-verification loop, extended thinking
+- **Simon Willison** - Sub-agents for context isolation, skills system
+- **Hacker News Community** - [Production patterns](https://news.ycombinator.com/item?id=44623207) from real deployments
+
+### Inspirations
+
+- [LerianStudio/ring](https://github.com/LerianStudio/ring) - Subagent-driven-development pattern
+- [Awesome Agentic Patterns](https://github.com/nibzard/awesome-agentic-patterns) - 105+ production patterns
+
+**[Full Acknowledgements](ACKNOWLEDGEMENTS.md)** - Complete list of 50+ research papers, articles, and resources
+
+Built for the [Claude Code](https://claude.ai) ecosystem, powered by Anthropic's Claude models (Sonnet, Haiku, Opus).
 
 ---
 
