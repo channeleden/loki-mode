@@ -5,6 +5,38 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.32.1] - 2026-01-08
+
+### Fixed - Critical Bug Fixes
+
+**5 bugs fixed in autonomy/run.sh:**
+
+| Bug | Symptom | Root Cause | Fix |
+|-----|---------|------------|-----|
+| Dashboard crash on edit | Dashboard killed mid-session | Bash reads scripts incrementally; editing corrupts execution | Self-copy to `/tmp/loki-run-PID.sh` before exec |
+| Parse error: `name 'pattern' is not defined` | Python errors during PRD processing | PRD content with quotes breaking Python string literals | Pass context via `LOKI_CONTEXT` env var |
+| `datetime.utcnow()` deprecated | DeprecationWarning spam in logs | Python 3.12+ deprecation | Use `datetime.now(timezone.utc)` |
+| `log_warning: command not found` | Errors during resource monitoring | Function name mismatch (`log_warn` vs `log_warning`) | Added `log_warning()` as alias |
+| CPU showing 45226498% | False resource warnings | Summed process CPU instead of system-wide | Parse idle% from `top` header |
+
+**New Safeguards:**
+- **Protected Files section** in SKILL.md - Documents files that shouldn't be edited during active sessions
+- **Rule #6** in Core Autonomy Rules - "NEVER edit `autonomy/run.sh` while running"
+
+### Added
+
+- **ACKNOWLEDGEMENTS.md** - Comprehensive citations for 50+ research sources:
+  - Anthropic (8 papers)
+  - Google DeepMind (7 papers)
+  - OpenAI (12 resources)
+  - Academic papers (9)
+  - HN discussions (7) and Show HN projects (4)
+  - Individual contributors
+
+- **README.md** - Enhanced acknowledgements section with top research papers
+
+---
+
 ## [2.32.0] - 2026-01-07
 
 ### Added - Hacker News Production Patterns

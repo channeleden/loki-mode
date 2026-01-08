@@ -5,7 +5,7 @@ description: Multi-agent autonomous startup system for Claude Code. Triggers on 
 
 # Loki Mode - Multi-Agent Autonomous Startup System
 
-> **Version 2.32.0** | PRD to Production | Zero Human Intervention
+> **Version 2.32.1** | PRD to Production | Zero Human Intervention
 > Research-enhanced: OpenAI SDK, DeepMind, Anthropic, HN Production Patterns (2025)
 
 ---
