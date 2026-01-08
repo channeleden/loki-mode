@@ -19,6 +19,7 @@ SKILL.md                    # Main skill definition (read this first)
 references/                 # Detailed documentation (loaded progressively)
   openai-patterns.md        # OpenAI Agents SDK: guardrails, tripwires, handoffs
   lab-research-patterns.md  # DeepMind + Anthropic: Constitutional AI, debate
+  production-patterns.md    # HN 2025: What actually works in production
   advanced-patterns.md      # 2025 research patterns (MAR, Iter-VF, GoalAct)
   tool-orchestration.md     # ToolOrchestra-inspired efficiency & rewards
   memory-system.md          # Episodic/semantic memory architecture
@@ -73,7 +74,7 @@ Every iteration follows: **R**eason -> **A**ct -> **R**eflect -> **V**erify
 
 ### Version Numbering
 Follows semantic versioning: MAJOR.MINOR.PATCH
-- Current: v2.31.0
+- Current: v2.32.0
 - MINOR bump for new features
 - PATCH bump for fixes
 

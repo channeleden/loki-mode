@@ -5,8 +5,8 @@ description: Multi-agent autonomous startup system for Claude Code. Triggers on 
 
 # Loki Mode - Multi-Agent Autonomous Startup System
 
-> **Version 2.31.0** | PRD to Production | Zero Human Intervention
-> Research-enhanced: OpenAI SDK, DeepMind (SIMA/Dreamer), Anthropic (Constitutional AI), ToolOrchestra
+> **Version 2.32.0** | PRD to Production | Zero Human Intervention
+> Research-enhanced: OpenAI SDK, DeepMind, Anthropic, HN Production Patterns (2025)
 
 ---
 
@@ -82,6 +82,9 @@ Development <- QA <- Deployment <- Business Ops <- Growth Loop
 **Tool Orchestration:** `Classify Complexity -> Select Agents -> Track Efficiency -> Reward Learning`
 **Debate Verification:** `Proponent defends -> Opponent challenges -> Synthesize` (DeepMind)
 **Handoff Callbacks:** `on_handoff -> Pre-fetch context -> Transfer with data` (OpenAI SDK)
+**Narrow Scope:** `3-5 steps max -> Human review -> Continue` (HN Production)
+**Context Curation:** `Manual selection -> Focused context -> Fresh per task` (HN Production)
+**Deterministic Validation:** `LLM output -> Rule-based checks -> Retry or approve` (HN Production)
 
 ---
 
@@ -452,6 +455,71 @@ See `references/lab-research-patterns.md` for debate verification details.
 
 ---
 
+## Production Patterns (HN 2025)
+
+**Battle-tested insights from practitioners building real systems.**
+
+### Narrow Scope Wins
+
+```yaml
+task_constraints:
+  max_steps_before_review: 3-5
+  characteristics:
+    - Specific, well-defined objectives
+    - Pre-classified inputs
+    - Deterministic success criteria
+    - Verifiable outputs
+```
+
+### Confidence-Based Routing
+
+```
+confidence >= 0.95  -->  Auto-approve with audit log
+confidence >= 0.70  -->  Quick human review
+confidence >= 0.40  -->  Detailed human review
+confidence < 0.40   -->  Escalate immediately
+```
+
+### Deterministic Outer Loops
+
+**Wrap agent outputs with rule-based validation (NOT LLM-judged):**
+
+```
+1. Agent generates output
+2. Run linter (deterministic)
+3. Run tests (deterministic)
+4. Check compilation (deterministic)
+5. Only then: human or AI review
+```
+
+### Context Engineering
+
+```yaml
+principles:
+  - "Less is more" - focused beats comprehensive
+  - Manual selection outperforms automatic RAG
+  - Fresh conversations per major task
+  - Remove outdated information aggressively
+
+context_budget:
+  target: "< 10k tokens for context"
+  reserve: "90% for model reasoning"
+```
+
+### Sub-Agents for Context Isolation
+
+**Use sub-agents to prevent token waste on noisy subtasks:**
+
+```
+Main agent (focused) --> Sub-agent (file search)
+                     --> Sub-agent (test running)
+                     --> Sub-agent (linting)
+```
+
+See `references/production-patterns.md` for full practitioner patterns.
+
+---
+
 ## Exit Conditions
 
 | Condition | Action |
@@ -524,6 +592,7 @@ Detailed documentation is split into reference files for progressive loading:
 | `references/quality-control.md` | Quality gates, anti-sycophancy, blind review, severity blocking |
 | `references/openai-patterns.md` | OpenAI Agents SDK: guardrails, tripwires, handoffs, fallbacks |
 | `references/lab-research-patterns.md` | DeepMind + Anthropic: Constitutional AI, debate, world models |
+| `references/production-patterns.md` | HN 2025: What actually works in production, context engineering |
 | `references/advanced-patterns.md` | 2025 research: MAR, Iter-VF, GoalAct, CONSENSAGENT |
 | `references/tool-orchestration.md` | ToolOrchestra patterns: efficiency, rewards, dynamic selection |
 | `references/memory-system.md` | Episodic/semantic memory, consolidation, Zettelkasten linking |
@@ -539,4 +608,4 @@ Detailed documentation is split into reference files for progressive loading:
 
 ---
 
-**Version:** 2.31.0 | **Lines:** ~530 | **Research-Enhanced: OpenAI + DeepMind + Anthropic**
+**Version:** 2.32.0 | **Lines:** ~600 | **Research-Enhanced: Labs + HN Production Patterns**

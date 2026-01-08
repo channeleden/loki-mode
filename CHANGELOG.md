@@ -5,6 +5,59 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.32.0] - 2026-01-07
+
+### Added - Hacker News Production Patterns
+
+**Sources analyzed:**
+- [What Actually Works in Production for Autonomous Agents](https://news.ycombinator.com/item?id=44623207)
+- [Coding with LLMs in Summer 2025](https://news.ycombinator.com/item?id=44623953)
+- [Superpowers: How I'm Using Coding Agents](https://news.ycombinator.com/item?id=45547344)
+- [Claude Code Experience After Two Weeks](https://news.ycombinator.com/item?id=44596472)
+- [AI Agent Benchmarks Are Broken](https://news.ycombinator.com/item?id=44531697)
+- [How to Orchestrate Multi-Agent Workflows](https://news.ycombinator.com/item?id=45955997)
+
+**New Reference File: `references/production-patterns.md`**
+Battle-tested patterns from practitioners:
+- **Human-in-the-Loop (HITL)**: "Zero companies without humans in loop"
+- **Narrow Scope Wins**: 3-5 steps max before human review
+- **Confidence-Based Routing**: Auto-approve high confidence, escalate low
+- **Deterministic Outer Loops**: Rule-based validation, not LLM-judged
+- **Context Curation**: Manual selection beats automatic RAG
+- **Sub-Agents for Context Isolation**: Prevent token waste
+- **Event-Driven Orchestration**: Async, decoupled coordination
+- **Policy-First Enforcement**: Runtime governance
+
+**New Patterns in SKILL.md:**
+- **Narrow Scope**: `3-5 steps max -> Human review -> Continue`
+- **Context Curation**: `Manual selection -> Focused context -> Fresh per task`
+- **Deterministic Validation**: `LLM output -> Rule-based checks -> Retry or approve`
+
+**New Section: Production Patterns (HN 2025)**
+- Narrow Scope Wins with task constraints
+- Confidence-Based Routing thresholds
+- Deterministic Outer Loops workflow
+- Context Engineering principles
+- Sub-Agents for Context Isolation
+
+### Key Practitioner Insights
+
+| Insight | Source | Implementation |
+|---------|--------|----------------|
+| "Zero companies without HITL" | Amazon AI engineer | Confidence thresholds |
+| "3-5 steps max before review" | Multiple practitioners | Task scope constraints |
+| "Deterministic validation wins" | Production teams | Rule-based outer loops |
+| "Less context is more" | Simon Willison | Context curation |
+| "LLM-as-judge has blind spots" | Benchmark discussion | Objective metrics only |
+
+### Changed
+- SKILL.md: Updated version to 2.32.0, ~600 lines
+- SKILL.md: Added 3 new patterns to Essential Patterns
+- SKILL.md: Added Production Patterns (HN 2025) section
+- References: Added production-patterns.md to table
+
+---
+
 ## [2.31.0] - 2026-01-07
 
 ### Added - DeepMind + Anthropic Research Patterns
