@@ -288,6 +288,6 @@ sleep 2
 echo -e "${CYAN}From PRD to Production${NC}"
 echo -e "${CYAN}Zero Human Intervention${NC}"
 echo ""
-echo "github.com/asklokesh/claudeskill-loki-mode"
+echo "github.com/asklokesh/loki-mode"
 echo ""
 sleep 3

@@ -2,7 +2,7 @@
 
 **Date:** 2025-12-28
 **Version:** 2.5.0
-**Repository:** https://github.com/asklokesh/claudeskill-loki-mode
+**Repository:** https://github.com/asklokesh/loki-mode
 
 ---
 
@@ -25,7 +25,7 @@
 ## File Structure
 
 ```
-claudeskill-loki-mode/
+loki-mode/
 ├── SKILL.md                    # The main skill file (YAML frontmatter required)
 ├── VERSION                     # Current version: 2.4.0
 ├── CHANGELOG.md                # Full version history

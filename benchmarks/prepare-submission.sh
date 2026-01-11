@@ -191,7 +191,7 @@ cat > "$SUBMISSION_DIR/SUBMISSION_CHECKLIST.md" << 'CHECKLIST'
 ## Contact
 
 For questions about this submission, open an issue at:
-https://github.com/asklokesh/claudeskill-loki-mode/issues
+https://github.com/asklokesh/loki-mode/issues
 CHECKLIST
 
 # Final summary

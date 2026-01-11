@@ -55,7 +55,7 @@ results:
 submission:
   date: "2026-01-05"
   author: "Loki Mode Team"
-  repository: "https://github.com/asklokesh/claudeskill-loki-mode"
+  repository: "https://github.com/asklokesh/loki-mode"
   license: "MIT"
 
 # Contact

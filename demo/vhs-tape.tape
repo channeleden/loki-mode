@@ -218,6 +218,6 @@ Type "# Zero Human Intervention"
 Enter
 Sleep 1s
 
-Type "# github.com/asklokesh/claudeskill-loki-mode"
+Type "# github.com/asklokesh/loki-mode"
 Enter
 Sleep 3s

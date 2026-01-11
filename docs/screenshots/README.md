@@ -102,11 +102,11 @@ cd /Users/lokesh/git/jobman  # or any test project
 mkdir -p .agent/sub-agents .loki/state .loki/queue
 
 # Copy test data from Loki Mode repo
-cp ~/git/claudeskill-loki-mode/tests/fixtures/agents/*.json .agent/sub-agents/
-cp ~/git/claudeskill-loki-mode/tests/fixtures/queue/*.json .loki/queue/
+cp ~/git/loki-mode/tests/fixtures/agents/*.json .agent/sub-agents/
+cp ~/git/loki-mode/tests/fixtures/queue/*.json .loki/queue/
 
 # Generate dashboard
-~/git/claudeskill-loki-mode/autonomy/run.sh --generate-dashboard-only
+~/git/loki-mode/autonomy/run.sh --generate-dashboard-only
 
 # Open dashboard
 open .loki/dashboard/index.html

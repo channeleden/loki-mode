@@ -315,7 +315,7 @@ echo ""
 echo -e "  ${CYAN}claude --dangerously-skip-permissions${NC}"
 echo -e "  ${CYAN}> Loki Mode with PRD at $PRD_FILE${NC}"
 echo ""
-echo "Documentation: https://github.com/asklokesh/claudeskill-loki-mode"
+echo "Documentation: https://github.com/asklokesh/loki-mode"
 echo ""
 
 # Cleanup prompt

@@ -64,7 +64,7 @@ After timeout optimization, the multi-agent RARV pipeline matches single-agent p
 
 ## Repository
 
-- **GitHub**: [asklokesh/claudeskill-loki-mode](https://github.com/asklokesh/claudeskill-loki-mode)
+- **GitHub**: [asklokesh/loki-mode](https://github.com/asklokesh/loki-mode)
 - **License**: MIT
 - **Version**: 2.25.0
 
@@ -72,7 +72,7 @@ After timeout optimization, the multi-agent RARV pipeline matches single-agent p
 
 ```bash
 # Clone the repository
-git clone https://github.com/asklokesh/claudeskill-loki-mode.git
+git clone https://github.com/asklokesh/loki-mode.git
 
 # Run SWE-bench with Loki Mode
 ./benchmarks/run-benchmarks.sh swebench --execute --loki

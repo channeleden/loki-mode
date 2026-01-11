@@ -180,7 +180,7 @@ npm install -g @anthropic-ai/claude-code
 Make sure you're running from the loki-mode directory or have installed the skill:
 ```bash
 # Option 1: Run from project directory
-cd /path/to/claudeskill-loki-mode
+cd /path/to/loki-mode
 ./autonomy/run.sh
 
 # Option 2: Install skill globally

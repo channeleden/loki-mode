@@ -21,7 +21,7 @@ Complete installation instructions for all platforms and use cases.
 
 ```bash
 # Clone to your skills directory
-git clone https://github.com/asklokesh/claudeskill-loki-mode.git ~/.claude/skills/loki-mode
+git clone https://github.com/asklokesh/loki-mode.git ~/.claude/skills/loki-mode
 ```
 
 **Done!** Skip to [Verify Installation](#verify-installation).
@@ -36,7 +36,7 @@ Loki Mode can be installed for Claude Code in three ways:
 
 **Personal installation (available in all projects):**
 ```bash
-git clone https://github.com/asklokesh/claudeskill-loki-mode.git ~/.claude/skills/loki-mode
+git clone https://github.com/asklokesh/loki-mode.git ~/.claude/skills/loki-mode
 ```
 
 **Project-specific installation:**
@@ -45,7 +45,7 @@ git clone https://github.com/asklokesh/claudeskill-loki-mode.git ~/.claude/skill
 cd /path/to/your/project
 
 # Clone to local skills directory
-git clone https://github.com/asklokesh/claudeskill-loki-mode.git .claude/skills/loki-mode
+git clone https://github.com/asklokesh/loki-mode.git .claude/skills/loki-mode
 ```
 
 ### Option B: Download from Releases
@@ -55,10 +55,10 @@ git clone https://github.com/asklokesh/claudeskill-loki-mode.git .claude/skills/
 cd ~/.claude/skills
 
 # Get latest version number
-VERSION=$(curl -s https://api.github.com/repos/asklokesh/claudeskill-loki-mode/releases/latest | grep tag_name | cut -d'"' -f4 | tr -d 'v')
+VERSION=$(curl -s https://api.github.com/repos/asklokesh/loki-mode/releases/latest | grep tag_name | cut -d'"' -f4 | tr -d 'v')
 
 # Download and extract
-curl -L -o loki-mode.zip "https://github.com/asklokesh/claudeskill-loki-mode/releases/download/v${VERSION}/loki-mode-claude-code-${VERSION}.zip"
+curl -L -o loki-mode.zip "https://github.com/asklokesh/loki-mode/releases/download/v${VERSION}/loki-mode-claude-code-${VERSION}.zip"
 unzip loki-mode.zip && rm loki-mode.zip
 ```
 
@@ -74,19 +74,19 @@ mkdir -p ~/.claude/skills/loki-mode/references
 
 # Download core skill file
 curl -o ~/.claude/skills/loki-mode/SKILL.md \
-  https://raw.githubusercontent.com/asklokesh/claudeskill-loki-mode/main/SKILL.md
+  https://raw.githubusercontent.com/asklokesh/loki-mode/main/SKILL.md
 
 # Download agent definitions
 curl -o ~/.claude/skills/loki-mode/references/agents.md \
-  https://raw.githubusercontent.com/asklokesh/claudeskill-loki-mode/main/references/agents.md
+  https://raw.githubusercontent.com/asklokesh/loki-mode/main/references/agents.md
 
 # Download deployment guides
 curl -o ~/.claude/skills/loki-mode/references/deployment.md \
-  https://raw.githubusercontent.com/asklokesh/claudeskill-loki-mode/main/references/deployment.md
+  https://raw.githubusercontent.com/asklokesh/loki-mode/main/references/deployment.md
 
 # Download business operations reference
 curl -o ~/.claude/skills/loki-mode/references/business-ops.md \
-  https://raw.githubusercontent.com/asklokesh/claudeskill-loki-mode/main/references/business-ops.md
+  https://raw.githubusercontent.com/asklokesh/loki-mode/main/references/business-ops.md
 ```
 
 **Note:** This minimal install won't include examples, tests, or the autonomous runner. Use Option A or B for full functionality.
@@ -99,7 +99,7 @@ For using Loki Mode on the Claude.ai web interface:
 
 ### Step 1: Download the Skill Package
 
-1. Go to [Releases](https://github.com/asklokesh/claudeskill-loki-mode/releases)
+1. Go to [Releases](https://github.com/asklokesh/loki-mode/releases)
 2. Download **either**:
    - `loki-mode-X.X.X.zip` (standard format)
    - `loki-mode-X.X.X.skill` (skill format)
@@ -124,7 +124,7 @@ For using Loki Mode through the Anthropic API Console (console.anthropic.com):
 
 ### Step 1: Download the API Package
 
-1. Go to [Releases](https://github.com/asklokesh/claudeskill-loki-mode/releases)
+1. Go to [Releases](https://github.com/asklokesh/loki-mode/releases)
 2. Download **`loki-mode-api-X.X.X.zip`** (note the `-api-` version)
 
    **Important:** The API version has a different file structure than the web version.
@@ -256,7 +256,7 @@ ls -la ~/.claude/
    ```bash
    # Use wget instead of curl
    wget -O ~/.claude/skills/loki-mode/SKILL.md \
-     https://raw.githubusercontent.com/asklokesh/claudeskill-loki-mode/main/SKILL.md
+     https://raw.githubusercontent.com/asklokesh/loki-mode/main/SKILL.md
    ```
 
 3. **Manual download:**
@@ -305,7 +305,7 @@ ls -la ~/.claude/skills/loki-mode/references/
 
 # If missing, download them:
 curl -o ~/.claude/skills/loki-mode/references/agents.md \
-  https://raw.githubusercontent.com/asklokesh/claudeskill-loki-mode/main/references/agents.md
+  https://raw.githubusercontent.com/asklokesh/loki-mode/main/references/agents.md
 ```
 
 ---
@@ -369,14 +369,14 @@ After installation:
 
 3. **Create Your First PRD:** See the Quick Start section in README
 
-4. **Join the Community:** Report issues or contribute at [GitHub](https://github.com/asklokesh/claudeskill-loki-mode)
+4. **Join the Community:** Report issues or contribute at [GitHub](https://github.com/asklokesh/loki-mode)
 
 ---
 
 ## Need Help?
 
-- **Issues/Bugs:** [GitHub Issues](https://github.com/asklokesh/claudeskill-loki-mode/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/asklokesh/claudeskill-loki-mode/discussions)
+- **Issues/Bugs:** [GitHub Issues](https://github.com/asklokesh/loki-mode/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/asklokesh/loki-mode/discussions)
 - **Documentation:** [README.md](README.md)
 
 ---

@@ -1,4 +1,4 @@
-This is a different repository (claudeskill-loki-mode), not the sympy repository. The issue is about SymPy's `solve_poly_system` function. Based on the problem statement and hints, I need to generate a patch for the SymPy repository.
+This is a different repository (loki-mode), not the sympy repository. The issue is about SymPy's `solve_poly_system` function. Based on the problem statement and hints, I need to generate a patch for the SymPy repository.
 
 Looking at the issue:
 1. `solve_poly_system((x - 1,), x, y)` correctly raises `NotImplementedError` 
