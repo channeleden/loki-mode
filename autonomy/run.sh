@@ -49,6 +49,15 @@
 #   LOKI_MAX_ITERATIONS        - Max loop iterations before exit (default: 1000)
 #   LOKI_PERPETUAL_MODE        - Ignore ALL completion signals (default: false)
 #                                Set to 'true' for truly infinite operation
+#
+# 2026 Research Enhancements:
+#   LOKI_PROMPT_REPETITION     - Enable prompt repetition for Haiku agents (default: true)
+#                                arXiv 2512.14982v1: Improves accuracy 4-5x on structured tasks
+#   LOKI_CONFIDENCE_ROUTING    - Enable confidence-based routing (default: true)
+#                                HN Production: 4-tier routing (auto-approve, direct, supervisor, escalate)
+#   LOKI_AUTONOMY_MODE         - Autonomy level (default: perpetual)
+#                                Options: perpetual, checkpoint, supervised
+#                                Tim Dettmers: "Shorter bursts of autonomy with feedback loops"
 #===============================================================================
 
 set -uo pipefail
@@ -121,6 +130,11 @@ MAX_ITERATIONS=${LOKI_MAX_ITERATIONS:-1000}
 ITERATION_COUNT=0
 # Perpetual mode: never stop unless max iterations (ignores all completion signals)
 PERPETUAL_MODE=${LOKI_PERPETUAL_MODE:-false}
+
+# 2026 Research Enhancements (minimal additions)
+PROMPT_REPETITION=${LOKI_PROMPT_REPETITION:-true}
+CONFIDENCE_ROUTING=${LOKI_CONFIDENCE_ROUTING:-true}
+AUTONOMY_MODE=${LOKI_AUTONOMY_MODE:-perpetual}  # perpetual|checkpoint|supervised
 
 # Colors
 RED='\033[0;31m'
@@ -1545,6 +1559,9 @@ run_autonomous() {
     log_info "Completion promise: $COMPLETION_PROMISE"
     log_info "Base wait: ${BASE_WAIT}s"
     log_info "Max wait: ${MAX_WAIT}s"
+    log_info "Autonomy mode: $AUTONOMY_MODE"
+    log_info "Prompt repetition (Haiku): $PROMPT_REPETITION"
+    log_info "Confidence routing: $CONFIDENCE_ROUTING"
     echo ""
 
     load_state

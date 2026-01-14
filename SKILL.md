@@ -217,6 +217,32 @@ for test_file in test_files:
          run_in_background=True)
 ```
 
+### Prompt Repetition for Haiku (2026 Research - arXiv 2512.14982v1)
+
+**For Haiku agents on structured tasks, repeat prompts 2x to improve accuracy 4-5x with zero latency cost.**
+
+```python
+# Haiku agents benefit from prompt repetition on structured tasks
+base_prompt = "Run unit tests in tests/ directory and report results"
+repeated_prompt = f"{base_prompt}\n\n{base_prompt}"  # 2x repetition
+
+Task(model="haiku", description="Run unit tests", prompt=repeated_prompt)
+```
+
+**Research Finding:** Accuracy improves from 21.33% → 97.33% on position-dependent tasks (Gemini 2.0 Flash-Lite benchmark).
+
+**When to apply:**
+- Unit tests, linting, formatting (structured tasks)
+- Parsing, extraction, list operations
+- Position-dependent operations
+
+**When NOT to apply:**
+- Opus/Sonnet (reasoning models see no benefit)
+- Creative/open-ended tasks
+- Complex reasoning or planning
+
+See `references/prompt-repetition.md` and `agent-skills/prompt-optimization/` for full implementation.
+
 ### Advanced Task Tool Parameters
 
 **Background Agents:**
@@ -240,33 +266,39 @@ Task(resume="agent-abc123", prompt="Continue from where you left off")
 - Multi-session work on same task
 - Checkpoint/restore for critical operations
 
-### Routing Mode Optimization (AWS Bedrock Pattern)
+### Routing Mode Optimization (Enhanced with Confidence-Based Routing)
 
-**Two dispatch modes based on task complexity - reduces latency for simple tasks:**
+**Four-tier routing based on confidence scores - optimizes speed vs safety:**
 
-| Mode | When to Use | Behavior |
-|------|-------------|----------|
-| **Direct Routing** | Simple, single-domain tasks | Route directly to specialist agent, skip orchestration |
-| **Supervisor Mode** | Complex, multi-step tasks | Full decomposition, coordination, result synthesis |
+| Confidence | Tier | Behavior |
+|------------|------|----------|
+| **>= 0.95** | Auto-Approve | Fastest: direct execution, no review |
+| **0.70-0.95** | Direct + Review | Fast with safety net: execute then validate |
+| **0.40-0.70** | Supervisor Mode | Full coordination with mandatory review |
+| **< 0.40** | Human Escalation | Too uncertain, requires human decision |
+
+**Confidence Calculation:**
+```python
+confidence = weighted_average({
+    "requirement_clarity": 0.30,      # How clear are the requirements?
+    "technical_feasibility": 0.25,    # Can we do this with known patterns?
+    "resource_availability": 0.15,    # Do we have APIs, agents, budget?
+    "historical_success": 0.20,       # How often do similar tasks succeed?
+    "complexity_match": 0.10          # Does complexity match agent capability?
+})
+```
 
 **Decision Logic:**
 ```
-Task Received
-    |
-    +-- Is task single-domain? (one file, one skill, clear scope)
-    |   +-- YES: Direct Route to specialist agent
-    |   |        - Faster (no orchestration overhead)
-    |   |        - Minimal context (avoid confusion)
-    |   |        - Examples: "Fix typo in README", "Run unit tests"
-    |   |
-    |   +-- NO: Supervisor Mode
-    |            - Full task decomposition
-    |            - Coordinate multiple agents
-    |            - Synthesize results
-    |            - Examples: "Implement auth system", "Refactor API layer"
-    |
-    +-- Fallback: If intent unclear, use Supervisor Mode
+Task Received → Calculate Confidence → Route by Tier
+
+Tier 1 (>= 0.95): "Run linter" → Auto-execute with Haiku
+Tier 2 (0.70-0.95): "Add CRUD endpoint" → Direct + automated review
+Tier 3 (0.40-0.70): "Design auth architecture" → Full supervisor orchestration
+Tier 4 (< 0.40): "Choose payment provider" → Escalate to human
 ```
+
+See `references/confidence-routing.md` and `agent-skills/confidence-routing/` for full implementation.
 
 **Direct Routing Examples (Skip Orchestration):**
 ```python
@@ -718,4 +750,4 @@ Detailed documentation is split into reference files for progressive loading:
 
 ---
 
-**Version:** 2.32.0 | **Lines:** ~600 | **Research-Enhanced: Labs + HN Production Patterns**
+**Version:** 2.36.0 | **Lines:** ~750 | **Research-Enhanced: 2026 Cutting-Edge Patterns (arXiv, HN, Labs)**
