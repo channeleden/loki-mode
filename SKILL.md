@@ -5,7 +5,7 @@ description: Multi-agent autonomous startup system for Claude Code. Triggers on 
 
 # Loki Mode - Multi-Agent Autonomous Startup System
 
-> **Version 2.36.2** | PRD to Production | Zero Human Intervention
+> **Version 2.36.3** | PRD to Production | Zero Human Intervention
 > Research-enhanced: OpenAI SDK, DeepMind, Anthropic, AWS Bedrock, Agent SDK, HN Production (2025)
 
 ---
@@ -476,7 +476,7 @@ See `references/agent-types.md` for complete definitions and capabilities.
 - **NEVER** skip code review between tasks
 - **NEVER** proceed with unfixed Critical/High/Medium issues
 - **NEVER** dispatch reviewers sequentially (always parallel - 3x faster)
-- **NEVER** dispatch multiple implementation subagents in parallel (conflicts)
+- **NEVER** dispatch multiple implementation subagents in parallel WITHOUT worktree isolation (use git worktrees for safe parallel development - see Git Worktree Isolation section)
 - **NEVER** implement without reading task requirements first
 
 ### Review Anti-Patterns
@@ -696,6 +696,85 @@ Main agent (focused) --> Sub-agent (file search)
 
 See `references/production-patterns.md` for full practitioner patterns.
 
+### Git Worktree Isolation (Cursor Pattern)
+
+**Enable safe parallel development with isolated worktrees:**
+
+```yaml
+worktree_isolation:
+  purpose: "Allow multiple implementation agents to work in parallel without conflicts"
+  max_parallel_agents: 4
+
+  workflow:
+    1_create: "git worktree add .loki/worktrees/agent-{id} -b agent-{id}-feature"
+    2_implement: "Agent works in isolated worktree directory"
+    3_test: "Run tests within worktree (isolated from main)"
+    4_merge: "If tests pass: git checkout main && git merge agent-{id}-feature"
+    5_cleanup: "git worktree remove .loki/worktrees/agent-{id} && git branch -d agent-{id}-feature"
+
+  on_failure:
+    - "git worktree remove .loki/worktrees/agent-{id}"
+    - "git branch -D agent-{id}-feature"
+    - "No impact on main branch"
+```
+
+**When to use worktree isolation:**
+- Multiple independent features/fixes to implement
+- Tasks that touch different files/modules
+- When parallelization provides 2x+ speedup
+
+**When NOT to use:**
+- Tasks that modify same files (still conflicts)
+- Quick single-file fixes (overhead not worth it)
+- When worktree creation time > task time
+
+**Parallel implementation example:**
+```python
+# Create isolated worktrees for parallel agents
+agents = []
+for task in independent_tasks[:4]:  # Max 4 parallel
+    worktree_id = f"agent-{uuid4().hex[:8]}"
+    # Agent will work in .loki/worktrees/{worktree_id}/
+    Task(
+        subagent_type="general-purpose",
+        model="sonnet",
+        description=f"Implement {task.name} in worktree",
+        prompt=f"Work in .loki/worktrees/{worktree_id}/. {task.spec}",
+        run_in_background=True
+    )
+    agents.append(worktree_id)
+
+# After all complete: merge successful ones to main
+```
+
+### Atomic Checkpoint/Rollback (Cursor Pattern)
+
+**Formalized checkpoint strategy for safe task execution:**
+
+```yaml
+checkpoint_strategy:
+  before_task:
+    - "git stash create 'checkpoint-{task_id}'"
+    - "Save stash hash to .loki/state/checkpoints.json"
+
+  on_success:
+    - "git add -A && git commit -m 'Complete: {task_name}'"
+    - "Clear checkpoint from checkpoints.json"
+
+  on_failure:
+    - "git stash pop (restore to checkpoint)"
+    - "Log failure to .loki/memory/learnings/"
+    - "Retry with learned context"
+
+  rollback_command: "git checkout -- . && git clean -fd"
+```
+
+**Checkpoint before risky operations:**
+1. Large refactors (10+ files)
+2. Database migrations
+3. Configuration changes
+4. Dependency updates
+
 ---
 
 ## Exit Conditions
@@ -786,4 +865,4 @@ Detailed documentation is split into reference files for progressive loading:
 
 ---
 
-**Version:** 2.36.2 | **Lines:** ~780 | **Research-Enhanced: 2026 Cutting-Edge Patterns (arXiv, HN, Labs, OpenCode)**
+**Version:** 2.36.3 | **Lines:** ~850 | **Research-Enhanced: 2026 Cutting-Edge Patterns (arXiv, HN, Labs, OpenCode, Cursor, Devin)**

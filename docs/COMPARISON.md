@@ -1,8 +1,9 @@
 # Autonomous Coding Agents Comparison (2025-2026)
 
-> Last Updated: January 2026
+> Last Updated: January 15, 2026 (v2.36.3)
 >
 > A comprehensive comparison of Loki Mode against major autonomous coding agents and AI IDEs in the market.
+> Deep-dive comparisons validated by Opus feedback loops.
 
 ---
 
@@ -24,7 +25,7 @@
 |---------|--------------|-----------|-----------------|------------|-----------------|----------|-----------------|--------------|-------------------|
 | **Multi-Agent** | 37 specialized agents | Single agent | Single agent | Up to 8 parallel | Task subagents | Background agents | Multi-agent Manager | Multiple agent types | Can spawn agents |
 | **Agent Orchestration** | Full orchestrator | N/A | N/A | Basic | Basic | Hooks | Manager view | Workflow agents | Workflow |
-| **Parallel Execution** | Yes (10+ Haiku) | No | No | Yes (8 max) | Yes (background) | Yes | Yes | Yes | Yes |
+| **Parallel Execution** | Yes (10+ Haiku, 4 impl with worktree) | No | No | Yes (8 max) | Yes (background) | Yes | Yes | Yes | Yes |
 | **Agent Swarms** | 7 swarms (Eng, Ops, Business, Data, Product, Growth, Review) | N/A | N/A | N/A | N/A | N/A | N/A | 3 types | N/A |
 
 ---

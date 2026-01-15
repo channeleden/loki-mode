@@ -5,6 +5,76 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.36.3] - 2026-01-15
+
+### Added - Cursor/Devin Comparison and Parallel Development Patterns
+
+**Deep comparison with Cursor 2.0 ($10B valuation, 500M ARR) and Devin 2.0 ($4B valuation) validated by Opus feedback loop.**
+
+#### Cursor 2.0 Features Analyzed
+
+| Feature | Cursor | Loki Mode | Assessment |
+|---------|--------|-----------|------------|
+| Multi-Agent Parallel | 8 agents with worktree isolation | Sequential (was restricted) | ADOPTED: Worktree isolation |
+| Composer Model | Proprietary 250 tok/s | Uses Claude | Different architecture |
+| BugBot PR Review | GitHub integration | Pre-commit review | Loki Mode superior (prevent vs detect) |
+| Memories | Flat fact storage | 3-tier structured | Loki Mode superior |
+| YOLO Mode | Auto-apply with allowlist | Full autonomous | Already more comprehensive |
+| Tool Call Limits | 25 ops before approval | Guardrails/tripwires | Different approach (autonomous) |
+
+#### Devin 2.0 Features Analyzed
+
+| Feature | Devin | Loki Mode | Assessment |
+|---------|-------|-----------|------------|
+| Task Dispatch | One agent dispatches to others | 37 agents in 7 swarms | Loki Mode more comprehensive |
+| Confidence Clarification | Asks user when unsure | Escalates to human | Both valid for different use cases |
+| DeepWiki | Auto-generate docs | techwriter agent | Similar capability |
+| Specialized Models | Kevin 32B for CUDA | Opus/Sonnet/Haiku tiering | Both optimize model selection |
+| Sandbox Environment | Full shell/browser/editor | Claude Code environment | Different platforms |
+
+#### Patterns ADOPTED from Cursor
+
+**1. Git Worktree Isolation for Safe Parallel Development:**
+- Enables up to 4 implementation agents in parallel
+- Each agent works in isolated worktree (`.loki/worktrees/agent-{id}/`)
+- Tests run in isolation, merge only on success
+- Removes previous restriction: "NEVER dispatch multiple implementation subagents in parallel"
+
+```yaml
+workflow:
+  1. git worktree add .loki/worktrees/agent-{id} -b agent-{id}-feature
+  2. Agent implements in isolated directory
+  3. Run tests within worktree
+  4. Merge to main if tests pass
+  5. Cleanup worktree and branch
+```
+
+**2. Atomic Checkpoint/Rollback:**
+- Formalized checkpoint strategy before risky operations
+- Git stash for instant rollback
+- Clear recovery path on failure
+
+#### Patterns NOT Adopted (with justification)
+
+| Pattern | Source | Why Not Adopted |
+|---------|--------|-----------------|
+| Tool Call Limits (25 ops) | Cursor | Contradicts autonomous operation |
+| BugBot GitHub Comments | Cursor | Pre-commit review is superior |
+| Confidence-based Clarification | Devin | "NEVER ask questions" is core rule |
+| VM Isolation | Cursor | Infrastructure cost, marginal benefit |
+
+#### Where Loki Mode is SUPERIOR
+
+1. **Memory System**: 3-tier (episodic/semantic/procedural) vs Cursor's flat facts
+2. **Quality Control**: 7 gates + 3-reviewer blind + devil's advocate vs basic permissions
+3. **Research Foundation**: 10+ papers vs proprietary undisclosed
+4. **True Autonomy**: Zero human intervention vs semi-autonomous
+5. **Full SDLC**: 37 agents covering business ops, not just coding
+
+**See `docs/COMPARISON.md` for full competitive analysis.**
+
+---
+
 ## [2.36.2] - 2026-01-15
 
 ### Added - OpenCode Comparison and Proactive Context Management
