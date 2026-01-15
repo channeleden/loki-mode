@@ -1,0 +1,213 @@
+{
+  "name": "autonomi",
+  "displayName": "Autonomi - Autonomous Development",
+  "description": "Multi-agent autonomous software development platform",
+  "version": "0.1.0",
+  "publisher": "autonomi",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Machine Learning",
+    "Other"
+  ],
+  "keywords": [
+    "autonomous",
+    "ai",
+    "multi-agent",
+    "code generation",
+    "development"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "autonomi.start",
+        "title": "Autonomi: Start Autonomous Development",
+        "category": "Autonomi"
+      },
+      {
+        "command": "autonomi.stop",
+        "title": "Autonomi: Stop Autonomous Development",
+        "category": "Autonomi"
+      },
+      {
+        "command": "autonomi.plan",
+        "title": "Autonomi: Create Development Plan",
+        "category": "Autonomi"
+      },
+      {
+        "command": "autonomi.approve",
+        "title": "Autonomi: Approve Pending Plan",
+        "category": "Autonomi"
+      },
+      {
+        "command": "autonomi.configure",
+        "title": "Autonomi: Open Configuration",
+        "category": "Autonomi"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "autonomi-sidebar",
+          "title": "Autonomi",
+          "icon": "$(robot)"
+        }
+      ]
+    },
+    "views": {
+      "autonomi-sidebar": [
+        {
+          "id": "autonomi-status",
+          "name": "Status",
+          "contextualTitle": "Autonomi Status"
+        },
+        {
+          "id": "autonomi-queue",
+          "name": "Task Queue",
+          "contextualTitle": "Autonomi Task Queue"
+        },
+        {
+          "id": "autonomi-actions",
+          "name": "Actions",
+          "contextualTitle": "Autonomi Actions"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Autonomi",
+      "properties": {
+        "autonomi.apiKeys.anthropic": {
+          "type": "string",
+          "default": "",
+          "description": "Anthropic API key for Claude models",
+          "scope": "application"
+        },
+        "autonomi.apiKeys.openai": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API key (optional fallback)",
+          "scope": "application"
+        },
+        "autonomi.budgets.sessionLimit": {
+          "type": "number",
+          "default": 10.0,
+          "description": "Maximum cost per session in USD",
+          "scope": "resource"
+        },
+        "autonomi.budgets.taskLimit": {
+          "type": "number",
+          "default": 2.0,
+          "description": "Maximum cost per individual task in USD",
+          "scope": "resource"
+        },
+        "autonomi.budgets.dailyLimit": {
+          "type": "number",
+          "default": 50.0,
+          "description": "Maximum daily spending in USD",
+          "scope": "application"
+        },
+        "autonomi.approvalGates.requirePlanApproval": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require manual approval before executing plans"
+        },
+        "autonomi.approvalGates.autoApproveTier1": {
+          "type": "boolean",
+          "default": false,
+          "description": "Auto-approve Tier 1 (high confidence) tasks"
+        },
+        "autonomi.approvalGates.autoApproveTier2": {
+          "type": "boolean",
+          "default": false,
+          "description": "Auto-approve Tier 2 (medium-high confidence) tasks"
+        },
+        "autonomi.approvalGates.fileChangeThreshold": {
+          "type": "number",
+          "default": 5,
+          "description": "Number of file changes that triggers mandatory approval"
+        },
+        "autonomi.approvalGates.costThreshold": {
+          "type": "number",
+          "default": 1.0,
+          "description": "Estimated cost in USD that triggers mandatory approval"
+        },
+        "autonomi.modelSelection.planning": {
+          "type": "string",
+          "default": "claude-opus-4-5-20251101",
+          "enum": [
+            "claude-opus-4-5-20251101",
+            "claude-sonnet-4-20250514"
+          ],
+          "description": "Model to use for planning and architecture"
+        },
+        "autonomi.modelSelection.development": {
+          "type": "string",
+          "default": "claude-sonnet-4-20250514",
+          "enum": [
+            "claude-sonnet-4-20250514",
+            "claude-haiku-3-5-20241022"
+          ],
+          "description": "Model to use for development tasks"
+        },
+        "autonomi.modelSelection.testing": {
+          "type": "string",
+          "default": "claude-haiku-3-5-20241022",
+          "enum": [
+            "claude-haiku-3-5-20241022",
+            "claude-sonnet-4-20250514"
+          ],
+          "description": "Model to use for testing and simple tasks"
+        }
+      }
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "autonomi.start",
+          "when": "view == autonomi-status",
+          "group": "navigation"
+        },
+        {
+          "command": "autonomi.stop",
+          "when": "view == autonomi-status",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "autonomi.approve",
+          "when": "view == autonomi-queue && viewItem == pendingTask",
+          "group": "inline"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.2",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  }
+}

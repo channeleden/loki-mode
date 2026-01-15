@@ -1,4 +1,13 @@
 .DS_Store
 
-# Autonomi development folder (local development, not tracked)
-the_app/
+# OS files
+*.DS_Store
+
+# Node.js
+node_modules/
+*.log
+*.tgz
+
+# Build outputs
+dist/
+*.vsix
