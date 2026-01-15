@@ -69,6 +69,27 @@ from autonomi.interrupt import interrupt, Command, Approval
 # Cost tracking
 from autonomi.telemetry import CostTracker, Budget, Telemetry
 
+# MCP support
+from autonomi.mcp import MCPClient, MCPConfig, MCPTools, mcp_tool
+
+# SKILL.md support
+from autonomi.skill import (
+    SkillDefinition,
+    parse_skill_md,
+    load_skill,
+    save_skill,
+    skill_to_agent,
+    agent_to_skill_md,
+)
+
+# Checkpointing
+from autonomi.checkpoint import (
+    Checkpointer,
+    Checkpoint,
+    CheckpointStatus,
+    RecoveryMode,
+)
+
 # Convenience re-exports
 from autonomi.types import Message, Role, ConfidenceTier
 
@@ -118,4 +139,21 @@ __all__ = [
     "Message",
     "Role",
     "ConfidenceTier",
+    # MCP support
+    "MCPClient",
+    "MCPConfig",
+    "MCPTools",
+    "mcp_tool",
+    # SKILL.md support
+    "SkillDefinition",
+    "parse_skill_md",
+    "load_skill",
+    "save_skill",
+    "skill_to_agent",
+    "agent_to_skill_md",
+    # Checkpointing
+    "Checkpointer",
+    "Checkpoint",
+    "CheckpointStatus",
+    "RecoveryMode",
 ]
