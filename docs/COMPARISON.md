@@ -1,6 +1,6 @@
 # Autonomous Coding Agents Comparison (2025-2026)
 
-> Last Updated: January 15, 2026 (v2.36.5)
+> Last Updated: January 17, 2026 (v2.36.8)
 >
 > A comprehensive comparison of Loki Mode against major autonomous coding agents and AI IDEs in the market.
 > Deep-dive comparisons validated by Opus feedback loops.
@@ -9,14 +9,14 @@
 
 ## Overview Comparison
 
-| Feature | **Loki Mode** | **Devin** | **OpenAI Codex** | **Cursor** | **Claude Code** | **Kiro** | **Antigravity** | **Amazon Q** | **OpenCode** |
-|---------|--------------|-----------|-----------------|------------|-----------------|----------|-----------------|--------------|--------------|
-| **Type** | Skill/Framework | Standalone Agent | Cloud Agent | AI IDE | CLI Agent | AI IDE | AI IDE | Cloud Agent | AI IDE (OSS) |
-| **Autonomy Level** | Full (zero human) | Full | High | Medium-High | High | High | High | High | High |
-| **Max Runtime** | Unlimited | Hours | Per-task | Session | Session | Days | Async | Per-task | Session |
-| **Pricing** | Free (OSS) | $20/mo | ChatGPT Plus | $20/mo | API costs | Free preview | Free preview | $19/mo | Free (OSS) |
-| **Open Source** | Yes | No | No | No | No | No | No | No | Yes |
-| **GitHub Stars** | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 70.9k |
+| Feature | **Loki Mode** | **Zencoder** | **Devin** | **OpenAI Codex** | **Cursor** | **Claude Code** | **Kiro** | **Antigravity** | **Amazon Q** | **OpenCode** |
+|---------|--------------|--------------|-----------|-----------------|------------|-----------------|----------|-----------------|--------------|--------------|
+| **Type** | Skill/Framework | Enterprise Platform | Standalone Agent | Cloud Agent | AI IDE | CLI Agent | AI IDE | AI IDE | Cloud Agent | AI IDE (OSS) |
+| **Autonomy Level** | Full (zero human) | High | Full | High | Medium-High | High | High | High | High | High |
+| **Max Runtime** | Unlimited | Async/Scheduled | Hours | Per-task | Session | Session | Days | Async | Per-task | Session |
+| **Pricing** | Free (OSS) | Enterprise | $20/mo | ChatGPT Plus | $20/mo | API costs | Free preview | Free preview | $19/mo | Free (OSS) |
+| **Open Source** | Yes | No | No | No | No | No | No | No | No | Yes |
+| **GitHub Stars** | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 70.9k |
 
 ---
 
@@ -135,6 +135,61 @@
 | **Devin 2.0** | 67% | PR merge rate doubled |
 | **Amazon Q Developer** | 66% | State-of-the-art claim |
 | **Loki Mode** | Inherits Claude | Framework, not model |
+
+---
+
+## Zencoder/Zenflow Comparison (v2.36.7)
+
+**Comprehensive analysis of Zencoder.ai enterprise AI coding platform, including Zenflow (autonomous workflows), Zen Agents (specialized agents), and Zentester (QA automation).**
+
+### Feature Comparison
+
+| Feature | **Zencoder** | **Loki Mode** | **Assessment** |
+|---------|-------------|---------------|----------------|
+| **Four Pillars** | Structured Workflows, SDD, Multi-Agent Verification, Parallel Execution | SDLC + RARV + 7 Gates + Worktrees | TIE |
+| **Spec-Driven Dev** | Specs as first-class objects | OpenAPI-first | TIE |
+| **Multi-Agent Verification** | Model diversity (Claude vs OpenAI, 54% improvement) | 3 blind reviewers + devil's advocate | Different approach (N/A for Claude Code - only Claude models) |
+| **Quality Gates** | Built-in verification loops | 7 explicit gates + anti-sycophancy | **Loki Mode** |
+| **Memory System** | Not documented | 3-tier episodic/semantic/procedural | **Loki Mode** |
+| **Agent Specialization** | Custom Zen Agents | 37 pre-defined specialized agents | **Loki Mode** |
+| **CI Failure Analysis** | Explicit pattern with auto-fix | DevOps agent only | **ADOPTED from Zencoder** |
+| **Review Comment Resolution** | Auto-apply simple changes | Manual review | **ADOPTED from Zencoder** |
+| **Dependency Management** | Scheduled PRs, one group at a time | Mentioned only | **ADOPTED from Zencoder** |
+| **Multi-Repo Support** | Full cross-repo workflows | Single repo | Zencoder (N/A for Claude Code context) |
+| **IDE Plugins** | VS Code, JetBrains, GitHub App | CLI skill | Zencoder (different use case) |
+| **Repo Grokking** | Proprietary semantic indexing | Claude native exploration | Different approach |
+
+### Patterns ADOPTED from Zencoder
+
+| Pattern | Description | Priority |
+|---------|-------------|----------|
+| **CI Failure Analysis** | Classify failures (regression/flakiness/environment/dependency), auto-fix 90% of flaky tests | HIGH |
+| **Review Comment Resolution** | Auto-apply simple review comments (validation, tests, error messages) | HIGH |
+| **Dependency Management** | Weekly scans, one group at a time, security > major > minor > patch | MEDIUM |
+
+### Patterns NOT Adopted
+
+| Pattern | Zencoder Feature | Why Not Adopted |
+|---------|-----------------|-----------------|
+| Model Diversity | Claude critiques OpenAI code (54% improvement) | Claude Code only has Claude models available |
+| Multi-Repo Support | Cross-repo change coordination | Claude Code is single-context per session |
+| IDE Plugins | VS Code, JetBrains integrations | Loki Mode is a skill, not a plugin |
+| Repo Grokking | Proprietary semantic indexing | Claude Code has native codebase exploration |
+
+### Where Loki Mode EXCEEDS Zencoder
+
+1. **Quality Control**: 7 explicit gates + blind review + devil's advocate vs built-in loops
+2. **Memory System**: 3-tier (episodic/semantic/procedural) with cross-project learning
+3. **Agent Specialization**: 37 pre-defined specialized agents across 7 swarms
+4. **Anti-Sycophancy**: CONSENSAGENT patterns prevent reviewer groupthink
+5. **Autonomy Design**: Zero human intervention from PRD to production
+6. **Research Foundation**: 10+ academic papers integrated vs proprietary
+
+### Where Zencoder EXCEEDS Loki Mode
+
+1. **Multi-Repo**: Cross-repository change coordination (N/A for Claude Code)
+2. **Model Diversity**: Can use Claude to critique OpenAI-generated code (Claude Code limitation)
+3. **IDE Integration**: Native plugins for VS Code, JetBrains (Loki Mode is CLI-based)
 
 ---
 
@@ -262,6 +317,8 @@ Each comparison was validated through:
 | v2.36.3 | 2026-01-15 | Cursor, Devin |
 | v2.36.4 | 2026-01-15 | Codex, Kiro |
 | v2.36.5 | 2026-01-15 | Antigravity, Amazon Q |
+| v2.36.7 | 2026-01-17 | Zencoder/Zenflow |
+| v2.36.8 | 2026-01-17 | Model assignment update (Opus for SDLC phases) |
 
 ---
 

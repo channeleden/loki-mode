@@ -5,6 +5,39 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.36.8] - 2026-01-17
+
+### Changed - SDLC Phase-Based Model Assignment
+
+**Updated model selection strategy to assign models by SDLC phase rather than task type.**
+
+#### Previous Model Assignment
+| Model | Use For |
+|-------|---------|
+| Opus 4.5 | Planning only - architecture & high-level decisions |
+| Sonnet 4.5 | Development - implementation & functional testing |
+| Haiku 4.5 | Operations - simple tasks & monitoring |
+
+#### New Model Assignment (SDLC Phase-Based)
+| Model | SDLC Phases | Examples |
+|-------|-------------|----------|
+| **Opus 4.5** | Bootstrap, Discovery, Architecture, Development | PRD analysis, system design, feature implementation, API endpoints, complex bug fixes |
+| **Sonnet 4.5** | QA, Deployment | Integration/E2E tests, security scanning, performance testing, deployment automation |
+| **Haiku 4.5** | All other operations (in parallel) | Unit tests, docs, bash commands, linting, monitoring, health checks |
+
+#### Rationale
+- **Opus for Development**: Higher quality code generation for core implementation work
+- **Sonnet for QA/Deployment**: Cost-effective for testing and deployment automation
+- **Haiku in parallel**: Maximum parallelization for operations tasks
+
+#### Files Modified
+- `SKILL.md`: Updated Model Selection Strategy section (lines 163-210)
+- `SKILL.md`: Updated Quick Reference line 21
+- `SKILL.md`: Updated Dynamic Agent Selection table
+- `docs/COMPARISON.md`: Added Zencoder comparison section, updated version history
+
+---
+
 ## [2.36.7] - 2026-01-17
 
 ### Added - Zencoder/Zenflow CI/CD Automation Patterns

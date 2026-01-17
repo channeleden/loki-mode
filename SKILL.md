@@ -5,7 +5,7 @@ description: Multi-agent autonomous startup system for Claude Code. Triggers on 
 
 # Loki Mode - Multi-Agent Autonomous Startup System
 
-> **Version 2.36.7** | PRD to Production | Zero Human Intervention
+> **Version 2.36.8** | PRD to Production | Zero Human Intervention
 > Research-enhanced: OpenAI SDK, DeepMind, Anthropic, AWS Bedrock, Agent SDK, HN Production (2025)
 
 ---
@@ -18,7 +18,7 @@ description: Multi-agent autonomous startup system for Claude Code. Triggers on 
 3. **CHECK** `.loki/state/orchestrator.json` - Current phase/metrics
 4. **REVIEW** `.loki/queue/pending.json` - Next tasks
 5. **FOLLOW** RARV cycle: REASON, ACT, REFLECT, **VERIFY** (test your work!)
-6. **OPTIMIZE** Opus=planning, Sonnet=development, Haiku=unit tests/monitoring - 10+ Haiku agents in parallel
+6. **OPTIMIZE** Opus=Bootstrap/Discovery/Architecture/Development, Sonnet=QA/Deployment, Haiku=rest (parallel)
 7. **TRACK** Efficiency metrics: tokens, time, agent count per task
 8. **CONSOLIDATE** After task: Update episodic memory, extract patterns to semantic memory
 
@@ -162,44 +162,42 @@ If bugs are found in these files, document them in `.loki/CONTINUITY.md` under "
 
 ## Model Selection Strategy
 
-**CRITICAL: Use the right model for each task type. Opus is ONLY for planning/architecture.**
+**CRITICAL: Use the right model for each SDLC phase.**
 
-| Model | Use For | Examples |
-|-------|---------|----------|
-| **Opus 4.5** | PLANNING ONLY - Architecture & high-level decisions | System design, architecture decisions, planning, security audits |
-| **Sonnet 4.5** | DEVELOPMENT - Implementation & functional testing | Feature implementation, API endpoints, bug fixes, integration/E2E tests |
-| **Haiku 4.5** | OPERATIONS - Simple tasks & monitoring | Unit tests, docs, bash commands, linting, monitoring, file operations |
+| Model | SDLC Phases | Examples |
+|-------|-------------|----------|
+| **Opus 4.5** | Bootstrap, Discovery, Architecture, Development | PRD analysis, system design, architecture decisions, feature implementation, API endpoints, complex bug fixes |
+| **Sonnet 4.5** | QA, Deployment | Integration/E2E tests, security scanning, performance testing, deployment automation, release management |
+| **Haiku 4.5** | All other operations (in parallel) | Unit tests, docs, bash commands, linting, monitoring, file operations, health checks |
 
 ### Task Tool Model Parameter
 ```python
-# Opus for planning/architecture ONLY
+# Opus for Bootstrap, Discovery, Architecture, Development phases
 Task(subagent_type="Plan", model="opus", description="Design system architecture", prompt="...")
+Task(subagent_type="general-purpose", model="opus", description="Implement API endpoint", prompt="...")
+Task(subagent_type="general-purpose", model="opus", description="Analyze PRD requirements", prompt="...")
 
-# Sonnet for development and functional testing
-Task(subagent_type="general-purpose", description="Implement API endpoint", prompt="...")
-Task(subagent_type="general-purpose", description="Write integration tests", prompt="...")
+# Sonnet for QA and Deployment phases
+Task(subagent_type="general-purpose", model="sonnet", description="Write integration tests", prompt="...")
+Task(subagent_type="general-purpose", model="sonnet", description="Run E2E test suite", prompt="...")
+Task(subagent_type="general-purpose", model="sonnet", description="Deploy to production", prompt="...")
 
-# Haiku for unit tests, monitoring, and simple tasks (PREFER THIS for speed)
+# Haiku for everything else (PREFER THIS for parallelization)
 Task(subagent_type="general-purpose", model="haiku", description="Run unit tests", prompt="...")
 Task(subagent_type="general-purpose", model="haiku", description="Check service health", prompt="...")
 ```
 
-### Opus Task Categories (RESTRICTED - Planning Only)
-- System architecture design
-- High-level planning and strategy
-- Security audits and threat modeling
-- Major refactoring decisions
-- Technology selection
+### Opus Task Categories (Bootstrap -> Development)
+- **Bootstrap**: Project setup, dependency analysis, environment configuration
+- **Discovery**: PRD analysis, requirement extraction, gap identification
+- **Architecture**: System design, technology selection, schema design, API contracts
+- **Development**: Feature implementation, API endpoints, complex bug fixes, database migrations, code refactoring
 
-### Sonnet Task Categories (Development)
-- Feature implementation
-- API endpoint development
-- Bug fixes (non-trivial)
-- Integration tests and E2E tests
-- Code refactoring
-- Database migrations
+### Sonnet Task Categories (QA -> Deployment)
+- **QA**: Integration tests, E2E tests, security scanning, performance testing, accessibility testing
+- **Deployment**: Release automation, infrastructure provisioning, monitoring setup, rollback procedures
 
-### Haiku Task Categories (Operations - Use Extensively)
+### Haiku Task Categories (Operations - Use Extensively in Parallel)
 - Writing/running unit tests
 - Generating documentation
 - Running bash commands (npm install, git operations)
@@ -369,13 +367,13 @@ PREFERENCE REWARD: Inferred from user actions (commit/revert/edit)
 
 ### Dynamic Agent Selection by Complexity
 
-| Complexity | Max Agents | Planning | Development | Testing | Review |
-|------------|------------|----------|-------------|---------|--------|
-| Trivial | 1 | - | haiku | haiku | skip |
-| Simple | 2 | - | haiku | haiku | single |
-| Moderate | 4 | sonnet | sonnet | haiku | standard (3 parallel) |
+| Complexity | Max Agents | Bootstrap/Discovery/Arch/Dev | QA/Deployment | Operations | Review |
+|------------|------------|------------------------------|---------------|------------|--------|
+| Trivial | 1 | haiku | haiku | haiku | skip |
+| Simple | 2 | opus | sonnet | haiku | single |
+| Moderate | 4 | opus | sonnet | haiku | standard (3 parallel) |
 | Complex | 8 | opus | sonnet | haiku | deep (+ devil's advocate) |
-| Critical | 12 | opus | sonnet | sonnet | exhaustive + human checkpoint |
+| Critical | 12 | opus | sonnet | haiku | exhaustive + human checkpoint |
 
 See `references/tool-orchestration.md` for full implementation details.
 
@@ -1213,4 +1211,4 @@ Detailed documentation is split into reference files for progressive loading:
 
 ---
 
-**Version:** 2.36.7 | **Lines:** ~1150 | **Research-Enhanced: 2026 Patterns (arXiv, HN, Labs, OpenCode, Cursor, Devin, Codex, Kiro, Antigravity, Amazon Q, RLM, Zencoder)**
+**Version:** 2.36.8 | **Lines:** ~1150 | **Research-Enhanced: 2026 Patterns (arXiv, HN, Labs, OpenCode, Cursor, Devin, Codex, Kiro, Antigravity, Amazon Q, RLM, Zencoder)**
