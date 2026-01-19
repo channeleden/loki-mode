@@ -179,3 +179,114 @@ dependency_workflow:
     5. Run full test suite after updates
     6. Create PR with changelog
 ```
+
+---
+
+## Batch Processing (Claude API)
+
+**50% cost reduction for large-scale async operations.**
+
+### When to Use Batch API
+
+| Use Case | Batch? | Reasoning |
+|----------|--------|-----------|
+| Single code review | No | Immediate feedback needed |
+| Review 100+ files | Yes | 50% savings, async OK |
+| Generate tests for all modules | Yes | Bulk operation |
+| Interactive development | No | Need real-time responses |
+| Large-scale evaluations | Yes | Cost-critical at scale |
+| QA phase bulk analysis | Yes | Can wait for results |
+
+### Batch API Limits
+
+```yaml
+limits:
+  max_requests: 100,000 per batch
+  max_size: 256 MB per batch
+  processing_time: Most < 1 hour (max 24h)
+  results_available: 29 days
+
+pricing:
+  discount: 50% on all tokens
+  stacks_with: Prompt caching (30-98% cache hits)
+```
+
+### Implementation Pattern
+
+```python
+import anthropic
+from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
+from anthropic.types.messages.batch_create_params import Request
+
+client = anthropic.Anthropic()
+
+# Batch all code review requests
+def batch_code_review(files: list[str]) -> str:
+    requests = [
+        Request(
+            custom_id=f"review-{i}-{file.replace('/', '-')}",
+            params=MessageCreateParamsNonStreaming(
+                model="claude-sonnet-4-5",
+                max_tokens=2048,
+                messages=[{
+                    "role": "user",
+                    "content": f"Review this code for bugs, security, performance:\n\n{open(file).read()}"
+                }]
+            )
+        )
+        for i, file in enumerate(files)
+    ]
+
+    batch = client.messages.batches.create(requests=requests)
+    return batch.id  # Poll for results later
+
+# Poll for completion
+def wait_for_batch(batch_id: str):
+    while True:
+        batch = client.messages.batches.retrieve(batch_id)
+        if batch.processing_status == "ended":
+            return batch
+        time.sleep(60)
+
+# Stream results
+def process_results(batch_id: str):
+    for result in client.messages.batches.results(batch_id):
+        if result.result.type == "succeeded":
+            # Process successful review
+            handle_review(result.custom_id, result.result.message)
+        elif result.result.type == "errored":
+            # Retry or log error
+            handle_error(result.custom_id, result.result.error)
+```
+
+### Batch + Prompt Caching
+
+**Stack discounts for maximum savings:**
+
+```python
+# All requests share cached system prompt
+SHARED_SYSTEM = [
+    {"type": "text", "text": "You are a code reviewer..."},
+    {"type": "text", "text": CODING_STANDARDS,  # Large shared context
+     "cache_control": {"type": "ephemeral"}}
+]
+
+requests = [
+    Request(
+        custom_id=f"review-{file}",
+        params=MessageCreateParamsNonStreaming(
+            model="claude-sonnet-4-5",
+            max_tokens=2048,
+            system=SHARED_SYSTEM,  # Identical across all requests
+            messages=[{"role": "user", "content": f"Review: {code}"}]
+        )
+    )
+    for file, code in files_with_code
+]
+```
+
+**Cost math:**
+- Base: $3/MTok input, $15/MTok output (Sonnet)
+- Batch discount: 50% -> $1.50/$7.50
+- Cache hit: 90% reduction on cached tokens
+- Combined: Up to 95% savings on large batches
