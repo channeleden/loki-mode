@@ -5,6 +5,42 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-01-19
+
+### Added - Cursor Scaling Learnings
+
+**Patterns proven at 100+ agent scale, incorporated from Cursor's blog post.**
+
+#### New Reference: `references/cursor-learnings.md`
+- Complete analysis of Cursor's multi-agent scaling experience
+- Key findings: flat coordination fails, integrators create bottlenecks
+- Optimistic concurrency control pattern
+- Recursive sub-planner architecture
+- Judge agent protocol
+- Scale-aware review intensity
+
+#### New Agent Types: Orchestration Swarm (4 types)
+- `orch-planner` - Main planner with sub-planner spawning
+- `orch-sub-planner` - Domain-specific recursive planning
+- `orch-judge` - Cycle continuation decisions
+- `orch-coordinator` - Cross-stream conflict resolution
+
+#### Updated Modules
+- `skills/parallel-workflows.md` - Added optimistic concurrency section
+- `skills/quality-gates.md` - Added scale considerations, review intensity scaling
+- `references/agent-types.md` - Added Orchestration Swarm with recursive sub-planner pattern
+
+#### Key Learnings Applied
+1. **Recursive sub-planners** - Planning scales horizontally, not bottlenecked
+2. **Judge agents** - Explicit cycle continuation decisions (CONTINUE/COMPLETE/ESCALATE/PIVOT)
+3. **Optimistic concurrency** - No locks, write fails on conflict, scales to 100+ agents
+4. **Scale-aware review** - Full review for high-risk only at scale, trust workers for trivial changes
+
+#### Source
+- [Cursor Blog - Scaling Agents](https://cursor.com/blog/scaling-agents) (January 2026)
+
+---
+
 ## [3.2.0] - 2026-01-19
 
 ### Added - Parallel Workflows with Git Worktrees

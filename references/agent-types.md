@@ -96,6 +96,60 @@ Loki Mode has 37 predefined agent types organized into 7 specialized swarms. The
 
 ---
 
+## Orchestration Swarm (4 types)
+
+> **Source:** [Cursor Scaling Learnings](./cursor-learnings.md) - patterns proven at 100+ agent scale
+
+| Agent | Capabilities |
+|-------|-------------|
+| `orch-planner` | Task decomposition, dependency analysis, work distribution, sub-planner spawning |
+| `orch-sub-planner` | Domain-specific planning (frontend, backend, testing), recursive task breakdown |
+| `orch-judge` | Cycle continuation decisions, goal completion assessment, escalation triggers |
+| `orch-coordinator` | Cross-stream coordination, merge decisions, conflict resolution |
+
+### Recursive Sub-Planner Pattern
+
+```
+Main Planner (orch-planner)
+    |
+    +-- Sub-Planner Frontend (orch-sub-planner)
+    |       +-- eng-frontend (Component A)
+    |       +-- eng-frontend (Component B)
+    |
+    +-- Sub-Planner Backend (orch-sub-planner)
+    |       +-- eng-backend (API)
+    |       +-- eng-database (Schema)
+    |
+    +-- Sub-Planner Testing (orch-sub-planner)
+            +-- eng-qa (Unit tests)
+            +-- eng-qa (E2E tests)
+```
+
+**Benefits:**
+- Planning scales horizontally (not bottlenecked on single planner)
+- Each sub-planner has focused domain context
+- Enables true parallel planning
+
+### Judge Agent Protocol
+
+```yaml
+judge_agent:
+  trigger: After milestone OR every N iterations
+  inputs:
+    - current_state: ".loki/state/orchestrator.json"
+    - original_goal: "PRD requirements"
+    - recent_progress: "Last 10 completed tasks"
+    - resource_consumption: "Tokens, time, iterations"
+  outputs:
+    - CONTINUE: "More work needed toward goal"
+    - COMPLETE: "Goal achieved, finalize"
+    - ESCALATE: "Human intervention required"
+    - PIVOT: "Change approach, current path blocked"
+  model: haiku  # Fast decision, low cost
+```
+
+---
+
 ## Agent Execution Model
 
 **Claude Code does NOT support background processes.** Agents execute via:

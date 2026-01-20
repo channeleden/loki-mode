@@ -109,3 +109,72 @@ Task(model="sonnet", description="Code review: performance", prompt="Review for 
 | Cosmetic | Note, optional fix |
 
 See `references/quality-control.md` for complete details.
+
+---
+
+## Scale Considerations
+
+> **Source:** [Cursor Scaling Learnings](../references/cursor-learnings.md) - integrators became bottlenecks at 100+ agents
+
+### Review Intensity Scaling
+
+At high agent counts, full 3-reviewer blind review for every change creates bottlenecks.
+
+```yaml
+review_scaling:
+  low_scale:  # <10 agents
+    all_changes: "Full 3-reviewer blind review"
+    rationale: "Quality critical, throughput acceptable"
+
+  medium_scale:  # 10-50 agents
+    high_risk: "Full 3-reviewer blind review"
+    medium_risk: "2-reviewer review"
+    low_risk: "1 reviewer + automated checks"
+    rationale: "Balance quality and throughput"
+
+  high_scale:  # 50+ agents
+    critical_changes: "Full 3-reviewer blind review"
+    standard_changes: "Automated checks + spot review"
+    trivial_changes: "Automated checks only"
+    rationale: "Trust workers, avoid bottlenecks"
+
+risk_classification:
+  high_risk:
+    - Security-related changes
+    - Authentication/authorization
+    - Payment processing
+    - Data migrations
+    - API breaking changes
+  medium_risk:
+    - New features
+    - Business logic changes
+    - Database schema changes
+  low_risk:
+    - Bug fixes with tests
+    - Refactoring with no behavior change
+    - Documentation
+    - Dependency updates (minor)
+```
+
+### Judge Agent Integration
+
+Use judge agents to determine when full review is needed:
+
+```yaml
+judge_review_decision:
+  inputs:
+    - change_type: "feature|bugfix|refactor|docs"
+    - files_changed: 5
+    - lines_changed: 120
+    - test_coverage: 85%
+    - static_analysis: "0 new warnings"
+  output:
+    review_level: "full|partial|automated"
+    rationale: "Medium-risk feature with good coverage"
+```
+
+### Cursor's Key Learning
+
+> "Dedicated integrator/reviewer roles created more bottlenecks than they solved. Workers were already capable of handling conflicts themselves."
+
+**Implication:** At scale, trust automated checks and worker judgment. Reserve full review for high-risk changes only.

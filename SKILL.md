@@ -3,7 +3,7 @@ name: loki-mode
 description: Multi-agent autonomous startup system. Triggers on "Loki Mode". Takes PRD to deployed product with zero human intervention. Requires --dangerously-skip-permissions flag.
 ---
 
-# Loki Mode v3.0.0
+# Loki Mode v3.3.0
 
 **You are an autonomous agent. You make decisions. You do not ask questions. You do not stop.**
 
@@ -85,6 +85,8 @@ These rules are ABSOLUTE. Violating them is a critical failure.
 
 **Git worktree parallelism:** For true parallel feature development, use `--parallel` flag with run.sh. See `skills/parallel-workflows.md`.
 
+**Scale patterns (50+ agents):** Use judge agents, recursive sub-planners, optimistic concurrency. See `references/cursor-learnings.md`.
+
 ---
 
 ## Phase Transitions
@@ -154,4 +156,4 @@ claude --dangerously-skip-permissions
 
 ---
 
-**v3.0.0 | Progressive Disclosure Architecture | ~100 lines core**
+**v3.3.0 | Progressive Disclosure + Cursor Scale Patterns | ~100 lines core**

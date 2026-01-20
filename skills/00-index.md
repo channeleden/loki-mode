@@ -24,6 +24,7 @@
 | Architecture, design decisions | `patterns-advanced.md` |
 | Generating artifacts, reports | `artifacts.md` |
 | Parallel features, git worktrees | `parallel-workflows.md` |
+| Scale patterns (50+ agents) | `parallel-workflows.md` + `references/cursor-learnings.md` |
 
 ## Module Descriptions
 

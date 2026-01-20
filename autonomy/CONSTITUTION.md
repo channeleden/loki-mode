@@ -1,7 +1,7 @@
 # Loki Mode Agent Constitution
 
 > **Machine-Enforceable Behavioral Contract for All Agents**
-> Version 3.2.0 | Immutable Principles | Context-Preserved Lineage
+> Version 3.3.0 | Immutable Principles | Context-Preserved Lineage
 
 ---
 

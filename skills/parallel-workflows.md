@@ -387,6 +387,96 @@ git worktree list
 
 ---
 
+## Optimistic Concurrency Control
+
+> **Source:** [Cursor Scaling Learnings](../references/cursor-learnings.md) - file locking failed at scale
+
+### The Problem with Locks
+
+Signal files (`.loki/signals/`) can create bottlenecks similar to file locking:
+- Agents wait for signals to clear
+- Deadlocks if agent fails while "holding" a signal
+- Throughput drops as agent count increases
+
+### Optimistic Concurrency Pattern
+
+```yaml
+optimistic_write:
+  1_read:
+    action: "Read current state (no lock)"
+    example: "Read .loki/state/orchestrator.json"
+    capture: "state_version: 42"
+
+  2_work:
+    action: "Perform work normally"
+    example: "Complete task, generate output"
+
+  3_write_attempt:
+    action: "Attempt write with version check"
+    example: |
+      current_version=$(jq .version .loki/state/orchestrator.json)
+      if [ "$current_version" == "42" ]; then
+        # Version unchanged, safe to write
+        write_new_state_with_version_43
+      else
+        # State changed, retry from step 1
+        retry_with_backoff
+      fi
+
+  benefits:
+    - No waiting for locks
+    - No deadlock risk
+    - Failed writes are cheap (just retry)
+    - Scales to 100+ agents
+```
+
+### Implementation
+
+```bash
+# Optimistic write function
+optimistic_update_state() {
+  local file="$1"
+  local update_fn="$2"
+  local max_retries=5
+  local retry=0
+
+  while [ $retry -lt $max_retries ]; do
+    # Read current version
+    local version=$(jq -r '.version // 0' "$file" 2>/dev/null || echo "0")
+
+    # Apply update
+    local new_content=$($update_fn "$file")
+
+    # Attempt atomic write with version check
+    local current_version=$(jq -r '.version // 0' "$file" 2>/dev/null || echo "0")
+
+    if [ "$current_version" == "$version" ]; then
+      # Version unchanged, safe to write
+      echo "$new_content" | jq ".version = $((version + 1))" > "$file.tmp"
+      mv "$file.tmp" "$file"
+      return 0
+    fi
+
+    # Version changed, retry with backoff
+    retry=$((retry + 1))
+    sleep $((retry * 2))
+  done
+
+  return 1  # Failed after max retries
+}
+```
+
+### When to Use
+
+| Coordination Type | Use Case | Recommendation |
+|-------------------|----------|----------------|
+| Signal files | <10 agents | OK, simple |
+| Signal files | 10-50 agents | Monitor for bottlenecks |
+| Optimistic concurrency | 50+ agents | Required for scale |
+| Git-based coordination | Cross-worktree | Use git commits as versions |
+
+---
+
 ## Limitations and Considerations
 
 ### When NOT to Use Worktrees

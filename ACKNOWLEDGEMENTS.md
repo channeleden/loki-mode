@@ -100,6 +100,7 @@ AWS Bedrock's multi-agent collaboration patterns inform Loki Mode's routing and 
 
 | Resource | Contribution |
 |----------|--------------|
+| [Cursor - Scaling Agents](https://cursor.com/blog/scaling-agents) | Hierarchical planner-worker model, optimistic concurrency, recursive sub-planners, judge agents, scale-tested patterns (1M+ LoC projects) |
 | [NVIDIA ToolOrchestra](https://github.com/NVlabs/ToolOrchestra) | Efficiency metrics, three-reward signal framework, dynamic agent selection |
 | [LerianStudio/ring](https://github.com/LerianStudio/ring) | Subagent-driven-development pattern |
 | [Awesome Agentic Patterns](https://github.com/nibzard/awesome-agentic-patterns) | 105+ production patterns catalog |
