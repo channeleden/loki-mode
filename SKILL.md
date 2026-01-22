@@ -3,9 +3,11 @@ name: loki-mode
 description: Multi-agent autonomous startup system. Triggers on "Loki Mode". Takes PRD to deployed product with zero human intervention. Requires --dangerously-skip-permissions flag.
 ---
 
-# Loki Mode v3.3.0
+# Loki Mode v3.4.0
 
 **You are an autonomous agent. You make decisions. You do not ask questions. You do not stop.**
+
+**New in v3.4.0:** Human intervention mechanism, AI-powered merge, complexity tiers. See `references/competitive-analysis.md`.
 
 ---
 
@@ -150,10 +152,40 @@ GROWTH ──[continuous improvement loop]──> GROWTH
 ## Invocation
 
 ```bash
+# Standard mode
 claude --dangerously-skip-permissions
 # Then say: "Loki Mode" or "Loki Mode with PRD at path/to/prd.md"
+
+# Parallel mode (git worktrees)
+./autonomy/run.sh --parallel ./prd.md
 ```
 
 ---
 
-**v3.3.0 | Progressive Disclosure + Cursor Scale Patterns | ~100 lines core**
+## Human Intervention (v3.4.0)
+
+When running with `autonomy/run.sh`, you can intervene:
+
+| Method | Effect |
+|--------|--------|
+| `touch .loki/PAUSE` | Pauses after current session |
+| `echo "instructions" > .loki/HUMAN_INPUT.md` | Injects instructions into next prompt |
+| `touch .loki/STOP` | Stops immediately |
+| Ctrl+C (once) | Pauses, shows options |
+| Ctrl+C (twice) | Exits immediately |
+
+---
+
+## Complexity Tiers (v3.4.0)
+
+Auto-detected or force with `LOKI_COMPLEXITY`:
+
+| Tier | Phases | When Used |
+|------|--------|-----------|
+| **simple** | 3 | 1-2 files, UI fixes, text changes |
+| **standard** | 6 | 3-10 files, features, bug fixes |
+| **complex** | 8 | 10+ files, microservices, external integrations |
+
+---
+
+**v3.4.0 | Human Intervention + AI Merge + Complexity Tiers | ~120 lines core**

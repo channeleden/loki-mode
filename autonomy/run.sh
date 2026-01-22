@@ -70,6 +70,20 @@
 #   LOKI_PARALLEL_DOCS         - Run documentation stream in parallel (default: true)
 #   LOKI_PARALLEL_BLOG         - Run blog stream if site has blog (default: false)
 #   LOKI_AUTO_MERGE            - Auto-merge completed features (default: true)
+#
+# Complexity Tiers (Auto-Claude pattern):
+#   LOKI_COMPLEXITY            - Force complexity tier (default: auto)
+#                                Options: auto, simple, standard, complex
+#   Simple (3 phases):   1-2 files, single service, UI fixes, text changes
+#   Standard (6 phases): 3-10 files, 1-2 services, features, bug fixes
+#   Complex (8 phases):  10+ files, multiple services, external integrations
+#
+# Human Intervention (Auto-Claude pattern):
+#   PAUSE file:          touch .loki/PAUSE - pauses after current session
+#   HUMAN_INPUT.md:      echo "instructions" > .loki/HUMAN_INPUT.md
+#   STOP file:           touch .loki/STOP - stops immediately
+#   Ctrl+C (once):       Pauses execution, shows options
+#   Ctrl+C (twice):      Exits immediately
 #===============================================================================
 
 set -uo pipefail
@@ -160,6 +174,11 @@ PARALLEL_DOCS=${LOKI_PARALLEL_DOCS:-true}
 PARALLEL_BLOG=${LOKI_PARALLEL_BLOG:-false}
 AUTO_MERGE=${LOKI_AUTO_MERGE:-true}
 
+# Complexity Tiers (Auto-Claude pattern)
+# auto = detect from PRD/codebase, simple = 3 phases, standard = 6 phases, complex = 8 phases
+COMPLEXITY_TIER=${LOKI_COMPLEXITY:-auto}
+DETECTED_COMPLEXITY=""
+
 # Track worktree PIDs for cleanup (requires bash 4+ for associative arrays)
 # Check bash version for parallel mode compatibility
 BASH_VERSION_MAJOR="${BASH_VERSION%%.*}"
@@ -197,6 +216,107 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 log_warning() { log_warn "$@"; }  # Alias for backwards compatibility
 log_error() { echo -e "${RED}[ERROR]${NC} $*"; }
 log_step() { echo -e "${CYAN}[STEP]${NC} $*"; }
+
+#===============================================================================
+# Complexity Tier Detection (Auto-Claude pattern)
+#===============================================================================
+
+# Detect project complexity from PRD and codebase
+detect_complexity() {
+    local prd_path="${1:-}"
+    local target_dir="${TARGET_DIR:-.}"
+
+    # If forced, use that
+    if [ "$COMPLEXITY_TIER" != "auto" ]; then
+        DETECTED_COMPLEXITY="$COMPLEXITY_TIER"
+        return 0
+    fi
+
+    # Count files in project (excluding common non-source dirs)
+    local file_count=$(find "$target_dir" -type f \
+        \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \
+        -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java" \
+        -o -name "*.rb" -o -name "*.php" -o -name "*.swift" -o -name "*.kt" \) \
+        ! -path "*/node_modules/*" ! -path "*/.git/*" ! -path "*/vendor/*" \
+        ! -path "*/dist/*" ! -path "*/build/*" ! -path "*/__pycache__/*" \
+        2>/dev/null | wc -l | tr -d ' ')
+
+    # Check for external integrations
+    local has_external=false
+    if grep -rq "oauth\|SAML\|OIDC\|stripe\|twilio\|aws-sdk\|@google-cloud\|azure" \
+        "$target_dir" --include="*.json" --include="*.ts" --include="*.js" 2>/dev/null; then
+        has_external=true
+    fi
+
+    # Check for multiple services (docker-compose, k8s)
+    local has_microservices=false
+    if [ -f "$target_dir/docker-compose.yml" ] || [ -d "$target_dir/k8s" ] || \
+       [ -f "$target_dir/docker-compose.yaml" ]; then
+        has_microservices=true
+    fi
+
+    # Analyze PRD if provided
+    local prd_complexity="standard"
+    if [ -n "$prd_path" ] && [ -f "$prd_path" ]; then
+        local prd_words=$(wc -w < "$prd_path" | tr -d ' ')
+        local feature_count=$(grep -c "^##\|^- \[" "$prd_path" 2>/dev/null || echo "0")
+
+        if [ "$prd_words" -lt 200 ] && [ "$feature_count" -lt 5 ]; then
+            prd_complexity="simple"
+        elif [ "$prd_words" -gt 1000 ] || [ "$feature_count" -gt 15 ]; then
+            prd_complexity="complex"
+        fi
+    fi
+
+    # Determine final complexity
+    if [ "$file_count" -le 5 ] && [ "$prd_complexity" = "simple" ] && \
+       [ "$has_external" = "false" ] && [ "$has_microservices" = "false" ]; then
+        DETECTED_COMPLEXITY="simple"
+    elif [ "$file_count" -gt 50 ] || [ "$has_microservices" = "true" ] || \
+         [ "$has_external" = "true" ] || [ "$prd_complexity" = "complex" ]; then
+        DETECTED_COMPLEXITY="complex"
+    else
+        DETECTED_COMPLEXITY="standard"
+    fi
+
+    log_info "Detected complexity: $DETECTED_COMPLEXITY (files: $file_count, external: $has_external, microservices: $has_microservices)"
+}
+
+# Get phases based on complexity tier
+get_complexity_phases() {
+    case "$DETECTED_COMPLEXITY" in
+        simple)
+            echo "3"
+            ;;
+        standard)
+            echo "6"
+            ;;
+        complex)
+            echo "8"
+            ;;
+        *)
+            echo "6"  # Default to standard
+            ;;
+    esac
+}
+
+# Get phase names based on complexity tier
+get_phase_names() {
+    case "$DETECTED_COMPLEXITY" in
+        simple)
+            echo "IMPLEMENT TEST DEPLOY"
+            ;;
+        standard)
+            echo "RESEARCH DESIGN IMPLEMENT TEST REVIEW DEPLOY"
+            ;;
+        complex)
+            echo "RESEARCH ARCHITECTURE DESIGN IMPLEMENT TEST REVIEW SECURITY DEPLOY"
+            ;;
+        *)
+            echo "RESEARCH DESIGN IMPLEMENT TEST REVIEW DEPLOY"
+            ;;
+    esac
+}
 
 #===============================================================================
 # Parallel Workflow Functions (Git Worktrees)
@@ -375,7 +495,49 @@ check_merge_queue() {
     done
 }
 
-# Merge a completed feature branch
+# AI-powered conflict resolution (inspired by Auto-Claude)
+resolve_conflicts_with_ai() {
+    local feature="$1"
+    local conflict_files=$(git diff --name-only --diff-filter=U 2>/dev/null)
+
+    if [ -z "$conflict_files" ]; then
+        return 0
+    fi
+
+    log_step "AI-powered conflict resolution for: $feature"
+
+    for file in $conflict_files; do
+        log_info "Resolving conflicts in: $file"
+
+        # Get conflict markers
+        local conflict_content=$(cat "$file")
+
+        # Use Claude to resolve conflict
+        local resolution=$(claude --dangerously-skip-permissions -p "
+You are resolving a git merge conflict. The file below contains conflict markers.
+Your task is to merge both changes intelligently, preserving functionality from both sides.
+
+FILE: $file
+CONTENT:
+$conflict_content
+
+Output ONLY the resolved file content with no conflict markers. No explanations.
+" --output-format text 2>/dev/null)
+
+        if [ -n "$resolution" ]; then
+            echo "$resolution" > "$file"
+            git add "$file"
+            log_info "Resolved: $file"
+        else
+            log_error "AI resolution failed for: $file"
+            return 1
+        fi
+    done
+
+    return 0
+}
+
+# Merge a completed feature branch (with AI conflict resolution)
 merge_feature() {
     local feature="$1"
     local branch="feature/$feature"
@@ -388,25 +550,36 @@ merge_feature() {
         # Ensure we're on main
         git checkout main 2>/dev/null
 
-        # Merge with no-ff for clear history
-        if git merge "$branch" --no-ff -m "feat: Merge $feature"; then
-            log_info "Merged: $feature"
-
-            # Remove signal
-            rm -f ".loki/signals/MERGE_REQUESTED_$feature"
-
-            # Remove worktree
-            remove_worktree "feature-$feature"
-
-            # Delete branch
-            git branch -d "$branch" 2>/dev/null || true
-
-            # Signal for docs update
-            touch ".loki/signals/DOCS_NEEDED"
+        # Attempt merge with no-ff for clear history
+        if git merge "$branch" --no-ff -m "feat: Merge $feature" 2>/dev/null; then
+            log_info "Merged cleanly: $feature"
         else
-            log_error "Merge failed: $feature (conflicts?)"
-            git merge --abort 2>/dev/null || true
+            # Merge has conflicts - try AI resolution
+            log_warn "Merge conflicts detected - attempting AI resolution"
+
+            if resolve_conflicts_with_ai "$feature"; then
+                # AI resolved conflicts, commit the merge
+                git commit -m "feat: Merge $feature (AI-resolved conflicts)"
+                log_info "Merged with AI conflict resolution: $feature"
+            else
+                # AI resolution failed, abort merge
+                log_error "AI conflict resolution failed: $feature"
+                git merge --abort 2>/dev/null || true
+                return 1
+            fi
         fi
+
+        # Remove signal
+        rm -f ".loki/signals/MERGE_REQUESTED_$feature"
+
+        # Remove worktree
+        remove_worktree "feature-$feature"
+
+        # Delete branch
+        git branch -d "$branch" 2>/dev/null || true
+
+        # Signal for docs update
+        touch ".loki/signals/DOCS_NEEDED"
     )
 }
 
@@ -2291,17 +2464,138 @@ if __name__ == "__main__":
 }
 
 #===============================================================================
-# Cleanup Handler
+# Human Intervention Mechanism (Auto-Claude pattern)
+#===============================================================================
+
+# Track interrupt state for Ctrl+C pause/exit behavior
+INTERRUPT_COUNT=0
+INTERRUPT_LAST_TIME=0
+PAUSED=false
+
+# Check for human intervention signals
+check_human_intervention() {
+    local loki_dir="${TARGET_DIR:-.}/.loki"
+
+    # Check for PAUSE file
+    if [ -f "$loki_dir/PAUSE" ]; then
+        log_warn "PAUSE file detected - pausing execution"
+        rm -f "$loki_dir/PAUSE"
+        handle_pause
+        return 1
+    fi
+
+    # Check for HUMAN_INPUT.md
+    if [ -f "$loki_dir/HUMAN_INPUT.md" ]; then
+        local human_input=$(cat "$loki_dir/HUMAN_INPUT.md")
+        if [ -n "$human_input" ]; then
+            log_info "Human input detected:"
+            echo "$human_input"
+            echo ""
+            # Move to processed
+            mv "$loki_dir/HUMAN_INPUT.md" "$loki_dir/logs/human-input-$(date +%Y%m%d-%H%M%S).md"
+            # Inject into next prompt
+            export LOKI_HUMAN_INPUT="$human_input"
+            return 0
+        fi
+    fi
+
+    # Check for STOP file (immediate stop)
+    if [ -f "$loki_dir/STOP" ]; then
+        log_warn "STOP file detected - stopping execution"
+        rm -f "$loki_dir/STOP"
+        return 2
+    fi
+
+    return 0
+}
+
+# Handle pause state - wait for resume
+handle_pause() {
+    PAUSED=true
+    local loki_dir="${TARGET_DIR:-.}/.loki"
+
+    log_header "Execution Paused"
+    echo ""
+    log_info "To resume: Remove .loki/PAUSE or press Enter"
+    log_info "To add instructions: echo 'your instructions' > .loki/HUMAN_INPUT.md"
+    log_info "To stop completely: touch .loki/STOP"
+    echo ""
+
+    # Create resume instructions file
+    cat > "$loki_dir/PAUSED.md" << 'EOF'
+# Loki Mode - Paused
+
+Execution is currently paused. Options:
+
+1. **Resume**: Press Enter in terminal or `rm .loki/PAUSE`
+2. **Add Instructions**: `echo "Focus on fixing the login bug" > .loki/HUMAN_INPUT.md`
+3. **Stop**: `touch .loki/STOP`
+
+Current state is saved. You can inspect:
+- `.loki/CONTINUITY.md` - Progress and context
+- `.loki/STATUS.txt` - Current status
+- `.loki/logs/` - Session logs
+EOF
+
+    # Wait for resume signal
+    while [ "$PAUSED" = "true" ]; do
+        # Check for resume conditions
+        if [ -f "$loki_dir/STOP" ]; then
+            rm -f "$loki_dir/STOP" "$loki_dir/PAUSED.md"
+            PAUSED=false
+            return 1
+        fi
+
+        # Check for any key press (non-blocking)
+        if read -t 1 -n 1 2>/dev/null; then
+            PAUSED=false
+            break
+        fi
+
+        sleep 1
+    done
+
+    rm -f "$loki_dir/PAUSED.md"
+    log_info "Resuming execution..."
+    PAUSED=false
+    return 0
+}
+
+#===============================================================================
+# Cleanup Handler (with Ctrl+C pause support)
 #===============================================================================
 
 cleanup() {
+    local current_time=$(date +%s)
+    local time_diff=$((current_time - INTERRUPT_LAST_TIME))
+
+    # If double Ctrl+C within 2 seconds, exit immediately
+    if [ "$time_diff" -lt 2 ] && [ "$INTERRUPT_COUNT" -gt 0 ]; then
+        echo ""
+        log_warn "Double interrupt - stopping immediately"
+        stop_dashboard
+        stop_status_monitor
+        save_state ${RETRY_COUNT:-0} "interrupted" 130
+        log_info "State saved. Run again to resume."
+        exit 130
+    fi
+
+    # First Ctrl+C - pause and show options
+    INTERRUPT_COUNT=$((INTERRUPT_COUNT + 1))
+    INTERRUPT_LAST_TIME=$current_time
+
     echo ""
-    log_warn "Received interrupt signal"
-    stop_dashboard
-    stop_status_monitor
-    save_state ${RETRY_COUNT:-0} "interrupted" 130
-    log_info "State saved. Run again to resume."
-    exit 130
+    log_warn "Interrupt received - pausing..."
+    log_info "Press Ctrl+C again within 2 seconds to exit"
+    log_info "Or wait to add instructions..."
+    echo ""
+
+    # Create pause state
+    touch "${TARGET_DIR:-.}/.loki/PAUSE"
+    handle_pause
+
+    # Reset interrupt count after pause
+    INTERRUPT_COUNT=0
 }
 
 #===============================================================================

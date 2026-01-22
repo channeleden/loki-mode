@@ -5,6 +5,48 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2026-01-21
+
+### Added - Competitive Analysis and Improvements
+
+**Analyzed top competitors (Auto-Claude, MemOS, Dexter) and 2026 agentic AI trends. Implemented key missing features.**
+
+#### Competitive Analysis
+- `docs/auto-claude-comparison.md` - Honest technical comparison with Auto-Claude (9,594 stars)
+- `references/competitive-analysis.md` - Full analysis of MemOS, Dexter, Simon Willison patterns
+
+#### Human Intervention Mechanism (from Auto-Claude)
+- `PAUSE` file - Pauses execution after current session
+- `HUMAN_INPUT.md` - Injects human instructions into next prompt
+- `STOP` file - Stops execution immediately
+- Ctrl+C (once) - Pauses and shows options
+- Ctrl+C (twice within 2s) - Exits immediately
+
+#### AI-Powered Merge Resolution (from Auto-Claude)
+- Automatic conflict resolution using Claude when git merge fails
+- `resolve_conflicts_with_ai()` function in run.sh
+- Falls back to abort if AI resolution fails
+
+#### Complexity Tiers (from Auto-Claude)
+- Auto-detection from PRD and codebase analysis
+- `LOKI_COMPLEXITY` env var to force tier
+- Simple (3 phases): 1-2 files, UI fixes
+- Standard (6 phases): 3-10 files, features
+- Complex (8 phases): 10+ files, microservices
+
+#### Research Sources
+- [Auto-Claude](https://github.com/AndyMik90/Auto-Claude) - 9,594 stars, top competitor
+- [MemOS](https://github.com/MemTensor/MemOS) - Memory OS, arXiv:2507.03724
+- [Dexter](https://github.com/virattt/dexter) - Financial research agent
+- [Simon Willison - Scaling Autonomous Coding](https://simonwillison.net/2026/Jan/19/scaling-long-running-autonomous-coding/)
+- [AAMAS 2026](https://cyprusconferences.org/aamas2026/) - Leading AI agents conference
+
+#### Honest Assessment
+- **Auto-Claude wins:** Desktop GUI, packaged releases, community, integrations
+- **Loki Mode wins:** Research foundation, 37 agents, full SDLC, anti-sycophancy, MIT license, benchmarks
+
+---
+
 ## [3.3.0] - 2026-01-19
 
 ### Added - Cursor Scaling Learnings
