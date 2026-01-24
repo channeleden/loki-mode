@@ -74,17 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Normalize path for GitHub Pages deployment
-    // Local: blog/index.html references ../README.md
-    // GitHub Pages: index.html at root, so ./README.md
+    // Normalize path - paths are relative to blog/ directory
+    // ../README.md -> goes to parent (loki-mode/) which is correct
+    // No transformation needed - browser resolves relative paths correctly
     function normalizePath(path) {
-        // Check if we're on GitHub Pages (path starts with /loki-mode/ or similar)
-        const isGitHubPages = window.location.hostname.includes('github.io');
-
-        if (isGitHubPages && path.startsWith('../')) {
-            // Remove ../ prefix for GitHub Pages deployment
-            return path.replace(/^\.\.\//, './');
-        }
         return path;
     }
 
