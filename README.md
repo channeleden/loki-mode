@@ -68,7 +68,7 @@ loki start ./my-prd.md
 ### Option 5: Docker
 
 ```bash
-docker run -v $(pwd):/workspace asklokesh/loki-mode:5.1.0 ./my-prd.md
+docker run -v $(pwd):/workspace asklokesh/loki-mode:5.1.1 ./my-prd.md
 ```
 
 See [Installation Guide](docs/INSTALLATION.md) for more details.
