@@ -14,7 +14,7 @@
         <div class="nav-container">
             <div class="nav-brand">
                 <h1>Loki Mode</h1>
-                <span class="version">v4.2.0</span>
+                <span class="version">v5.1.0</span>
             </div>
             <div class="hamburger" id="hamburger">
                 <span></span>
@@ -27,12 +27,19 @@
                 <li><a href="#architecture" class="nav-link">Architecture</a></li>
                 <li><a href="#research" class="nav-link">Research</a></li>
                 <li><a href="#skills" class="nav-link">Skills</a></li>
+                <li><a href="#providers" class="nav-link">Providers</a></li>
                 <li><a href="#examples" class="nav-link">Examples</a></li>
                 <li><a href="#comparisons" class="nav-link">Comparisons</a></li>
                 <li><a href="https://github.com/asklokesh/loki-mode" class="nav-link github" target="_blank">GitHub</a></li>
             </ul>
         </div>
     </nav>
+
+    <!-- Announcement Banner -->
+    <div class="announcement-banner" style="background: linear-gradient(135deg, #d97757 0%, #c56647 100%); color: white; text-align: center; padding: 0.75rem 1rem; font-size: 0.9rem;">
+        <strong>NEW in v5.0.0:</strong> Multi-Provider Support - Now works with Claude Code, OpenAI Codex CLI, and Google Gemini CLI!
+        <a href="#providers" style="color: white; margin-left: 0.5rem; text-decoration: underline;">Learn more</a>
+    </div>
 
     <main class="main-content">
         <!-- Home Section -->
@@ -92,6 +99,11 @@
                     <h3>Foundational Principles</h3>
                     <p>WHY-based reasoning: Autonomy, Memory > Reasoning, Verification, Atomicity, Constraints.</p>
                     <span class="feature-badge">v4.2.0</span>
+                </div>
+                <div class="feature-card" style="border: 2px solid #d97757;">
+                    <h3>Multi-Provider Support</h3>
+                    <p>Claude Code, OpenAI Codex CLI, Google Gemini CLI. Abstract tiers: planning, development, fast.</p>
+                    <span class="feature-badge" style="background: #d97757; color: white;">v5.0.0 NEW</span>
                 </div>
                 <div class="feature-card">
                     <h3>Human Intervention</h3>
@@ -342,6 +354,99 @@ open http://localhost:8080/dashboard/index.html</code></pre>
                     <h3>Troubleshooting</h3>
                     <p>Common issues, red flags, fallback systems</p>
                 </div>
+            </div>
+        </section>
+
+        <!-- Providers Section (NEW in v5.0.0) -->
+        <section id="providers" class="section">
+            <div class="section-header">
+                <h2>Multi-Provider Support</h2>
+                <p>NEW in v5.0.0: Run Loki Mode with Claude Code, OpenAI Codex CLI, or Google Gemini CLI</p>
+            </div>
+
+            <div class="provider-comparison" style="overflow-x: auto; margin-bottom: 2rem;">
+                <table style="width: 100%; border-collapse: collapse; background: #1e1e20; border-radius: 8px; overflow: hidden;">
+                    <thead>
+                        <tr style="background: #2d2d30;">
+                            <th style="padding: 1rem; text-align: left; color: #f5f5f5; border-bottom: 1px solid #3d3d40;">Feature</th>
+                            <th style="padding: 1rem; text-align: center; color: #22c55e; border-bottom: 1px solid #3d3d40;">Claude Code</th>
+                            <th style="padding: 1rem; text-align: center; color: #f59e0b; border-bottom: 1px solid #3d3d40;">OpenAI Codex</th>
+                            <th style="padding: 1rem; text-align: center; color: #3b82f6; border-bottom: 1px solid #3d3d40;">Gemini CLI</th>
+                        </tr>
+                    </thead>
+                    <tbody style="color: #a1a1a6;">
+                        <tr>
+                            <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #2d2d30;">Full Features</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30; color: #22c55e;">Yes</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30; color: #f59e0b;">Degraded</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30; color: #f59e0b;">Degraded</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #2d2d30;">Task Tool (Subagents)</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30; color: #22c55e;">Yes</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30; color: #ef4444;">No</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30; color: #ef4444;">No</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #2d2d30;">Parallel Agents</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30; color: #22c55e;">10+</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30; color: #ef4444;">No</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30; color: #ef4444;">No</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #2d2d30;">MCP Integration</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30; color: #22c55e;">Yes</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30; color: #ef4444;">No</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30; color: #ef4444;">No</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #2d2d30;">Context Window</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30;">200K</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30;">128K</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #2d2d30; color: #22c55e;">1M</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.75rem 1rem;">Model Tiers</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center;">opus/sonnet/haiku</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center;">effort param</td>
+                            <td style="padding: 0.75rem 1rem; text-align: center;">thinking param</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="docs-grid">
+                <div class="doc-card" style="border-left: 3px solid #22c55e;">
+                    <h3>Claude Code (Default)</h3>
+                    <p>Full-featured provider with Task tool, parallel agents, and MCP support</p>
+                    <code style="display: block; margin-top: 0.5rem; font-size: 0.85rem; color: #a1a1a6;">claude --dangerously-skip-permissions</code>
+                </div>
+                <div class="doc-card" style="border-left: 3px solid #f59e0b;">
+                    <h3>OpenAI Codex CLI</h3>
+                    <p>Degraded mode with effort parameter. Sequential execution only.</p>
+                    <code style="display: block; margin-top: 0.5rem; font-size: 0.85rem; color: #a1a1a6;">--provider codex</code>
+                </div>
+                <div class="doc-card" style="border-left: 3px solid #3b82f6;">
+                    <h3>Google Gemini CLI</h3>
+                    <p>Degraded mode with thinking_level. Largest context window (1M).</p>
+                    <code style="display: block; margin-top: 0.5rem; font-size: 0.85rem; color: #a1a1a6;">--provider gemini</code>
+                </div>
+            </div>
+
+            <div class="quick-start" style="margin-top: 2rem;">
+                <h3>Provider Selection</h3>
+                <pre><code># Via CLI flag
+./autonomy/run.sh --provider codex ./prd.md
+loki start --provider gemini ./prd.md
+
+# Via environment variable
+export LOKI_PROVIDER=codex
+loki start ./prd.md</code></pre>
+            </div>
+
+            <div class="doc-card" data-doc="../skills/providers.md" style="margin-top: 2rem; cursor: pointer;">
+                <h3>Full Provider Documentation</h3>
+                <p>Complete provider comparison, configuration, and usage guide</p>
             </div>
         </section>
 

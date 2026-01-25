@@ -5,6 +5,51 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.0] - 2026-01-24
+
+### Added - Dynamic Tier Selection & Rate Limiting
+
+**Minor release: Enhanced provider support with dynamic tier selection, provider-agnostic rate limiting, and comprehensive test coverage.**
+
+#### Dynamic Tier Selection (autonomy/run.sh)
+- `get_rarv_tier()` - Maps RARV phases to abstract tiers (planning/development/fast)
+- `get_rarv_phase_name()` - Human-readable phase names for logging
+- `get_provider_tier_param()` - Converts tiers to provider-specific params
+- Automatic tier selection based on RARV cycle phase:
+  - REASON -> planning tier (opus/xhigh/high)
+  - ACT -> development tier (sonnet/high/medium)
+  - REFLECT -> development tier
+  - VERIFY -> fast tier (haiku/low/low)
+
+#### Provider-Agnostic Rate Limiting
+- `is_rate_limited()` - Detects 429, rate limit, quota exceeded, retry-after
+- `parse_claude_reset_time()` - Claude-specific "resets Xam/pm" parsing
+- `parse_retry_after()` - HTTP Retry-After header parsing
+- `calculate_rate_limit_backoff()` - Uses PROVIDER_RATE_LIMIT_RPM config
+- `detect_rate_limit()` - Fallback chain: provider-specific -> generic -> calculated
+
+#### Test Suites (180 tests total, all passing)
+- `test-provider-loader.sh` - 12 tests for provider loading
+- `test-provider-invocation.sh` - 24 tests for provider functions
+- `test-provider-degraded-mode.sh` - 19 tests for degraded mode flags
+- `test-cli-provider-flag.sh` - 39 tests for CLI provider selection
+- `test-rate-limiting.sh` - 27 tests for rate limit detection (NEW)
+
+#### Fixes from Peer Review
+- Fixed deprecated Gemini `-p` flag in run.sh (now uses positional prompt)
+- Added rm -rf safety check in worktree cleanup
+- Fixed loader.sh source command (was losing variables in subshell)
+- Added empty string validation in validate_provider_config
+- Updated docker-compose.yml version to v5.0.0
+
+#### Website Updates
+- Added announcement banner for multi-provider support
+- New "Providers" section with comparison table
+- Provider selection quick start guide
+- Updated version to v5.0.0
+
+---
+
 ## [5.0.0] - 2026-01-24
 
 ### Added - Multi-Provider Support
