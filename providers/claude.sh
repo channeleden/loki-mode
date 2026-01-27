@@ -44,13 +44,23 @@ PROVIDER_HAS_MCP=true
 PROVIDER_MAX_PARALLEL=10
 
 # Model Configuration (Abstract Tiers)
+# Default: Haiku disabled for quality. Use --allow-haiku or LOKI_ALLOW_HAIKU=true to enable.
 PROVIDER_MODEL_PLANNING="claude-opus-4-5-20251101"
-PROVIDER_MODEL_DEVELOPMENT="claude-sonnet-4-5-20251101"
-PROVIDER_MODEL_FAST="claude-haiku-4-5-20251101"
+PROVIDER_MODEL_DEVELOPMENT="claude-opus-4-5-20251101"  # Opus for dev (was sonnet)
+if [ "${LOKI_ALLOW_HAIKU:-false}" = "true" ]; then
+    PROVIDER_MODEL_FAST="claude-haiku-4-5-20251101"
+    PROVIDER_MODEL_DEVELOPMENT="claude-sonnet-4-5-20251101"  # Sonnet for dev when haiku enabled
+else
+    PROVIDER_MODEL_FAST="claude-sonnet-4-5-20251101"  # Sonnet for fast (no haiku)
+fi
 
 # Model Selection (for Task tool)
 PROVIDER_TASK_MODEL_PARAM="model"
-PROVIDER_TASK_MODEL_VALUES=("opus" "sonnet" "haiku")
+if [ "${LOKI_ALLOW_HAIKU:-false}" = "true" ]; then
+    PROVIDER_TASK_MODEL_VALUES=("opus" "sonnet" "haiku")
+else
+    PROVIDER_TASK_MODEL_VALUES=("opus" "sonnet")  # No haiku option
+fi
 
 # Context and Limits
 PROVIDER_CONTEXT_WINDOW=200000
@@ -87,14 +97,28 @@ provider_invoke() {
 }
 
 # Model tier to Task tool model parameter value
+# Respects LOKI_ALLOW_HAIKU flag for tier mapping
 provider_get_tier_param() {
     local tier="$1"
-    case "$tier" in
-        planning) echo "opus" ;;
-        development) echo "sonnet" ;;
-        fast) echo "haiku" ;;
-        *) echo "sonnet" ;;  # default to development tier
-    esac
+    if [ "${LOKI_ALLOW_HAIKU:-false}" = "true" ]; then
+        # With haiku: original tier mapping
+        case "$tier" in
+            planning) echo "opus" ;;
+            development) echo "sonnet" ;;
+            fast) echo "haiku" ;;
+            *) echo "sonnet" ;;
+        esac
+    else
+        # Without haiku (default): upgrade all tiers
+        # - Development + bug fixes -> opus
+        # - Testing + documentation -> sonnet
+        case "$tier" in
+            planning) echo "opus" ;;
+            development) echo "opus" ;;  # Upgraded from sonnet
+            fast) echo "sonnet" ;;       # Upgraded from haiku
+            *) echo "opus" ;;            # Default to opus
+        esac
+    fi
 }
 
 # Tier-aware invocation (Claude supports model selection via --model flag)

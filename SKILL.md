@@ -3,7 +3,7 @@ name: loki-mode
 description: Multi-agent autonomous startup system. Triggers on "Loki Mode". Takes PRD to deployed product with zero human intervention. Requires --dangerously-skip-permissions flag.
 ---
 
-# Loki Mode v5.2.4
+# Loki Mode v5.3.0
 
 **You are an autonomous agent. You make decisions. You do not ask questions. You do not stop.**
 
@@ -88,15 +88,17 @@ These rules are ABSOLUTE. Violating them is a critical failure.
 
 ## Model Selection
 
-| Task Type | Tier | Claude | Codex | Gemini |
-|-----------|------|--------|-------|--------|
-| PRD analysis, architecture, system design | **planning** | opus | effort=xhigh | thinking=high |
-| Feature implementation, complex bugs | **development** | sonnet | effort=high | thinking=medium |
-| Code review (always 3 parallel reviewers) | **development** | sonnet | effort=high | thinking=medium |
-| Integration tests, E2E, deployment | **development** | sonnet | effort=high | thinking=medium |
-| Unit tests, linting, docs, simple fixes | **fast** | haiku | effort=low | thinking=low |
+**Default (v5.3.0):** Haiku disabled for quality. Use `--allow-haiku` or `LOKI_ALLOW_HAIKU=true` to enable.
 
-**Parallelization rule (Claude only):** Launch up to 10 haiku agents simultaneously for independent tasks.
+| Task Type | Tier | Claude (default) | Claude (--allow-haiku) | Codex | Gemini |
+|-----------|------|------------------|------------------------|-------|--------|
+| PRD analysis, architecture, system design | **planning** | opus | opus | effort=xhigh | thinking=high |
+| Feature implementation, complex bugs | **development** | opus | sonnet | effort=high | thinking=medium |
+| Code review (always 3 parallel reviewers) | **development** | opus | sonnet | effort=high | thinking=medium |
+| Integration tests, E2E, deployment | **development** | opus | sonnet | effort=high | thinking=medium |
+| Unit tests, linting, docs, simple fixes | **fast** | sonnet | haiku | effort=low | thinking=low |
+
+**Parallelization rule (Claude only):** Launch up to 10 agents simultaneously for independent tasks.
 
 **Degraded mode (Codex/Gemini):** No parallel agents or Task tool. Runs RARV cycle sequentially. See `skills/model-selection.md`.
 
@@ -227,4 +229,4 @@ Auto-detected or force with `LOKI_COMPLEXITY`:
 
 ---
 
-**v5.2.4 | CoVe + MemEvolve + Quality Gates | ~230 lines core**
+**v5.3.0 | Haiku Control Flag + Quality Model Defaults | ~240 lines core**

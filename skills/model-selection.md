@@ -20,11 +20,33 @@ Loki Mode supports three AI providers. Claude has full features; Codex and Gemin
 
 ## Abstract Model Tiers
 
-| Tier | Purpose | Claude | Codex | Gemini |
-|------|---------|--------|-------|--------|
-| **planning** | PRD analysis, architecture, system design | opus | effort=xhigh | thinking=high |
-| **development** | Feature implementation, complex bugs, tests | sonnet | effort=high | thinking=medium |
-| **fast** | Unit tests, docs, linting, simple tasks | haiku | effort=low | thinking=low |
+**Default (v5.3.0):** Haiku disabled for quality. All tasks use Opus or Sonnet.
+
+| Tier | Purpose | Claude (default) | Claude (--allow-haiku) | Codex | Gemini |
+|------|---------|------------------|------------------------|-------|--------|
+| **planning** | PRD analysis, architecture, system design | opus | opus | effort=xhigh | thinking=high |
+| **development** | Feature implementation, complex bugs, tests | opus | sonnet | effort=high | thinking=medium |
+| **fast** | Unit tests, docs, linting, simple tasks | sonnet | haiku | effort=low | thinking=low |
+
+### Enabling Haiku
+
+To enable Haiku for fast-tier tasks (cost optimization at potential quality trade-off):
+
+```bash
+# Via environment variable
+LOKI_ALLOW_HAIKU=true ./autonomy/run.sh ./prd.md
+
+# Via CLI flag
+./autonomy/run.sh --allow-haiku ./prd.md
+
+# Via loki CLI wrapper
+loki start --allow-haiku ./prd.md
+```
+
+When Haiku is enabled:
+- Development tier uses Sonnet (instead of Opus)
+- Fast tier uses Haiku (instead of Sonnet)
+- Planning tier always uses Opus (unchanged)
 
 ---
 
@@ -36,7 +58,7 @@ Loki Mode supports three AI providers. Claude has full features; Codex and Gemin
 | **development** | Development, QA, Deployment | Feature implementation, complex bugs, integration/E2E tests, code review, deployment |
 | **fast** | All other operations (parallel for Claude) | Unit tests, docs, bash commands, linting, monitoring |
 
-**Claude-specific model names:** opus, sonnet, haiku
+**Claude-specific model names:** opus, sonnet, haiku (haiku requires --allow-haiku flag)
 **Codex effort levels:** xhigh, high, medium, low
 **Gemini thinking levels:** high, medium, low
 

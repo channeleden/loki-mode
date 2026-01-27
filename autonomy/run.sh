@@ -53,6 +53,12 @@
 #   LOKI_PERPETUAL_MODE        - Ignore ALL completion signals (default: false)
 #                                Set to 'true' for truly infinite operation
 #
+# Model Selection:
+#   LOKI_ALLOW_HAIKU           - Enable Haiku model for fast tier (default: false)
+#                                When false: Opus for dev/bugfix, Sonnet for tests/docs
+#                                When true:  Sonnet for dev, Haiku for tests/docs (original)
+#                                Use --allow-haiku flag or set to 'true'
+#
 # 2026 Research Enhancements:
 #   LOKI_PROMPT_REPETITION     - Enable prompt repetition for Haiku agents (default: true)
 #                                arXiv 2512.14982v1: Improves accuracy 4-5x on structured tasks
@@ -3867,6 +3873,11 @@ main() {
                 PARALLEL_MODE=true
                 shift
                 ;;
+            --allow-haiku)
+                export LOKI_ALLOW_HAIKU=true
+                log_info "Haiku model enabled for fast tier"
+                shift
+                ;;
             --provider)
                 if [[ -n "${2:-}" ]]; then
                     LOKI_PROVIDER="$2"
@@ -3909,6 +3920,7 @@ main() {
                 echo ""
                 echo "Options:"
                 echo "  --parallel           Enable git worktree-based parallel workflows"
+                echo "  --allow-haiku        Enable Haiku model for fast tier (default: disabled)"
                 echo "  --provider <name>    Provider: claude (default), codex, gemini"
                 echo "  --help, -h           Show this help message"
                 echo ""

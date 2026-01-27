@@ -5,6 +5,29 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.3.0] - 2026-01-27
+
+### Added - Haiku Control Flag
+
+**Minor release: Control Haiku model usage with opt-in flag. Default to higher quality models.**
+
+#### Model Selection Changes
+- **Default behavior**: Haiku disabled for improved quality
+  - Development tier: Opus (was Sonnet)
+  - Fast tier: Sonnet (was Haiku)
+  - Planning tier: Opus (unchanged)
+- **New flag**: `--allow-haiku` / `LOKI_ALLOW_HAIKU=true` to enable Haiku
+  - When enabled: Original tier mapping (Opus/Sonnet/Haiku)
+  - Useful for cost optimization when quality trade-off acceptable
+
+#### Files Changed
+- `providers/claude.sh`: Conditional model selection based on LOKI_ALLOW_HAIKU
+- `autonomy/run.sh`: Added `--allow-haiku` CLI flag
+- `skills/model-selection.md`: Updated tier documentation
+- `SKILL.md`: Updated model selection table
+
+---
+
 ## [5.2.4] - 2026-01-25
 
 ### Fixed - Homebrew Token Permissions
