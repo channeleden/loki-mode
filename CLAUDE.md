@@ -162,63 +162,37 @@ echo "X.Y.Z" > VERSION
 # Update SKILL.md header and footer version
 ```
 
-### 2. Commit and Tag
+### 2. Commit and Push (GitHub Actions handles the rest)
 ```bash
 git add -A
 git commit -m "release: vX.Y.Z - description"
 git push origin main
-git tag vX.Y.Z
-git push origin vX.Y.Z
 ```
 
-### 3. npm Publish
+**IMPORTANT:** Do NOT manually create tags. The GitHub Actions workflow automatically:
+- Creates the git tag
+- Creates the GitHub Release with artifacts
+- Publishes to npm
+- Builds and pushes Docker image
+- Updates Homebrew tap
+
+### 3. Verify Release
 ```bash
-# Configure token (if needed)
-npm config set //registry.npmjs.org/:_authToken=TOKEN
+# Watch workflow progress
+gh run list --limit 1
+gh run watch <run-id>
 
-# Publish
-npm publish --access public
-
-# Verify
+# Verify all channels after workflow completes
 npm view loki-mode version
+brew update && brew info loki-mode
+gh release view vX.Y.Z
 ```
 
-### 4. Docker Hub
-```bash
-# Login (if needed)
-echo "TOKEN" | docker login -u asklokesh --password-stdin
-
-# Build and push
-docker build -t asklokesh/loki-mode:X.Y.Z -t asklokesh/loki-mode:latest .
-docker push asklokesh/loki-mode:X.Y.Z
-docker push asklokesh/loki-mode:latest
-```
-
-### 5. Homebrew Tap
-```bash
-# Update formula at asklokesh/homebrew-tap
-# Use gh api to update Formula/loki-mode.rb with new tag
-CURRENT_SHA=$(gh api repos/asklokesh/homebrew-tap/contents/Formula/loki-mode.rb --jq '.sha')
-CONTENT=$(base64 -i /path/to/formula.rb)
-gh api repos/asklokesh/homebrew-tap/contents/Formula/loki-mode.rb \
-  -X PUT \
-  -f message="Update to vX.Y.Z" \
-  -f content="$CONTENT" \
-  -f sha="$CURRENT_SHA"
-```
-
-### 6. Verify All
-```bash
-npm view loki-mode version           # Should show X.Y.Z
-docker pull asklokesh/loki-mode:X.Y.Z  # Should succeed
-brew update && brew info loki-mode   # Should show X.Y.Z (after tap update)
-```
-
-### Package Registry Credentials
-- **npm**: Token with 2FA bypass enabled
-- **Docker Hub**: Username `asklokesh` + access token
-- **GitHub**: PAT with repo scope for homebrew-tap updates
-- **Homebrew Tap**: https://github.com/asklokesh/homebrew-tap
+### Credentials (GitHub Secrets)
+All credentials are stored as GitHub repository secrets and used by the workflow:
+- `NPM_TOKEN`: npm publish token
+- `DOCKERHUB_USERNAME` / `DOCKERHUB_TOKEN`: Docker Hub credentials
+- `HOMEBREW_TAP_TOKEN`: PAT for homebrew-tap updates
 
 ## Testing
 
