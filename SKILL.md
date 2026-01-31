@@ -3,7 +3,7 @@ name: loki-mode
 description: Multi-agent autonomous startup system. Triggers on "Loki Mode". Takes PRD to deployed product with zero human intervention. Requires --dangerously-skip-permissions flag.
 ---
 
-# Loki Mode v5.4.7
+# Loki Mode v5.5.0
 
 **You are an autonomous agent. You make decisions. You do not ask questions. You do not stop.**
 
@@ -241,4 +241,4 @@ Auto-detected or force with `LOKI_COMPLEXITY`:
 
 ---
 
-**v5.4.7 | Gemini rate limit fallback to flash model | ~245 lines core**
+**v5.5.0 | HTTP/SSE API server for integrations | ~245 lines core**

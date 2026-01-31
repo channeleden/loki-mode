@@ -79,7 +79,10 @@ show_help() {
     echo "  pause            Pause after current session"
     echo "  resume           Resume paused execution"
     echo "  status           Show current status"
+    echo "  logs             Show recent log output"
     echo "  dashboard        Open dashboard in browser"
+    echo "  serve            Start HTTP API server (alias for api start)"
+    echo "  api [cmd]        HTTP API server (start|stop|status)"
     echo "  import           Import GitHub issues as tasks"
     echo "  config [cmd]     Manage configuration (show|init|edit|path)"
     echo "  version          Show version"
@@ -505,6 +508,123 @@ cmd_version() {
     echo "Loki Mode v$(get_version)"
 }
 
+# Show recent logs
+cmd_logs() {
+    local lines="${1:-50}"
+    local log_file="$LOKI_DIR/logs/session.log"
+
+    if [ ! -f "$log_file" ]; then
+        echo -e "${YELLOW}No log file found at $log_file${NC}"
+        exit 0
+    fi
+
+    echo -e "${BOLD}Recent Logs (last $lines lines)${NC}"
+    echo ""
+    tail -n "$lines" "$log_file"
+}
+
+# API server management
+cmd_api() {
+    local subcommand="${1:-help}"
+    local port="${LOKI_API_PORT:-9898}"
+    local pid_file="$LOKI_DIR/api.pid"
+    local api_server="$SKILL_DIR/api/server.js"
+
+    case "$subcommand" in
+        start)
+            # Check if Node.js is available
+            if ! command -v node &> /dev/null; then
+                echo -e "${RED}Error: Node.js not found. Install with: brew install node${NC}"
+                exit 1
+            fi
+
+            # Check if already running
+            if [ -f "$pid_file" ]; then
+                local existing_pid=$(cat "$pid_file")
+                if kill -0 "$existing_pid" 2>/dev/null; then
+                    echo -e "${YELLOW}API server already running (PID: $existing_pid)${NC}"
+                    echo "URL: http://localhost:$port"
+                    exit 0
+                fi
+            fi
+
+            # Start server
+            mkdir -p "$LOKI_DIR"
+            nohup node "$api_server" --port "$port" > "$LOKI_DIR/logs/api.log" 2>&1 &
+            local new_pid=$!
+            echo "$new_pid" > "$pid_file"
+
+            echo -e "${GREEN}API server started${NC}"
+            echo "  PID:  $new_pid"
+            echo "  URL:  http://localhost:$port"
+            echo "  Logs: $LOKI_DIR/logs/api.log"
+            ;;
+
+        stop)
+            if [ -f "$pid_file" ]; then
+                local pid=$(cat "$pid_file")
+                if kill -0 "$pid" 2>/dev/null; then
+                    kill "$pid"
+                    rm -f "$pid_file"
+                    echo -e "${GREEN}API server stopped${NC}"
+                else
+                    rm -f "$pid_file"
+                    echo -e "${YELLOW}API server was not running${NC}"
+                fi
+            else
+                echo -e "${YELLOW}No API server PID file found${NC}"
+            fi
+            ;;
+
+        status)
+            if [ -f "$pid_file" ]; then
+                local pid=$(cat "$pid_file")
+                if kill -0 "$pid" 2>/dev/null; then
+                    echo -e "${GREEN}API server running${NC}"
+                    echo "  PID:  $pid"
+                    echo "  URL:  http://localhost:$port"
+
+                    # Try to fetch status
+                    if command -v curl &> /dev/null; then
+                        echo ""
+                        echo -e "${CYAN}Status:${NC}"
+                        curl -s "http://localhost:$port/status" 2>/dev/null | jq . 2>/dev/null || true
+                    fi
+                else
+                    echo -e "${YELLOW}API server not running (stale PID file)${NC}"
+                    rm -f "$pid_file"
+                fi
+            else
+                echo -e "${YELLOW}API server not running${NC}"
+            fi
+            ;;
+
+        *)
+            echo -e "${BOLD}Loki Mode API Server${NC}"
+            echo ""
+            echo "Usage: loki api <command>"
+            echo ""
+            echo "Commands:"
+            echo "  start    Start the HTTP API server"
+            echo "  stop     Stop the API server"
+            echo "  status   Check if API server is running"
+            echo ""
+            echo "Environment:"
+            echo "  LOKI_API_PORT  Port to listen on (default: 9898)"
+            echo ""
+            echo "Endpoints:"
+            echo "  GET  /health  - Health check"
+            echo "  GET  /status  - Session status"
+            echo "  GET  /events  - SSE stream"
+            echo "  GET  /logs    - Recent logs"
+            echo "  POST /start   - Start session"
+            echo "  POST /stop    - Stop session"
+            echo "  POST /pause   - Pause session"
+            echo "  POST /resume  - Resume session"
+            ;;
+    esac
+}
+
 # Main command dispatcher
 main() {
     if [ $# -eq 0 ]; then
@@ -533,6 +653,15 @@ main() {
             ;;
         dashboard)
             cmd_dashboard
+            ;;
+        logs)
+            cmd_logs "$@"
+            ;;
+        serve)
+            cmd_api start "$@"
+            ;;
+        api)
+            cmd_api "$@"
             ;;
         import)
             cmd_import
