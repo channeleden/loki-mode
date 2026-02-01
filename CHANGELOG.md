@@ -5,6 +5,50 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.8.2] - 2026-02-01
+
+### Fixed - API Status Bug
+
+**Patch release: Fix misleading API status when session not running.**
+
+#### Bug Fixes
+- **API status fix**: Return 'idle' instead of stale 'failed'/'completed' when no process is running
+- **Added lastSessionResult field**: Debug info showing what the last session's exit status was
+- **Version sync**: Fixed root package.json version sync with VS Code extension
+
+This fixes the issue where `loki api status` would show `"status": "failed"` even when the API server was healthy but no session was active.
+
+---
+
+## [5.8.1] - 2026-02-01
+
+### Added - Separate Chat Sidebar
+
+**Patch release: Chat sidebar improvements and prompt injection handling.**
+
+#### VS Code Extension
+- **Separate chat sidebar**: Chat is now in its own activity bar container (like Copilot/Claude Code)
+- **Chat icon**: New chat bubble icon in the activity bar
+- **Keyboard shortcut**: `Cmd+Shift+K` (Mac) / `Ctrl+Shift+K` (Windows/Linux) to open chat
+
+#### Prompt Injection Handling
+- **Helpful warning UI**: When prompt injection is disabled, shows clear instructions
+- **Enable command**: Displays `loki start --allow-injection` to users
+- **Security note**: Includes warning about only enabling in trusted environments
+
+#### Refactoring
+- Consolidated duplicate polling mechanisms using subscription pattern
+- Extracted shared `getNonce()` utility to `utils/webview.ts`
+- Added runtime type validation in `api/validators.ts`
+- Centralized port constant (9898) in `utils/constants.ts`
+
+#### TypeScript Fixes
+- Added type annotations for `response.json()` calls
+- Fixed `error.cause` type issue in API client
+- Added `mapTaskStatus()` for proper status mapping
+
+---
+
 ## [5.8.0] - 2026-02-01
 
 ### Added - VS Code Extension Chat and Logs
