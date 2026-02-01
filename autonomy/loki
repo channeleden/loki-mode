@@ -28,11 +28,35 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+# Resolve the script's real path (handles symlinks)
+resolve_script_path() {
+    local script="$1"
+    # Use realpath if available, otherwise fall back to readlink
+    if command -v realpath &> /dev/null; then
+        realpath "$script" 2>/dev/null || echo "$script"
+    elif command -v readlink &> /dev/null; then
+        # macOS readlink doesn't have -f, use a loop
+        while [ -L "$script" ]; do
+            local dir=$(dirname "$script")
+            script=$(readlink "$script")
+            [[ "$script" != /* ]] && script="$dir/$script"
+        done
+        echo "$script"
+    else
+        echo "$script"
+    fi
+}
+
 # Find the skill installation
 find_skill_dir() {
+    local script_path
+    script_path=$(resolve_script_path "$0")
+    local script_dir
+    script_dir=$(dirname "$script_path")
+
     local dirs=(
         "$HOME/.claude/skills/loki-mode"
-        "$(dirname "$0")/.."
+        "$script_dir/.."
         "."
     )
 
@@ -47,10 +71,12 @@ find_skill_dir() {
     return 1
 }
 
-SKILL_DIR=$(find_skill_dir)
+# Use || true to prevent set -e from exiting before error message
+SKILL_DIR=$(find_skill_dir) || true
 if [ -z "$SKILL_DIR" ]; then
     echo -e "${RED}Error: Could not find Loki Mode installation${NC}"
     echo "Expected at: ~/.claude/skills/loki-mode"
+    echo "Or install via: npm install -g loki-mode"
     exit 1
 fi
 
