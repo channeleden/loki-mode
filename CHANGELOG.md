@@ -5,6 +5,23 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.8.3] - 2026-02-01
+
+### Fixed - Bash Compatibility
+
+**Patch release: Fix parallel mode bash version compatibility on macOS.**
+
+#### Bash Compatibility
+- **Parallel mode fallback**: Gracefully fall back to sequential mode when bash < 4.0
+- **Proper version check**: Check bash version before entering parallel mode, not during execution
+- **Unbound variable fix**: Prevent "testing: unbound variable" errors in bash 3.x
+- **macOS support**: Users on macOS with default bash 3.2 now get automatic sequential mode fallback
+
+#### New Release Tools
+- **scripts/release.sh**: Automated release script for version bumping and publishing
+- **scripts/update-changelog.sh**: Auto-generate changelog from conventional commits
+
+---
 ## [5.8.2] - 2026-02-01
 
 ### Fixed - API Status Bug

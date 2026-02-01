@@ -1627,8 +1627,13 @@ cleanup_parallel_streams() {
 run_parallel_orchestrator() {
     log_header "Parallel Orchestrator Started"
 
-    # Initialize streams
-    init_parallel_streams
+    # Initialize streams - exit if bash version is too old
+    if ! init_parallel_streams; then
+        log_error "Failed to initialize parallel streams"
+        log_error "Falling back to sequential mode"
+        PARALLEL_MODE=false
+        return 1
+    fi
 
     # Spawn testing session
     if [ "$PARALLEL_TESTING" = "true" ] && [ -n "${WORKTREE_PATHS[testing]:-}" ]; then
@@ -4466,6 +4471,14 @@ main() {
 
     # Run in appropriate mode
     local result=0
+    if [ "$PARALLEL_MODE" = "true" ]; then
+        # Check bash version before attempting parallel mode
+        if ! check_parallel_support; then
+            log_warn "Parallel mode unavailable, falling back to sequential mode"
+            PARALLEL_MODE=false
+        fi
+    fi
+
     if [ "$PARALLEL_MODE" = "true" ]; then
         # Parallel mode: orchestrate multiple worktrees
         log_header "Running in Parallel Mode"
