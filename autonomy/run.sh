@@ -3071,15 +3071,17 @@ extract_learnings_from_session() {
 
     log_info "Extracting learnings from session..."
 
-    # Parse CONTINUITY.md for Mistakes & Learnings section
-    python3 << EXTRACT_SCRIPT
+    # Parse CONTINUITY.md for all learning types
+    python3 << 'EXTRACT_SCRIPT'
 import re
 import json
 import os
+import hashlib
 from datetime import datetime, timezone
 
 continuity_file = ".loki/CONTINUITY.md"
 learnings_dir = os.path.expanduser("~/.loki/learnings")
+os.makedirs(learnings_dir, exist_ok=True)
 
 if not os.path.exists(continuity_file):
     exit(0)
@@ -3087,22 +3089,95 @@ if not os.path.exists(continuity_file):
 with open(continuity_file, 'r') as f:
     content = f.read()
 
-# Find Mistakes & Learnings section
+project = os.path.basename(os.getcwd())
+timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+def get_existing_hashes(filepath):
+    """Get hashes of existing entries to avoid duplicates"""
+    hashes = set()
+    if os.path.exists(filepath):
+        with open(filepath, 'r') as f:
+            for line in f:
+                try:
+                    entry = json.loads(line)
+                    if 'description' in entry:
+                        h = hashlib.md5(entry['description'].encode()).hexdigest()
+                        hashes.add(h)
+                except:
+                    continue
+    return hashes
+
+def save_entries(filepath, entries, category):
+    """Save entries avoiding duplicates"""
+    existing = get_existing_hashes(filepath)
+    saved = 0
+    with open(filepath, 'a') as f:
+        for desc in entries:
+            h = hashlib.md5(desc.encode()).hexdigest()
+            if h not in existing:
+                entry = {
+                    "timestamp": timestamp,
+                    "project": project,
+                    "category": category,
+                    "description": desc.strip()
+                }
+                f.write(json.dumps(entry) + "\n")
+                existing.add(h)
+                saved += 1
+    return saved
+
+def extract_bullets(text):
+    """Extract bullet points from text"""
+    return [b.strip() for b in re.findall(r'[-*]\s+(.+)', text) if b.strip()]
+
+# === Extract Mistakes & Learnings ===
 mistakes_match = re.search(r'## Mistakes & Learnings\n(.*?)(?=\n## |\Z)', content, re.DOTALL)
 if mistakes_match:
-    mistakes_text = mistakes_match.group(1)
-    # Extract bullet points
-    bullets = re.findall(r'[-*]\s+(.+)', mistakes_text)
-    for bullet in bullets:
-        entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            "project": os.path.basename(os.getcwd()),
-            "category": "session",
-            "description": bullet.strip()
-        }
-        with open(f"{learnings_dir}/mistakes.jsonl", 'a') as f:
-            f.write(json.dumps(entry) + "\n")
-        print(f"Extracted: {bullet[:50]}...")
+    bullets = extract_bullets(mistakes_match.group(1))
+    saved = save_entries(f"{learnings_dir}/mistakes.jsonl", bullets, "session")
+    if saved > 0:
+        print(f"Extracted {saved} new mistakes")
+
+# === Extract Patterns (from various sections) ===
+pattern_sections = [
+    r'## Patterns Used\n(.*?)(?=\n## |\Z)',
+    r'## Solutions Applied\n(.*?)(?=\n## |\Z)',
+    r'## Key Approaches\n(.*?)(?=\n## |\Z)',
+    r'## What Worked\n(.*?)(?=\n## |\Z)',
+]
+patterns = []
+for pattern in pattern_sections:
+    match = re.search(pattern, content, re.DOTALL)
+    if match:
+        patterns.extend(extract_bullets(match.group(1)))
+
+# Also extract lines starting with "Pattern:" or "Solution:"
+patterns.extend(re.findall(r'(?:Pattern|Solution|Approach):\s*(.+)', content))
+
+if patterns:
+    saved = save_entries(f"{learnings_dir}/patterns.jsonl", patterns, "session")
+    if saved > 0:
+        print(f"Extracted {saved} new patterns")
+
+# === Extract Successes (completed tasks) ===
+success_sections = [
+    r'## Completed Tasks\n(.*?)(?=\n## |\Z)',
+    r'## Achievements\n(.*?)(?=\n## |\Z)',
+    r'## Done\n(.*?)(?=\n## |\Z)',
+]
+successes = []
+for pattern in success_sections:
+    match = re.search(pattern, content, re.DOTALL)
+    if match:
+        successes.extend(extract_bullets(match.group(1)))
+
+# Also extract [x] completed checkboxes
+successes.extend(re.findall(r'\[x\]\s+(.+)', content, re.IGNORECASE))
+
+if successes:
+    saved = save_entries(f"{learnings_dir}/successes.jsonl", successes, "session")
+    if saved > 0:
+        print(f"Extracted {saved} new successes")
 
 print("Learning extraction complete")
 EXTRACT_SCRIPT

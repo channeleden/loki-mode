@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Loki Mode HTTP API Server (v1.0.0)
+ * Loki Mode HTTP API Server (v1.1.0)
  * Zero npm dependencies - uses only Node.js built-ins
  *
  * Usage:
@@ -8,14 +8,19 @@
  *   loki api start
  *
  * Endpoints:
- *   GET  /health    - Health check
- *   GET  /status    - Session status
- *   GET  /events    - SSE stream
- *   GET  /logs      - Recent log lines
- *   POST /start     - Start session
- *   POST /stop      - Stop session
- *   POST /pause     - Pause session
- *   POST /resume    - Resume session
+ *   GET  /health              - Health check
+ *   GET  /status              - Session status
+ *   GET  /events              - SSE stream
+ *   GET  /logs                - Recent log lines
+ *   POST /start               - Start session
+ *   POST /stop                - Stop session
+ *   POST /pause               - Pause session
+ *   POST /resume              - Resume session
+ *   GET  /memory              - Cross-project learnings summary
+ *   GET  /memory/:type        - Get learnings (patterns|mistakes|successes)
+ *   GET  /memory/search?q=    - Search learnings
+ *   GET  /memory/stats        - Statistics by project/category
+ *   DELETE /memory/:type      - Clear specific learning type
  */
 
 const http = require('http');
@@ -334,6 +339,115 @@ async function handleRequest(req, res) {
         return json({ resumed: true });
     }
 
+    // === Memory/Learnings endpoints ===
+    const LEARNINGS_DIR = path.join(process.env.HOME || '', '.loki', 'learnings');
+
+    if (method === 'GET' && pathname === '/memory') {
+        // List summary of all learnings
+        const result = { patterns: 0, mistakes: 0, successes: 0, location: LEARNINGS_DIR };
+
+        for (const type of ['patterns', 'mistakes', 'successes']) {
+            const filepath = path.join(LEARNINGS_DIR, `${type}.jsonl`);
+            if (fs.existsSync(filepath)) {
+                const content = fs.readFileSync(filepath, 'utf8');
+                const count = (content.match(/"description"/g) || []).length;
+                result[type] = count;
+            }
+        }
+        return json(result);
+    }
+
+    if (method === 'GET' && pathname.startsWith('/memory/search')) {
+        const query = url.searchParams.get('q') || '';
+        if (!query) {
+            return json({ error: 'Missing query parameter ?q=' }, 400);
+        }
+
+        const results = [];
+        const queryLower = query.toLowerCase();
+
+        for (const type of ['patterns', 'mistakes', 'successes']) {
+            const filepath = path.join(LEARNINGS_DIR, `${type}.jsonl`);
+            if (!fs.existsSync(filepath)) continue;
+
+            const lines = fs.readFileSync(filepath, 'utf8').split('\n');
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                    const entry = JSON.parse(line);
+                    if (entry.description && entry.description.toLowerCase().includes(queryLower)) {
+                        results.push({ type, ...entry });
+                    }
+                } catch {}
+            }
+        }
+        return json({ query, results, count: results.length });
+    }
+
+    if (method === 'GET' && pathname.match(/^\/memory\/(patterns|mistakes|successes)$/)) {
+        const type = pathname.split('/')[2];
+        const filepath = path.join(LEARNINGS_DIR, `${type}.jsonl`);
+        const limit = parseInt(url.searchParams.get('limit')) || 50;
+        const offset = parseInt(url.searchParams.get('offset')) || 0;
+
+        if (!fs.existsSync(filepath)) {
+            return json({ type, entries: [], total: 0 });
+        }
+
+        const entries = [];
+        const lines = fs.readFileSync(filepath, 'utf8').split('\n');
+        for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+                const entry = JSON.parse(line);
+                if (entry.description) {
+                    entries.push(entry);
+                }
+            } catch {}
+        }
+
+        const total = entries.length;
+        const paginated = entries.slice(offset, offset + limit);
+
+        return json({ type, entries: paginated, total, limit, offset });
+    }
+
+    if (method === 'GET' && pathname === '/memory/stats') {
+        const stats = { byCategory: {}, byProject: {} };
+
+        for (const type of ['patterns', 'mistakes', 'successes']) {
+            const filepath = path.join(LEARNINGS_DIR, `${type}.jsonl`);
+            if (!fs.existsSync(filepath)) continue;
+
+            const lines = fs.readFileSync(filepath, 'utf8').split('\n');
+            let count = 0;
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                    const entry = JSON.parse(line);
+                    if (entry.description) {
+                        count++;
+                        const proj = entry.project || 'unknown';
+                        stats.byProject[proj] = (stats.byProject[proj] || 0) + 1;
+                    }
+                } catch {}
+            }
+            stats.byCategory[type] = count;
+        }
+        return json(stats);
+    }
+
+    if (method === 'DELETE' && pathname.match(/^\/memory\/(patterns|mistakes|successes)$/)) {
+        const type = pathname.split('/')[2];
+        const filepath = path.join(LEARNINGS_DIR, `${type}.jsonl`);
+
+        fs.mkdirSync(LEARNINGS_DIR, { recursive: true });
+        const header = JSON.stringify({ version: '1.0', created: new Date().toISOString() });
+        fs.writeFileSync(filepath, header + '\n');
+
+        return json({ cleared: type });
+    }
+
     // 404 for unknown routes
     json({ error: 'not found', path: pathname }, 404);
 }
@@ -346,14 +460,18 @@ server.listen(PORT, () => {
     console.log(`Listening on http://localhost:${PORT}`);
     console.log('');
     console.log('Endpoints:');
-    console.log('  GET  /health  - Health check');
-    console.log('  GET  /status  - Session status');
-    console.log('  GET  /events  - SSE stream (real-time updates)');
-    console.log('  GET  /logs    - Recent log lines (?lines=50)');
-    console.log('  POST /start   - Start session');
-    console.log('  POST /stop    - Stop session');
-    console.log('  POST /pause   - Pause after current task');
-    console.log('  POST /resume  - Resume paused session');
+    console.log('  GET  /health           - Health check');
+    console.log('  GET  /status           - Session status');
+    console.log('  GET  /events           - SSE stream (real-time updates)');
+    console.log('  GET  /logs             - Recent log lines (?lines=50)');
+    console.log('  POST /start            - Start session');
+    console.log('  POST /stop             - Stop session');
+    console.log('  POST /pause            - Pause after current task');
+    console.log('  POST /resume           - Resume paused session');
+    console.log('  GET  /memory           - Cross-project learnings summary');
+    console.log('  GET  /memory/:type     - Get learnings by type');
+    console.log('  GET  /memory/search?q= - Search learnings');
+    console.log('  GET  /memory/stats     - Statistics');
     console.log('');
     console.log(`LOKI_DIR: ${LOKI_DIR}`);
     console.log(`SKILL_DIR: ${SKILL_DIR}`);

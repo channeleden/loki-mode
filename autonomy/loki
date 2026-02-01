@@ -137,6 +137,8 @@ show_help() {
     echo "  sandbox [cmd]    Docker sandbox (start|stop|status|logs|shell|build)"
     echo "  import           Import GitHub issues as tasks"
     echo "  config [cmd]     Manage configuration (show|init|edit|path)"
+    echo "  memory [cmd]     Cross-project learnings (list|show|search|stats)"
+    echo "  reset [target]   Reset session state (all|retries|failed)"
     echo "  version          Show version"
     echo "  help             Show this help"
     echo ""
@@ -1127,6 +1129,9 @@ main() {
         reset)
             cmd_reset "$@"
             ;;
+        memory)
+            cmd_memory "$@"
+            ;;
         version|--version|-v)
             cmd_version
             ;;
@@ -1205,6 +1210,259 @@ with open('$LOKI_DIR/autonomy-state.json', 'w') as f:
         *)
             echo -e "${RED}Unknown reset target: $subcommand${NC}"
             echo "Valid targets: all, retries, failed"
+            exit 1
+            ;;
+    esac
+}
+
+# Cross-project memory/learnings management
+cmd_memory() {
+    local subcommand="${1:-list}"
+    local learnings_dir="${HOME}/.loki/learnings"
+
+    # Ensure directory exists
+    mkdir -p "$learnings_dir"
+
+    case "$subcommand" in
+        list|ls)
+            echo -e "${BOLD}Cross-Project Learnings${NC}"
+            echo ""
+
+            local patterns=0 mistakes=0 successes=0
+            [ -f "$learnings_dir/patterns.jsonl" ] && patterns=$(grep -c '"description"' "$learnings_dir/patterns.jsonl" 2>/dev/null) || patterns=0
+            [ -f "$learnings_dir/mistakes.jsonl" ] && mistakes=$(grep -c '"description"' "$learnings_dir/mistakes.jsonl" 2>/dev/null) || mistakes=0
+            [ -f "$learnings_dir/successes.jsonl" ] && successes=$(grep -c '"description"' "$learnings_dir/successes.jsonl" 2>/dev/null) || successes=0
+
+            echo -e "  Patterns:  ${GREEN}$patterns${NC}"
+            echo -e "  Mistakes:  ${YELLOW}$mistakes${NC}"
+            echo -e "  Successes: ${CYAN}$successes${NC}"
+            echo ""
+            echo "Location: $learnings_dir"
+            echo ""
+            echo "Use 'loki memory show <type>' to view entries"
+            ;;
+
+        show)
+            local type="${2:-all}"
+
+            case "$type" in
+                patterns|pattern)
+                    echo -e "${BOLD}Patterns${NC}"
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    if [ -f "$learnings_dir/patterns.jsonl" ]; then
+                        python3 -c "
+import json
+with open('$learnings_dir/patterns.jsonl', 'r') as f:
+    for line in f:
+        try:
+            e = json.loads(line)
+            if 'description' in e:
+                print(f\"[{e.get('project', 'unknown')}] {e['description'][:100]}\")
+        except: pass
+" 2>/dev/null || echo "No patterns found"
+                    fi
+                    ;;
+
+                mistakes|mistake)
+                    echo -e "${BOLD}Mistakes${NC}"
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    if [ -f "$learnings_dir/mistakes.jsonl" ]; then
+                        python3 -c "
+import json
+with open('$learnings_dir/mistakes.jsonl', 'r') as f:
+    for line in f:
+        try:
+            e = json.loads(line)
+            if 'description' in e:
+                print(f\"[{e.get('project', 'unknown')}] {e['description'][:100]}\")
+        except: pass
+" 2>/dev/null | tail -20 || echo "No mistakes found"
+                    fi
+                    ;;
+
+                successes|success)
+                    echo -e "${BOLD}Successes${NC}"
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    if [ -f "$learnings_dir/successes.jsonl" ]; then
+                        python3 -c "
+import json
+with open('$learnings_dir/successes.jsonl', 'r') as f:
+    for line in f:
+        try:
+            e = json.loads(line)
+            if 'description' in e:
+                print(f\"[{e.get('project', 'unknown')}] {e['description'][:100]}\")
+        except: pass
+" 2>/dev/null | tail -20 || echo "No successes found"
+                    fi
+                    ;;
+
+                all|*)
+                    cmd_memory show patterns
+                    echo ""
+                    cmd_memory show mistakes
+                    echo ""
+                    cmd_memory show successes
+                    ;;
+            esac
+            ;;
+
+        search)
+            local query="$2"
+            if [ -z "$query" ]; then
+                echo -e "${RED}Usage: loki memory search <query>${NC}"
+                exit 1
+            fi
+
+            echo -e "${BOLD}Search Results for: $query${NC}"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+            python3 -c "
+import json
+import os
+
+learnings_dir = '$learnings_dir'
+query = '$query'.lower()
+
+for filename in ['patterns.jsonl', 'mistakes.jsonl', 'successes.jsonl']:
+    filepath = os.path.join(learnings_dir, filename)
+    if not os.path.exists(filepath):
+        continue
+
+    category = filename.replace('.jsonl', '')
+    with open(filepath, 'r') as f:
+        for line in f:
+            try:
+                e = json.loads(line)
+                desc = e.get('description', '').lower()
+                if query in desc:
+                    print(f\"[{category}] [{e.get('project', 'unknown')}] {e['description'][:80]}...\")
+            except: pass
+" 2>/dev/null
+            ;;
+
+        clear)
+            local type="${2:-}"
+
+            if [ -z "$type" ]; then
+                echo -e "${YELLOW}This will delete ALL cross-project learnings.${NC}"
+                echo -n "Are you sure? (yes/no): "
+                read -r confirm
+                if [ "$confirm" = "yes" ]; then
+                    rm -rf "$learnings_dir"
+                    mkdir -p "$learnings_dir"
+                    echo '{"version":"1.0","created":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' > "$learnings_dir/patterns.jsonl"
+                    echo '{"version":"1.0","created":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' > "$learnings_dir/mistakes.jsonl"
+                    echo '{"version":"1.0","created":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' > "$learnings_dir/successes.jsonl"
+                    echo -e "${GREEN}All learnings cleared${NC}"
+                else
+                    echo "Cancelled"
+                fi
+            else
+                case "$type" in
+                    patterns|mistakes|successes)
+                        echo '{"version":"1.0","created":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' > "$learnings_dir/${type}.jsonl"
+                        echo -e "${GREEN}Cleared $type${NC}"
+                        ;;
+                    *)
+                        echo -e "${RED}Unknown type: $type${NC}"
+                        echo "Valid types: patterns, mistakes, successes"
+                        exit 1
+                        ;;
+                esac
+            fi
+            ;;
+
+        export)
+            local output="${2:-learnings-export.json}"
+
+            python3 -c "
+import json
+import os
+
+learnings_dir = '$learnings_dir'
+result = {'patterns': [], 'mistakes': [], 'successes': []}
+
+for category in ['patterns', 'mistakes', 'successes']:
+    filepath = os.path.join(learnings_dir, f'{category}.jsonl')
+    if os.path.exists(filepath):
+        with open(filepath, 'r') as f:
+            for line in f:
+                try:
+                    e = json.loads(line)
+                    if 'description' in e:
+                        result[category].append(e)
+                except: pass
+
+with open('$output', 'w') as f:
+    json.dump(result, f, indent=2)
+print(f'Exported to $output')
+" 2>/dev/null
+            ;;
+
+        stats)
+            echo -e "${BOLD}Learning Statistics${NC}"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+            python3 -c "
+import json
+import os
+from collections import Counter
+
+learnings_dir = '$learnings_dir'
+projects = Counter()
+categories = Counter()
+
+for filename in ['patterns.jsonl', 'mistakes.jsonl', 'successes.jsonl']:
+    filepath = os.path.join(learnings_dir, filename)
+    if not os.path.exists(filepath):
+        continue
+
+    category = filename.replace('.jsonl', '')
+    with open(filepath, 'r') as f:
+        for line in f:
+            try:
+                e = json.loads(line)
+                if 'description' in e:
+                    projects[e.get('project', 'unknown')] += 1
+                    categories[category] += 1
+            except: pass
+
+print('By Category:')
+for cat, count in categories.most_common():
+    print(f'  {cat}: {count}')
+
+print()
+print('By Project:')
+for proj, count in projects.most_common(10):
+    print(f'  {proj}: {count}')
+" 2>/dev/null
+            ;;
+
+        --help|-h|help)
+            echo -e "${BOLD}loki memory${NC} - Manage cross-project learnings"
+            echo ""
+            echo "Usage: loki memory <command> [args]"
+            echo ""
+            echo "Commands:"
+            echo "  list              Show summary of all learnings"
+            echo "  show [type]       Show entries (patterns|mistakes|successes|all)"
+            echo "  search <query>    Search across all learnings"
+            echo "  stats             Show statistics by project and category"
+            echo "  export [file]     Export to JSON file"
+            echo "  clear [type]      Clear learnings (all or specific type)"
+            echo ""
+            echo "Examples:"
+            echo "  loki memory list"
+            echo "  loki memory show mistakes"
+            echo "  loki memory search 'rate limit'"
+            echo "  loki memory stats"
+            echo "  loki memory export backup.json"
+            ;;
+
+        *)
+            echo -e "${RED}Unknown memory command: $subcommand${NC}"
+            echo "Run 'loki memory help' for usage."
             exit 1
             ;;
     esac

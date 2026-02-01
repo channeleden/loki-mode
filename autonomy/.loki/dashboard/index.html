@@ -1648,6 +1648,46 @@
                     </div>
                 </div>
 
+                <!-- Cross-Project Learnings -->
+                <div class="system-card">
+                    <div class="system-card-header">
+                        <span class="system-card-title">
+                            <svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                            Cross-Project Learnings
+                        </span>
+                        <span class="system-card-status" id="learnings-status">--</span>
+                    </div>
+                    <div class="memory-bars">
+                        <div class="memory-bar">
+                            <div class="memory-bar-header">
+                                <span class="memory-bar-label">Patterns</span>
+                                <span class="memory-bar-value" id="learnings-patterns">0</span>
+                            </div>
+                            <div class="memory-bar-track">
+                                <div class="memory-bar-fill semantic" id="learnings-patterns-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="memory-bar">
+                            <div class="memory-bar-header">
+                                <span class="memory-bar-label">Mistakes</span>
+                                <span class="memory-bar-value" id="learnings-mistakes">0</span>
+                            </div>
+                            <div class="memory-bar-track">
+                                <div class="memory-bar-fill episodic" id="learnings-mistakes-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="memory-bar">
+                            <div class="memory-bar-header">
+                                <span class="memory-bar-label">Successes</span>
+                                <span class="memory-bar-value" id="learnings-successes">0</span>
+                            </div>
+                            <div class="memory-bar-track">
+                                <div class="memory-bar-fill procedural" id="learnings-successes-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Quality Gates -->
                 <div class="system-card">
                     <div class="system-card-header">
@@ -1806,7 +1846,8 @@
         const CONFIG = {
             POLL_INTERVAL: 2000,       // Poll every 2 seconds
             STATE_FILE: '../dashboard-state.json',
-            LOCAL_STORAGE_KEY: 'loki-dashboard-local'
+            LOCAL_STORAGE_KEY: 'loki-dashboard-local',
+            API_URL: 'http://localhost:9898'  // Loki API server for cross-project learnings
         };
 
         // ============================================
@@ -1890,9 +1931,11 @@
         function startPolling() {
             fetchServerState();
             fetchTerminalLogs();
+            fetchLearnings();
             pollInterval = setInterval(() => {
                 fetchServerState();
                 fetchTerminalLogs();
+                fetchLearnings();
             }, CONFIG.POLL_INTERVAL);
         }
 
@@ -2415,6 +2458,64 @@
                 }
             } catch (error) {
                 // Silently fail - log file may not exist yet
+            }
+        }
+
+        // ============================================
+        // Cross-Project Learnings (API)
+        // ============================================
+        async function fetchLearnings() {
+            try {
+                const response = await fetch(CONFIG.API_URL + '/memory');
+                if (!response.ok) {
+                    updateLearningsUI(null);
+                    return;
+                }
+                const data = await response.json();
+                updateLearningsUI(data);
+            } catch (error) {
+                // API server may not be running
+                updateLearningsUI(null);
+            }
+        }
+
+        function updateLearningsUI(data) {
+            const statusEl = document.getElementById('learnings-status');
+            const patternsEl = document.getElementById('learnings-patterns');
+            const mistakesEl = document.getElementById('learnings-mistakes');
+            const successesEl = document.getElementById('learnings-successes');
+            const patternsBar = document.getElementById('learnings-patterns-bar');
+            const mistakesBar = document.getElementById('learnings-mistakes-bar');
+            const successesBar = document.getElementById('learnings-successes-bar');
+
+            if (!data) {
+                statusEl.textContent = 'Offline';
+                statusEl.className = 'system-card-status warning';
+                return;
+            }
+
+            const patterns = data.patterns || 0;
+            const mistakes = data.mistakes || 0;
+            const successes = data.successes || 0;
+            const total = patterns + mistakes + successes;
+
+            patternsEl.textContent = patterns;
+            mistakesEl.textContent = mistakes;
+            successesEl.textContent = successes;
+
+            // Update progress bars (max 100 for percentage calc)
+            const maxLearnings = Math.max(100, total);
+            patternsBar.style.width = Math.min((patterns / maxLearnings) * 100, 100) + '%';
+            mistakesBar.style.width = Math.min((mistakes / maxLearnings) * 100, 100) + '%';
+            successesBar.style.width = Math.min((successes / maxLearnings) * 100, 100) + '%';
+
+            // Update status
+            if (total === 0) {
+                statusEl.textContent = 'No data';
+                statusEl.className = 'system-card-status';
+            } else {
+                statusEl.textContent = total + ' total';
+                statusEl.className = 'system-card-status healthy';
             }
         }
 

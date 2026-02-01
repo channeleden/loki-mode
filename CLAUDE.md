@@ -135,10 +135,10 @@ Prompt: "Review the following claims for factual accuracy.
 
 ### Version Numbering
 Follows semantic versioning: MAJOR.MINOR.PATCH
-- Current: v5.4.0
+- Current: v5.9.0
 - MAJOR bump for architecture changes (v5.0.0 = multi-provider support)
-- MINOR bump for new features (v5.4.0 = JSON PRD support)
-- PATCH bump for fixes (v5.2.4 = Homebrew token fix)
+- MINOR bump for new features (v5.9.0 = Cross-Project Learning)
+- PATCH bump for fixes (v5.8.7 = session retry fix)
 
 ### Code Style
 - **CRITICAL: NEVER use emojis** - Not in code, documentation, commit messages, README, or any output

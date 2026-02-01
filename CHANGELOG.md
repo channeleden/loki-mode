@@ -5,6 +5,49 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.9.0] - 2026-02-01
+
+### Added - Cross-Project Learning
+
+**New feature: Learn from past sessions across all your projects.**
+
+Cross-project learnings automatically extract patterns, mistakes, and successes from every Loki Mode session and make them available for future sessions.
+
+#### New CLI Commands
+- `loki memory list` - View summary of all cross-project learnings
+- `loki memory show <type>` - View patterns, mistakes, or successes
+- `loki memory search <query>` - Search across all learnings
+- `loki memory stats` - View statistics by project and category
+- `loki memory export <file>` - Export learnings to JSON
+- `loki memory clear <type>` - Clear specific learning type
+
+#### New API Endpoints
+- `GET /memory` - Summary of all learnings (patterns, mistakes, successes counts)
+- `GET /memory/:type` - Get learnings by type with pagination
+- `GET /memory/search?q=` - Search across all learnings
+- `GET /memory/stats` - Statistics by project and category
+- `DELETE /memory/:type` - Clear specific learning type
+
+#### Dashboard Integration
+- New "Cross-Project Learnings" card in the dashboard
+- Real-time updates showing patterns, mistakes, and successes counts
+- Visual progress bars for each learning type
+
+#### Storage
+- Learnings stored in `~/.loki/learnings/` (global, not project-specific)
+- JSONL format for efficient append-only storage
+- MD5 hash-based deduplication prevents duplicate entries
+- Automatic extraction from CONTINUITY.md at session end
+
+#### How It Works
+1. At the end of each session, Loki Mode extracts learnings from CONTINUITY.md
+2. Patterns are extracted from "Patterns Used", "Solutions Applied", "Key Approaches"
+3. Mistakes are extracted from "Challenges Encountered", "Mistakes Made"
+4. Successes are extracted from "Completed Tasks", completed checkboxes `[x]`
+5. Entries are deduplicated using MD5 hashes before storage
+
+---
+
 ## [5.8.7] - 2026-02-01
 
 ### Fixed - Session retry persistence bug
