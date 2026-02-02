@@ -5,7 +5,7 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Executive Summary (v5.6 - v5.14)
+## Executive Summary (v5.5 - v5.14)
 
 - **Voice Input Support** - Dictate PRDs using macOS Dictation, Whisper API, or local Whisper
 - **Multi-Channel Notifications** - Real-time Slack, Discord, and webhook alerts for session events
@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Kanban Dashboard** - Web-based drag-and-drop task management with real-time updates
 - **GitHub Issue Automation** - Convert GitHub issues to PRDs and auto-start sessions
 - **VS Code Extension** - Integrated chat, logs, and session control in your IDE
+- **HTTP/SSE API Server** - Full REST API matching CLI features with TypeScript client SDK
 - **Docker Sandbox** - Secure isolated execution with seccomp profiles
 - **Docker Deployment** - Production-ready containerization with health checks
 
@@ -626,9 +627,51 @@ LOKI_PROMPT_INJECTION_ENABLED=true ./autonomy/run.sh ./my-prd.md
 
 ## [5.5.0] - 2026-01-30
 
-### Added - Gemini Rate Limit Fallback
+### Added - HTTP/SSE API Server
 
-**Minor release: Automatic model fallback for Gemini rate limits.**
+**Minor release: Full REST API server for programmatic control and integrations.**
+
+#### API Server (`loki serve`)
+- **Session Management**: Start, stop, list, and inject input into sessions
+- **Task Management**: List tasks, view active/queued tasks per session
+- **SSE Event Streaming**: Real-time events for sessions, phases, tasks, agents, logs
+- **Health Endpoints**: `/health`, `/health/ready`, `/health/live`, `/api/status`
+- **Authentication**: Token-based auth for remote access (`LOKI_API_TOKEN`)
+- **TypeScript Client SDK**: `api/client.ts` for programmatic integration
+- **OpenAPI Specification**: `api/openapi.yaml` for API documentation
+
+#### API Endpoints
+
+| Category | Endpoints |
+|----------|-----------|
+| Sessions | `POST /api/sessions`, `GET /api/sessions`, `GET /api/sessions/:id`, `POST /api/sessions/:id/stop`, `POST /api/sessions/:id/input` |
+| Tasks | `GET /api/sessions/:id/tasks`, `GET /api/tasks`, `GET /api/tasks/active`, `GET /api/tasks/queue` |
+| Events | `GET /api/events` (SSE), `GET /api/events/history`, `GET /api/events/stats` |
+| Health | `GET /health`, `GET /health/ready`, `GET /health/live` |
+
+#### SSE Event Types
+- Session: `session:started`, `session:paused`, `session:resumed`, `session:stopped`, `session:completed`, `session:failed`
+- Phase: `phase:started`, `phase:completed`, `phase:failed`
+- Task: `task:created`, `task:started`, `task:progress`, `task:completed`, `task:failed`
+- Agent: `agent:spawned`, `agent:output`, `agent:completed`, `agent:failed`
+- Logs: `log:debug`, `log:info`, `log:warn`, `log:error`
+
+#### CLI Commands
+- `loki serve` - Start the API server
+- `loki serve --port 9000` - Custom port
+- `loki serve --host 0.0.0.0` - Allow remote connections
+- `loki serve --generate-token` - Generate secure API token
+
+#### Files Added
+- `api/server.ts` - Main Deno HTTP server
+- `api/client.ts` - TypeScript client SDK
+- `api/openapi.yaml` - OpenAPI 3.0 specification
+- `api/routes/` - Session, task, event, health endpoints
+- `api/services/` - CLI bridge, state watcher, event bus
+- `api/middleware/` - Auth, CORS, error handling
+- `autonomy/serve.sh` - Server launcher script
+
+### Added - Gemini Rate Limit Fallback
 
 #### Gemini Provider
 - **Flash fallback**: Automatically falls back to `gemini-2.0-flash` on rate limits
