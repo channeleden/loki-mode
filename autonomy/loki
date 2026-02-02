@@ -694,7 +694,7 @@ cmd_provider_info() {
 # Dashboard server management
 DASHBOARD_PID_DIR="${HOME}/.loki/dashboard"
 DASHBOARD_PID_FILE="${DASHBOARD_PID_DIR}/dashboard.pid"
-DASHBOARD_DEFAULT_PORT=3000
+DASHBOARD_DEFAULT_PORT=8420
 DASHBOARD_DEFAULT_HOST="localhost"
 
 cmd_dashboard() {
@@ -877,7 +877,7 @@ cmd_dashboard_start() {
 
     # Start the dashboard server in background
     # Using LOKI_DASHBOARD_HOST and LOKI_DASHBOARD_PORT env vars for the server
-    LOKI_DASHBOARD_HOST="$host" LOKI_DASHBOARD_PORT="$port" \
+    PYTHONPATH="$SKILL_DIR" LOKI_DASHBOARD_HOST="$host" LOKI_DASHBOARD_PORT="$port" \
         nohup "$python_cmd" -m dashboard.server > "$log_file" 2>&1 &
     local new_pid=$!
 

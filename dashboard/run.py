@@ -38,7 +38,7 @@ def main():
         sys.exit(1)
 
     print(f"Starting Loki Mode Dashboard on http://{args.host}:{args.port}")
-    print("API docs available at: http://localhost:8420/docs")
+    print(f"API docs available at: http://localhost:{args.port}/docs")
 
     uvicorn.run(
         "dashboard.server:app",

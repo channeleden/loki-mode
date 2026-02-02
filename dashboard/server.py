@@ -656,9 +656,13 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
         manager.disconnect(websocket)
 
 
-def run_server(host: str = "0.0.0.0", port: int = 8420) -> None:
+def run_server(host: str = None, port: int = None) -> None:
     """Run the dashboard server."""
     import uvicorn
+    if host is None:
+        host = os.environ.get("LOKI_DASHBOARD_HOST", "0.0.0.0")
+    if port is None:
+        port = int(os.environ.get("LOKI_DASHBOARD_PORT", "8420"))
     uvicorn.run(app, host=host, port=port)
 
 

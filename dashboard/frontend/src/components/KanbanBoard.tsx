@@ -216,6 +216,7 @@ export const KanbanBoard: React.FC = () => {
                   placeholder="Search tasks..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Search tasks"
                   className="w-64 pl-10 pr-4 py-2 text-sm bg-gray-50 dark:bg-anthropic-charcoal border border-gray-200 dark:border-gray-700 rounded-lg focus:border-anthropic-orange focus:ring-1 focus:ring-anthropic-orange focus:outline-none"
                 />
               </div>
@@ -225,11 +226,17 @@ export const KanbanBoard: React.FC = () => {
                 Filter
               </button>
               {/* Refresh */}
-              <button className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+              <button
+                className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                aria-label="Refresh tasks"
+              >
                 <RefreshCw className="w-5 h-5" />
               </button>
               {/* Settings */}
-              <button className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+              <button
+                className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                aria-label="Board settings"
+              >
                 <Settings className="w-5 h-5" />
               </button>
               {/* Add Task */}

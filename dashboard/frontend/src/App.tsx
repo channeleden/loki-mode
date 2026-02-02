@@ -73,6 +73,7 @@ function App() {
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="p-1.5 rounded-lg hover:bg-anthropic-charcoal/5 dark:hover:bg-anthropic-cream/10"
+              aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <ChevronRight
                 className={`w-5 h-5 transition-transform ${sidebarCollapsed ? '' : 'rotate-180'}`}
@@ -126,6 +127,7 @@ function App() {
             <button
               onClick={toggleDarkMode}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-anthropic-charcoal/5 dark:hover:bg-anthropic-cream/10"
+              aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               {!sidebarCollapsed && <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>}
