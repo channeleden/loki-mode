@@ -119,6 +119,12 @@
           "contextualTitle": "Loki Tasks"
         },
         {
+          "id": "loki-memory",
+          "name": "Memory",
+          "contextualTitle": "Loki Memory",
+          "type": "webview"
+        },
+        {
           "id": "loki-logs",
           "name": "Logs",
           "contextualTitle": "Loki Logs",
@@ -142,6 +148,10 @@
       {
         "view": "loki-tasks",
         "contents": "No tasks available.\nStart a Loki session to see tasks."
+      },
+      {
+        "view": "loki-memory",
+        "contents": "No memory context available.\nMemory will appear when Loki Mode is running."
       },
       {
         "view": "loki-logs",

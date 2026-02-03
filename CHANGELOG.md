@@ -5,8 +5,16 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Executive Summary (v5.5 - v5.17)
+## Executive Summary (v5.5 - v5.18)
 
+- **Security Hardening** - Fixed command injection in hooks, path traversal in MCP server
+- **Unified Memory Access** - Single interface for all tools to access memory system
+- **Importance Scoring** - Memory decay and retrieval boost for smarter context
+- **Context Optimization** - Token-aware memory retrieval with progressive disclosure
+- **VS Code Memory Panel** - Memory context sidebar in VS Code extension
+- **CLI Event Emission** - All CLI commands emit events for cross-tool coordination
+- **API Memory Context** - Status endpoint returns relevant memory patterns
+- **MCP Event Emission** - All MCP tool calls emit events
 - **Unified Event Bus** - Cross-process event propagation between CLI, API, VS Code, MCP with file-based pub/sub
 - **Synergy Roadmap** - 5-pillar architecture for unified tool integration and cross-tool learning
 - **MCP Integration** - Model Context Protocol server with task queue, memory retrieval, and state management tools
@@ -23,6 +31,264 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **HTTP/SSE API Server** - Full REST API matching CLI features with TypeScript client SDK
 - **Docker Sandbox** - Secure isolated execution with seccomp profiles
 - **Docker Deployment** - Production-ready containerization with health checks
+
+---
+
+## [5.18.0] - 2026-02-03
+
+### Added - Security Fixes, Memory Integration, Cross-Tool Synergy
+
+**Major release: 10 parallel Opus agents completed all synergy tasks with peer review.**
+
+#### Security Fixes (Critical)
+
+**Command Injection Fixes:**
+- `.loki/hooks/session-init.sh` - Shell variables now passed via environment variables instead of string interpolation
+- `.loki/hooks/store-episode.sh` - Same fix, prevents arbitrary code execution
+- Input validation added for paths and session IDs
+
+**Path Traversal Fix:**
+- `mcp/server.py` - Added comprehensive path validation with `validate_path()`, `safe_path_join()`, `safe_open()`
+- All file access points now validate paths are within allowed directories (.loki/, memory/)
+- Uses `os.path.realpath()` to prevent symlink escapes
+
+#### Unified Memory Access Layer
+
+**New File: `memory/unified_access.py`**
+- `UnifiedMemoryAccess` class - single interface for all tools
+- `get_relevant_context(task_type, query, token_budget)` - retrieves context from all memory types
+- `record_interaction(source, action)` - records interactions to timeline
+- `get_suggestions(context)` - generates actionable suggestions
+- `MemoryContext` dataclass with episodes, patterns, skills, token budget
+
+#### Importance Scoring System
+
+**Updated: `memory/schemas.py`**
+- Added `importance: float` (0.0-1.0) to EpisodeTrace, SemanticPattern, ProceduralSkill
+- Added `last_accessed: datetime` for recency tracking
+- Added `access_count: int` for frequency tracking
+
+**Updated: `memory/storage.py`**
+- `calculate_importance(memory, task_type)` - scores based on outcome, errors, access frequency
+- `apply_decay(memories, decay_rate, half_life_days)` - exponential time decay
+- `boost_on_retrieval(memory, boost)` - increases importance on access
+
+**Updated: `memory/retrieval.py`**
+- Importance now factors into relevance scoring (30% weight)
+- Retrieved memories get importance boost
+
+#### Context Window Optimization
+
+**Updated: `memory/token_economics.py`**
+- `optimize_context(memories, budget)` - selects memories within token budget
+- Scores by importance (40%), recency (30%), relevance (30%)
+- Layer preference: index (1.1x) > summaries (1.0x) > full (0.9x)
+
+**Updated: `memory/retrieval.py`**
+- `retrieve_with_budget(query, task_type, budget)` - budget-aware retrieval
+- Progressive disclosure: Layer 1 (20%) -> Layer 2 (40%) -> Layer 3 (remaining)
+
+#### CLI Event Emission
+
+**Updated: `autonomy/loki`**
+- `cmd_start` emits `session:start` with provider, prd_path
+- `cmd_stop` emits `session:stop` with reason
+- `cmd_pause` emits `session:pause` with reason
+- `cmd_resume` emits `session:resume` with cleared_signal
+- Non-blocking (runs in background)
+
+#### API Memory Context
+
+**Updated: `api/routes/health.ts`**
+- `/api/status` now includes `memoryContext` field
+- Returns top 3 relevant patterns for current phase
+- Graceful fallback when memory unavailable
+
+#### MCP Event Emission
+
+**Updated: `mcp/server.py`**
+- All 8 MCP tools emit events on start and completion
+- Uses EventType.COMMAND and EventSource.MCP
+- Non-blocking via background threads
+
+#### VS Code Memory Sidebar
+
+**New File: `vscode-extension/src/views/memoryViewProvider.ts`**
+- Memory panel in VS Code sidebar
+- Shows: episodes count, patterns count, skills count
+- Lists recent patterns, episodes, and skills
+- Auto-refresh every 5 seconds
+
+#### Tests Added
+
+- `tests/test-unified-memory.sh` - 15 tests for unified memory access
+- `tests/test-context-optimization.sh` - 13 tests for token optimization
+- `memory/test_importance.py` - 23 tests for importance scoring
+
+#### Files Added/Modified
+
+**New Files:**
+- `memory/unified_access.py`
+- `memory/test_importance.py`
+- `tests/test-unified-memory.sh`
+- `tests/test-context-optimization.sh`
+- `vscode-extension/src/views/memoryViewProvider.ts`
+
+**Modified Files:**
+- `.loki/hooks/session-init.sh` (security fix)
+- `.loki/hooks/store-episode.sh` (security fix)
+- `mcp/server.py` (path traversal fix + event emission)
+- `memory/schemas.py` (importance fields)
+- `memory/storage.py` (importance functions)
+- `memory/retrieval.py` (importance integration + budget)
+- `memory/token_economics.py` (optimize_context)
+- `memory/__init__.py` (exports)
+- `autonomy/loki` (event emission)
+- `api/routes/health.ts` (memory context)
+- `vscode-extension/src/extension.ts` (memory view)
+- `vscode-extension/package.json` (view contribution)
+
+---
+
+## [5.18.0] - 2026-02-03
+
+### Added - Security Hardening and Memory Synergy
+
+**Major release: Comprehensive security fixes, unified memory access, importance scoring, and full tool synergy.**
+
+#### Security Fixes (Critical)
+
+**Command Injection Fixes:**
+- `.loki/hooks/session-init.sh` - Fixed shell variable interpolation into Python code by using environment variables
+- `.loki/hooks/store-episode.sh` - Fixed shell variable interpolation into Python code by using environment variables
+- Both hooks now pass data via `LOKI_CWD`, `LOKI_SESSION_ID` environment variables instead of string interpolation
+
+**Path Traversal Fix:**
+- `mcp/server.py` - Added comprehensive path validation with `validate_path()`, `safe_path_join()`, `safe_open()`, `safe_makedirs()`
+- All file access now validated against allowed directories (`.loki/`, `memory/`)
+- Uses `os.path.realpath()` to prevent symlink-based escapes
+
+#### Unified Memory Access (memory/unified_access.py)
+
+Single interface for all components to access memory:
+
+```python
+from memory import UnifiedMemoryAccess, MemoryContext
+
+access = UnifiedMemoryAccess()
+context = access.get_relevant_context("implementation", "authentication")
+access.record_interaction("cli", {"action": "start"})
+suggestions = access.get_suggestions("auth flow")
+```
+
+**Features:**
+- `get_relevant_context(task_type, query, token_budget)` - Task-aware retrieval
+- `record_interaction(source, action, outcome)` - Record any tool interaction
+- `record_episode(task_id, agent, goal, actions, outcome)` - Store episode traces
+- `get_suggestions(context, max_suggestions)` - Generate actionable suggestions
+- `MemoryContext` dataclass with episodes, patterns, skills, token budget
+
+#### Importance Scoring (memory/schemas.py, memory/storage.py)
+
+Memory decay and retrieval boost for smarter context:
+
+**New Fields on All Memory Types:**
+- `importance: float` (0.0-1.0) - Decays over time
+- `last_accessed: datetime` - Updated on retrieval
+- `access_count: int` - Tracks retrieval frequency
+
+**New Functions:**
+- `calculate_importance(memory, task_type)` - Score based on outcome, errors, access, confidence
+- `apply_decay(memories, decay_rate, half_life_days)` - Exponential time-based decay
+- `boost_on_retrieval(memory, boost)` - Increase importance when accessed
+- Minimum importance of 0.01 ensures memories never fully disappear
+
+#### Context Optimization (memory/token_economics.py, memory/retrieval.py)
+
+Token-aware memory retrieval with progressive disclosure:
+
+**New Functions:**
+- `optimize_context(memories, budget)` - Select best memories within token budget
+- `retrieve_with_budget(query, task_type, budget, progressive)` - Budget-aware retrieval
+- `get_context_efficiency()` - Token utilization metrics
+
+**Progressive Disclosure:**
+- Layer 1 (20% budget): Topic index
+- Layer 2 (40% budget): Summaries
+- Layer 3 (remaining): Full details
+
+#### CLI Event Emission (autonomy/loki)
+
+All CLI commands now emit events:
+
+```bash
+# Events emitted automatically:
+loki start ./prd.md  # session:start with provider, prd_path
+loki stop            # session:stop with reason
+loki pause           # session:pause with reason
+loki resume          # session:resume with cleared_signal
+```
+
+#### API Memory Context (api/routes/health.ts)
+
+Status endpoint now includes memory context:
+
+```json
+{
+  "status": "running",
+  "memoryContext": {
+    "available": true,
+    "currentPhase": "DEVELOPMENT",
+    "relevantPatterns": [...],
+    "patternCount": 15
+  }
+}
+```
+
+#### MCP Event Emission (mcp/server.py)
+
+All MCP tool calls emit events:
+- `loki_memory_retrieve` - start/complete with query, result count
+- `loki_task_queue_*` - start/complete with action, status
+- `loki_state_get` - start/complete
+- Events use `EventType.COMMAND` and `EventSource.MCP`
+
+#### VS Code Memory Panel (vscode-extension/)
+
+New memory context sidebar showing:
+- Token economics (total tokens, savings percentage)
+- Relevant patterns with confidence scores
+- Recent episodes with outcomes
+- Learned skills with success rates
+- Auto-refresh every 10 seconds
+
+**Files Added:**
+- `memory/unified_access.py` - Unified memory access layer
+- `memory/test_importance.py` - Importance scoring tests (23 tests)
+- `tests/test-unified-memory.sh` - Unified memory tests (15 tests)
+- `tests/test-context-optimization.sh` - Context optimization tests (13 tests)
+- `vscode-extension/src/views/memoryViewProvider.ts` - Memory view provider
+
+**Files Modified:**
+- `.loki/hooks/session-init.sh` - Security fix
+- `.loki/hooks/store-episode.sh` - Security fix
+- `mcp/server.py` - Path traversal fix + event emission
+- `memory/schemas.py` - Importance fields
+- `memory/storage.py` - Importance functions
+- `memory/retrieval.py` - Token budget + importance integration
+- `memory/token_economics.py` - Context optimization
+- `autonomy/loki` - Event emission
+- `api/routes/health.ts` - Memory context
+- `vscode-extension/package.json` - Memory view
+
+**Test Results:**
+- Memory engine tests: 15/15 passed
+- Importance scoring tests: 23/23 passed
+- Unified memory tests: 15/15 passed
+- Context optimization tests: 13/13 passed
+- Event bus tests: 10/10 passed
+- Hooks tests: 10/10 passed
+- MCP server tests: 11/11 passed
 
 ---
 

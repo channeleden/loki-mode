@@ -144,6 +144,162 @@ def estimate_memory_tokens(memory: dict) -> int:
         return 0
 
 
+def optimize_context(
+    memories: list,
+    budget: int,
+    importance_weight: float = 0.4,
+    recency_weight: float = 0.3,
+    relevance_weight: float = 0.3,
+) -> list:
+    """
+    Optimize memory selection to fit within token budget.
+
+    Uses a weighted scoring approach prioritizing:
+    - Importance (confidence, usage count)
+    - Recency (recently accessed memories)
+    - Relevance (pre-computed scores from retrieval)
+
+    Implements progressive disclosure by preferring layer 1 (topic) data
+    first, expanding to layer 2 (summary) and layer 3 (full) only if
+    budget allows.
+
+    Args:
+        memories: List of memory dictionaries with optional fields:
+            - _score: relevance score from retrieval
+            - confidence: pattern confidence (0-1)
+            - usage_count: how often this memory has been used
+            - last_used: datetime of last access
+            - timestamp: creation time
+            - _layer: memory layer (1=topic, 2=summary, 3=full)
+        budget: Maximum token budget
+        importance_weight: Weight for importance scoring (default 0.4)
+        recency_weight: Weight for recency scoring (default 0.3)
+        relevance_weight: Weight for relevance scoring (default 0.3)
+
+    Returns:
+        List of memories that fit within the token budget, sorted by
+        combined score.
+    """
+    from datetime import datetime
+
+    if not memories:
+        return []
+
+    if budget <= 0:
+        return []
+
+    scored_memories = []
+    now = datetime.now()
+
+    for memory in memories:
+        # Calculate importance score (0-1)
+        confidence = memory.get("confidence", 0.5)
+        usage_count = memory.get("usage_count", 0)
+        # Normalize usage count with diminishing returns
+        usage_score = min(1.0, usage_count / 10.0) if usage_count > 0 else 0.0
+        importance = (confidence + usage_score) / 2.0
+
+        # Calculate recency score (0-1)
+        recency = 0.5  # default
+        timestamp = memory.get("last_used") or memory.get("timestamp")
+        if timestamp:
+            try:
+                if isinstance(timestamp, str):
+                    if timestamp.endswith("Z"):
+                        timestamp = timestamp[:-1]
+                    item_time = datetime.fromisoformat(timestamp)
+                else:
+                    item_time = timestamp
+
+                # Calculate age in days
+                age_days = (now - item_time).days
+                # Recency decays over 30 days
+                recency = max(0.0, 1.0 - (age_days / 30.0))
+            except (ValueError, TypeError):
+                pass
+
+        # Get relevance score (already computed by retrieval)
+        relevance = memory.get("_score", 0.5)
+        if relevance > 1.0:
+            # Normalize high scores
+            relevance = min(1.0, relevance / 10.0)
+
+        # Calculate combined score
+        combined_score = (
+            importance * importance_weight +
+            recency * recency_weight +
+            relevance * relevance_weight
+        )
+
+        # Apply layer preference (layer 1 > layer 2 > layer 3)
+        layer = memory.get("_layer", 2)  # default to layer 2
+        layer_boost = {1: 1.1, 2: 1.0, 3: 0.9}.get(layer, 1.0)
+        combined_score *= layer_boost
+
+        # Estimate tokens for this memory
+        tokens = estimate_memory_tokens(memory)
+
+        scored_memories.append({
+            "memory": memory,
+            "score": combined_score,
+            "tokens": tokens,
+        })
+
+    # Sort by score (highest first)
+    scored_memories.sort(key=lambda x: x["score"], reverse=True)
+
+    # Select memories that fit within budget
+    selected = []
+    total_tokens = 0
+
+    for item in scored_memories:
+        if total_tokens + item["tokens"] <= budget:
+            selected.append(item["memory"])
+            total_tokens += item["tokens"]
+        elif item["tokens"] < budget * 0.1:
+            # Allow small memories even if slightly over budget
+            if total_tokens + item["tokens"] <= budget * 1.1:
+                selected.append(item["memory"])
+                total_tokens += item["tokens"]
+
+    return selected
+
+
+def get_context_efficiency(
+    selected_memories: list,
+    budget: int,
+    total_available: int,
+) -> dict:
+    """
+    Calculate context efficiency metrics.
+
+    Args:
+        selected_memories: Memories selected for context
+        budget: Token budget used
+        total_available: Total tokens if all memories were loaded
+
+    Returns:
+        Dictionary with efficiency metrics:
+            - tokens_used: Actual tokens in selected memories
+            - budget: The token budget
+            - utilization: tokens_used / budget ratio
+            - compression: tokens_used / total_available ratio
+            - memories_selected: Count of selected memories
+    """
+    tokens_used = sum(estimate_memory_tokens(m) for m in selected_memories)
+
+    utilization = tokens_used / budget if budget > 0 else 0.0
+    compression = tokens_used / total_available if total_available > 0 else 1.0
+
+    return {
+        "tokens_used": tokens_used,
+        "budget": budget,
+        "utilization": round(utilization, 3),
+        "compression": round(compression, 3),
+        "memories_selected": len(selected_memories),
+    }
+
+
 def estimate_full_load_tokens(base_path: str) -> int:
     """
     Estimate the total tokens if all memories were loaded at once.

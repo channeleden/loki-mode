@@ -45,6 +45,11 @@ from .consolidation import (
     compress_episodes_to_pattern_desc,
 )
 
+from .unified_access import (
+    UnifiedMemoryAccess,
+    MemoryContext,
+)
+
 __all__ = [
     # Schemas
     "ActionEntry",
@@ -79,4 +84,7 @@ __all__ = [
     "Cluster",
     "compress_episode_to_summary",
     "compress_episodes_to_pattern_desc",
+    # Unified Access
+    "UnifiedMemoryAccess",
+    "MemoryContext",
 ]

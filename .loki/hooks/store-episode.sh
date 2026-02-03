@@ -9,21 +9,27 @@ TRANSCRIPT_PATH=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(s
 
 # Store episode if memory system available
 if [ -d "$CWD/memory" ]; then
-    python3 << EOF
+    # Pass variables via environment to avoid command injection
+    LOKI_CWD="$CWD" LOKI_SESSION_ID="$SESSION_ID" python3 << 'EOF'
 import sys
-sys.path.insert(0, '$CWD')
+import os
+
+cwd = os.environ.get('LOKI_CWD', '')
+session_id = os.environ.get('LOKI_SESSION_ID', '')
+
+sys.path.insert(0, cwd)
 try:
     from memory.engine import MemoryEngine
     from memory.schemas import EpisodeTrace
     from datetime import datetime
     import json
 
-    engine = MemoryEngine('$CWD/.loki/memory')
+    engine = MemoryEngine(os.path.join(cwd, '.loki/memory'))
 
     # Create minimal episode from session
     episode = EpisodeTrace(
-        id='$SESSION_ID',
-        task_id='session-$SESSION_ID',
+        id=session_id,
+        task_id=f'session-{session_id}',
         timestamp=datetime.utcnow(),
         duration_seconds=0,
         agent='loki-mode',
@@ -39,7 +45,7 @@ try:
         files_modified=[]
     )
     engine.store_episode(episode)
-    print('Episode stored: $SESSION_ID')
+    print(f'Episode stored: {session_id}')
 except Exception as e:
     print(f'Episode storage failed: {e}', file=sys.stderr)
 EOF

@@ -263,3 +263,29 @@ Deno.test("GET /api/status returns detailed status", async () => {
   assertExists(data.events);
   assertExists(data.system);
 });
+
+Deno.test("GET /api/status includes memory context", async () => {
+  const handler = createHandler({ port: 8420, host: "localhost", cors: true, auth: false });
+  const req = createRequest("GET", "/api/status");
+  const res = await handler(req);
+
+  assertEquals(res.status, 200);
+  const data = await res.json();
+
+  // Verify memoryContext structure exists
+  assertExists(data.memoryContext);
+  assertEquals(typeof data.memoryContext.available, "boolean");
+  assertEquals(Array.isArray(data.memoryContext.relevantPatterns), true);
+  assertEquals(typeof data.memoryContext.patternCount, "number");
+
+  // Patterns array should be limited to max 3
+  assertEquals(data.memoryContext.relevantPatterns.length <= 3, true);
+
+  // Each pattern should have required fields if there are any
+  for (const pattern of data.memoryContext.relevantPatterns) {
+    assertExists(pattern.id);
+    assertExists(pattern.pattern);
+    assertExists(pattern.category);
+    assertExists(pattern.confidence);
+  }
+});

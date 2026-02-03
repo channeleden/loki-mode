@@ -3,16 +3,18 @@ Memory Storage Backend for Loki Mode
 
 JSON-based storage with progressive disclosure layers.
 Handles episodic, semantic, and procedural memory persistence.
+Includes importance scoring with decay and retrieval boost.
 """
 
 import json
+import math
 import os
 import tempfile
 import shutil
 import fcntl
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from contextlib import contextmanager
 
 # Import schemas (will be created in parallel)
@@ -828,3 +830,278 @@ class MemoryStorage:
             return True
         except (OSError, FileNotFoundError):
             return False
+
+    # -------------------------------------------------------------------------
+    # Importance Scoring Functions
+    # -------------------------------------------------------------------------
+
+    def calculate_importance(
+        self,
+        memory: Dict[str, Any],
+        task_type: Optional[str] = None,
+    ) -> float:
+        """
+        Calculate importance score for a memory based on various signals.
+
+        Factors considered:
+        - Base importance (default 0.5)
+        - Outcome success (boost for success, penalty for failure)
+        - Error resolution (higher if errors were resolved)
+        - Access frequency (more accessed = more important)
+        - Task type match (boost if memory matches current task type)
+        - Confidence (for semantic patterns)
+
+        Args:
+            memory: Memory dictionary (episode, pattern, or skill)
+            task_type: Optional current task type for relevance matching
+
+        Returns:
+            Calculated importance score between 0.0 and 1.0
+        """
+        base = memory.get("importance", 0.5)
+
+        # Outcome adjustment for episodes
+        outcome = memory.get("outcome", "")
+        if outcome == "success":
+            base = min(1.0, base + 0.1)
+        elif outcome == "failure":
+            base = max(0.0, base - 0.1)
+
+        # Error resolution boost
+        errors = memory.get("errors_encountered", [])
+        if errors:
+            # If there are errors but outcome is success, errors were resolved
+            if outcome == "success":
+                base = min(1.0, base + 0.05 * min(len(errors), 3))
+
+        # Access frequency boost (diminishing returns)
+        access_count = memory.get("access_count", 0)
+        if access_count > 0:
+            # Log scale boost, caps at about 0.15 for 100+ accesses
+            access_boost = 0.05 * math.log1p(access_count)
+            base = min(1.0, base + access_boost)
+
+        # Confidence factor for semantic patterns
+        confidence = memory.get("confidence")
+        if confidence is not None:
+            # Blend with confidence
+            base = (base + confidence) / 2
+
+        # Task type relevance boost
+        if task_type:
+            context = memory.get("context", {})
+            phase = context.get("phase", memory.get("phase", "")).lower()
+            category = memory.get("category", "").lower()
+
+            task_type_lower = task_type.lower()
+
+            # Phase match boost
+            if task_type_lower in phase or phase in task_type_lower:
+                base = min(1.0, base + 0.1)
+
+            # Category match boost for patterns
+            if task_type_lower in category or category in task_type_lower:
+                base = min(1.0, base + 0.1)
+
+        return round(min(1.0, max(0.0, base)), 3)
+
+    def apply_decay(
+        self,
+        memories: List[Dict[str, Any]],
+        decay_rate: float = 0.1,
+        half_life_days: int = 30,
+    ) -> List[Dict[str, Any]]:
+        """
+        Apply time-based decay to importance scores.
+
+        Uses exponential decay based on time since last access.
+        Decay formula: importance * exp(-decay_rate * days_since_access / half_life)
+
+        Args:
+            memories: List of memory dictionaries to decay
+            decay_rate: Base decay rate (default 0.1)
+            half_life_days: Days until importance halves without access (default 30)
+
+        Returns:
+            List of memories with decayed importance scores
+        """
+        now = datetime.now(timezone.utc)
+
+        for memory in memories:
+            # Get the reference time (last_accessed or timestamp or last_used)
+            ref_time = None
+            for time_field in ["last_accessed", "timestamp", "last_used"]:
+                time_value = memory.get(time_field)
+                if time_value:
+                    if isinstance(time_value, str):
+                        if time_value.endswith("Z"):
+                            time_value = time_value[:-1]
+                        try:
+                            ref_time = datetime.fromisoformat(time_value)
+                            if ref_time.tzinfo is None:
+                                ref_time = ref_time.replace(tzinfo=timezone.utc)
+                            break
+                        except ValueError:
+                            continue
+                    elif isinstance(time_value, datetime):
+                        ref_time = time_value
+                        if ref_time.tzinfo is None:
+                            ref_time = ref_time.replace(tzinfo=timezone.utc)
+                        break
+
+            if ref_time is None:
+                continue
+
+            # Calculate days since reference time
+            days_elapsed = (now - ref_time).total_seconds() / 86400
+
+            if days_elapsed <= 0:
+                continue
+
+            # Apply exponential decay
+            current_importance = memory.get("importance", 0.5)
+            decay_factor = math.exp(-decay_rate * days_elapsed / half_life_days)
+            decayed_importance = current_importance * decay_factor
+
+            # Ensure minimum importance of 0.01 (memories don't fully disappear)
+            memory["importance"] = round(max(0.01, decayed_importance), 3)
+
+        return memories
+
+    def boost_on_retrieval(
+        self,
+        memory: Dict[str, Any],
+        boost: float = 0.1,
+    ) -> Dict[str, Any]:
+        """
+        Boost importance and update access tracking when a memory is retrieved.
+
+        This implements the "use it or lose it" principle - frequently accessed
+        memories maintain their importance while unused ones decay.
+
+        Args:
+            memory: Memory dictionary to boost
+            boost: Amount to boost importance (default 0.1)
+
+        Returns:
+            Memory with boosted importance and updated access tracking
+        """
+        now = datetime.now(timezone.utc)
+
+        # Update access tracking
+        memory["last_accessed"] = now.isoformat() + "Z"
+        memory["access_count"] = memory.get("access_count", 0) + 1
+
+        # Boost importance (with diminishing returns for high importance)
+        current_importance = memory.get("importance", 0.5)
+
+        # Diminishing returns: boost is reduced as importance approaches 1.0
+        effective_boost = boost * (1.0 - current_importance)
+        new_importance = min(1.0, current_importance + effective_boost)
+
+        memory["importance"] = round(new_importance, 3)
+
+        return memory
+
+    def batch_apply_decay(
+        self,
+        collection: str = "all",
+        decay_rate: float = 0.1,
+        half_life_days: int = 30,
+    ) -> int:
+        """
+        Apply decay to all memories in a collection and persist changes.
+
+        Args:
+            collection: Which collection to decay ("episodic", "semantic",
+                       "skills", or "all")
+            decay_rate: Base decay rate
+            half_life_days: Days until importance halves
+
+        Returns:
+            Number of memories updated
+        """
+        updated_count = 0
+
+        collections_to_process = []
+        if collection == "all":
+            collections_to_process = ["episodic", "semantic", "skills"]
+        else:
+            collections_to_process = [collection]
+
+        for coll in collections_to_process:
+            if coll == "episodic":
+                updated_count += self._decay_episodic(decay_rate, half_life_days)
+            elif coll == "semantic":
+                updated_count += self._decay_semantic(decay_rate, half_life_days)
+            elif coll == "skills":
+                updated_count += self._decay_skills(decay_rate, half_life_days)
+
+        return updated_count
+
+    def _decay_episodic(self, decay_rate: float, half_life_days: int) -> int:
+        """Apply decay to episodic memories."""
+        updated = 0
+        episodic_dir = self.base_path / "episodic"
+        if not episodic_dir.exists():
+            return 0
+
+        for date_dir in episodic_dir.iterdir():
+            if not date_dir.is_dir():
+                continue
+
+            for file_path in date_dir.glob("task-*.json"):
+                data = self._load_json(file_path)
+                if data:
+                    original_importance = data.get("importance", 0.5)
+                    memories = self.apply_decay([data], decay_rate, half_life_days)
+                    if memories[0].get("importance") != original_importance:
+                        self._atomic_write(file_path, memories[0])
+                        updated += 1
+
+        return updated
+
+    def _decay_semantic(self, decay_rate: float, half_life_days: int) -> int:
+        """Apply decay to semantic patterns."""
+        patterns_path = self.base_path / "semantic" / "patterns.json"
+        if not patterns_path.exists():
+            return 0
+
+        patterns_file = self._load_json(patterns_path)
+        if not patterns_file:
+            return 0
+
+        patterns = patterns_file.get("patterns", [])
+        if not patterns:
+            return 0
+
+        updated = 0
+        for pattern in patterns:
+            original = pattern.get("importance", 0.5)
+            self.apply_decay([pattern], decay_rate, half_life_days)
+            if pattern.get("importance") != original:
+                updated += 1
+
+        if updated > 0:
+            patterns_file["last_updated"] = datetime.now(timezone.utc).isoformat()
+            self._atomic_write(patterns_path, patterns_file)
+
+        return updated
+
+    def _decay_skills(self, decay_rate: float, half_life_days: int) -> int:
+        """Apply decay to procedural skills."""
+        updated = 0
+        skills_dir = self.base_path / "skills"
+        if not skills_dir.exists():
+            return 0
+
+        for file_path in skills_dir.glob("*.json"):
+            data = self._load_json(file_path)
+            if data:
+                original = data.get("importance", 0.5)
+                self.apply_decay([data], decay_rate, half_life_days)
+                if data.get("importance") != original:
+                    self._atomic_write(file_path, data)
+                    updated += 1
+
+        return updated

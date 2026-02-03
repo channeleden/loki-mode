@@ -105,6 +105,7 @@ fi
 
 RUN_SH="$SKILL_DIR/autonomy/run.sh"
 SANDBOX_SH="$SKILL_DIR/autonomy/sandbox.sh"
+EMIT_SH="$SKILL_DIR/events/emit.sh"
 LOKI_DIR=".loki"
 
 # Get version from VERSION file
@@ -113,6 +114,15 @@ get_version() {
         cat "$SKILL_DIR/VERSION"
     else
         echo "unknown"
+    fi
+}
+
+# Emit event (non-blocking)
+# Usage: emit_event <type> <source> <action> [key=value ...]
+emit_event() {
+    if [ -f "$EMIT_SH" ]; then
+        # Run in background to be non-blocking
+        ("$EMIT_SH" "$@" >/dev/null 2>&1 &)
     fi
 }
 
@@ -308,6 +318,7 @@ cmd_start() {
         fi
 
         echo -e "${GREEN}Starting Loki Mode in Docker sandbox...${NC}"
+        emit_event session cli start "provider=$effective_provider" "sandbox=true" "prd_path=${prd_file:-}"
         exec "$SANDBOX_SH" start "${args[@]}"
     fi
 
@@ -320,6 +331,9 @@ cmd_start() {
         echo -e "${DIM}  (default - save for project with: loki provider set <name>)${NC}"
     fi
     echo ""
+
+    # Emit session start event
+    emit_event session cli start "provider=$effective_provider" "prd_path=${prd_file:-}"
 
     exec "$RUN_SH" "${args[@]}"
 }
@@ -346,6 +360,8 @@ cmd_stop() {
 
     if is_session_running; then
         touch "$LOKI_DIR/STOP"
+        # Emit session stop event
+        emit_event session cli stop "reason=user_requested"
         echo -e "${RED}STOP signal sent. Execution will halt immediately.${NC}"
     else
         echo -e "${YELLOW}No active session running.${NC}"
@@ -367,6 +383,8 @@ cmd_pause() {
 
     if is_session_running; then
         touch "$LOKI_DIR/PAUSE"
+        # Emit session pause event
+        emit_event session cli pause "reason=user_requested"
         echo -e "${YELLOW}PAUSE signal sent. Execution will pause after current task.${NC}"
         echo -e "${DIM}Resume with: loki resume${NC}"
     else
@@ -397,6 +415,8 @@ cmd_resume() {
     fi
 
     if [ -n "$removed_signal" ]; then
+        # Emit session resume event
+        emit_event session cli resume "cleared_signal=$removed_signal"
         if is_session_running; then
             echo -e "${GREEN}$removed_signal signal cleared. Session will resume automatically.${NC}"
         else

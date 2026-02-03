@@ -5,6 +5,7 @@ import { Config } from './utils/config';
 import { Logger, logger } from './utils/logger';
 import { ChatViewProvider } from './views/chatViewProvider';
 import { LogsViewProvider } from './views/logsViewProvider';
+import { MemoryViewProvider } from './views/memoryViewProvider';
 import { LokiApiClient } from './api/client';
 import { parseStatusResponse, isValidTaskStatus } from './api/validators';
 import { LokiEvent, Disposable } from './api/types';
@@ -157,6 +158,7 @@ let sessionsProvider: SessionsProvider;
 let tasksProvider: TasksProvider;
 let chatViewProvider: ChatViewProvider;
 let logsViewProvider: LogsViewProvider;
+let memoryViewProvider: MemoryViewProvider;
 let apiClient: LokiApiClient;
 
 /**
@@ -681,6 +683,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // Initialize webview providers
     chatViewProvider = new ChatViewProvider(context.extensionUri, apiClient);
     logsViewProvider = new LogsViewProvider(context.extensionUri, apiClient);
+    memoryViewProvider = new MemoryViewProvider(context.extensionUri, apiClient);
 
     // Register tree views
     const sessionsView = vscode.window.createTreeView('loki-sessions', {
@@ -702,6 +705,11 @@ export function activate(context: vscode.ExtensionContext): void {
     const logsView = vscode.window.registerWebviewViewProvider(
         LogsViewProvider.viewType,
         logsViewProvider
+    );
+
+    const memoryView = vscode.window.registerWebviewViewProvider(
+        MemoryViewProvider.viewType,
+        memoryViewProvider
     );
 
     // Create status bar item
@@ -753,6 +761,7 @@ export function activate(context: vscode.ExtensionContext): void {
         tasksView,
         chatView,
         logsView,
+        memoryView,
         statusBarItem,
         configListener,
         ...commands
@@ -785,6 +794,9 @@ export function deactivate(): void {
     }
     if (chatViewProvider) {
         chatViewProvider.dispose();
+    }
+    if (memoryViewProvider) {
+        memoryViewProvider.dispose();
     }
     if (apiClient) {
         apiClient.dispose();

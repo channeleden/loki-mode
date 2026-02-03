@@ -33,6 +33,7 @@ except ImportError:
 
 # Import from sibling modules
 from .schemas import EpisodeTrace, SemanticPattern, ProceduralSkill
+from .token_economics import estimate_memory_tokens, optimize_context, get_context_efficiency
 
 
 # -----------------------------------------------------------------------------
@@ -90,6 +91,18 @@ class MemoryStorageProtocol(Protocol):
 
     def list_files(self, subpath: str, pattern: str = "*.json") -> List[Path]:
         """List files matching pattern in subdirectory."""
+        ...
+
+    def calculate_importance(
+        self, memory: Dict[str, Any], task_type: Optional[str] = None
+    ) -> float:
+        """Calculate importance score for a memory."""
+        ...
+
+    def boost_on_retrieval(
+        self, memory: Dict[str, Any], boost: float = 0.1
+    ) -> Dict[str, Any]:
+        """Boost importance when memory is retrieved."""
         ...
 
 
@@ -315,6 +328,7 @@ class MemoryRetrieval:
         self,
         context: Dict[str, Any],
         top_k: int = 5,
+        token_budget: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """
         Retrieve memories with task-type-aware weighting.
@@ -325,6 +339,9 @@ class MemoryRetrieval:
         Args:
             context: Dictionary with query context (goal, task_type, phase, etc.)
             top_k: Maximum number of results to return
+            token_budget: Optional maximum token budget for returned memories.
+                         If specified, results will be optimized to fit within
+                         this budget using importance/recency/relevance scoring.
 
         Returns:
             List of memory items with source field indicating origin
@@ -363,11 +380,25 @@ class MemoryRetrieval:
                 query, anti_k
             )
 
-        # Merge and rank results
-        merged = self._merge_results(results_by_collection, weights, top_k)
+        # Merge and rank results (including importance scoring)
+        merged = self._merge_results(
+            results_by_collection,
+            weights,
+            top_k * 2 if token_budget else top_k,
+            task_type=task_type,
+        )
 
         # Apply recency boost
         merged = self._apply_recency_boost(merged, boost_factor=0.1)
+
+        # Boost importance for retrieved memories (use it or lose it)
+        if hasattr(self.storage, 'boost_on_retrieval'):
+            for memory in merged[:top_k]:
+                self.storage.boost_on_retrieval(memory, boost=0.05)
+
+        # Apply token budget optimization if specified
+        if token_budget is not None and token_budget > 0:
+            merged = optimize_context(merged, token_budget)
 
         return merged[:top_k]
 
@@ -609,16 +640,24 @@ class MemoryRetrieval:
         self,
         result: Dict[str, Any],
         weights: Dict[str, float],
+        task_type: Optional[str] = None,
     ) -> float:
         """
-        Calculate weighted score for a result.
+        Calculate weighted score for a result, factoring in importance.
+
+        The score combines:
+        - Base relevance score from keyword/vector matching
+        - Task strategy weights for the memory collection
+        - Memory importance score (0.0-1.0)
+        - Confidence factor for semantic patterns
 
         Args:
             result: Memory item with _source and _score fields
             weights: Task strategy weights
+            task_type: Optional task type for relevance calculation
 
         Returns:
-            Weighted score
+            Weighted score incorporating importance
         """
         source = result.get("_source", "")
         base_score = result.get("_score", 0.5)
@@ -629,21 +668,41 @@ class MemoryRetrieval:
             weight_key = "skills"
 
         weight = weights.get(weight_key, 0.0)
-        return base_score * weight
+
+        # Get importance score (default 0.5 if not set)
+        importance = result.get("importance", 0.5)
+
+        # Get confidence for semantic patterns
+        confidence = result.get("confidence", 1.0)
+
+        # Combined score: relevance * task_weight * importance * confidence
+        # Importance contributes 30% of the final score
+        importance_factor = 0.7 + (0.3 * importance)
+        score = base_score * weight * importance_factor * confidence
+
+        return score
 
     def _merge_results(
         self,
         results_by_collection: Dict[str, List[Dict[str, Any]]],
         weights: Dict[str, float],
         top_k: int,
+        task_type: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Merge and rank results from multiple collections.
+
+        Results are ranked by a combined score that factors in:
+        - Relevance to query (base score)
+        - Task strategy weights
+        - Memory importance (with decay)
+        - Confidence (for patterns)
 
         Args:
             results_by_collection: Results grouped by collection name
             weights: Task strategy weights
             top_k: Maximum number of results
+            task_type: Optional task type for importance calculation
 
         Returns:
             Merged and ranked list of results
@@ -656,8 +715,8 @@ class MemoryRetrieval:
                 if "_source" not in item:
                     item["_source"] = collection
 
-                # Calculate weighted score
-                item["_weighted_score"] = self._score_result(item, weights)
+                # Calculate weighted score with importance
+                item["_weighted_score"] = self._score_result(item, weights, task_type)
                 all_results.append(item)
 
         # Sort by weighted score
@@ -712,6 +771,262 @@ class MemoryRetrieval:
         # Re-sort after applying boost
         results.sort(key=lambda x: x.get("_weighted_score", 0), reverse=True)
         return results
+
+    # -------------------------------------------------------------------------
+    # Token Budget Optimization
+    # -------------------------------------------------------------------------
+
+    def retrieve_with_budget(
+        self,
+        context: Dict[str, Any],
+        token_budget: int,
+        progressive: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Retrieve memories optimized for a specific token budget.
+
+        Uses progressive disclosure: starts with layer 1 (topic index),
+        expands to layer 2 (summaries) if budget allows, and finally
+        layer 3 (full details) for highest priority items.
+
+        Args:
+            context: Query context (goal, phase, action_type, etc.)
+            token_budget: Maximum tokens to use for context
+            progressive: If True, use progressive disclosure layers.
+                        If False, retrieve all available data and trim.
+
+        Returns:
+            Dictionary with:
+                - memories: List of selected memories
+                - metrics: Token usage and efficiency metrics
+                - task_type: Detected task type
+        """
+        task_type = self.detect_task_type(context)
+
+        if progressive:
+            return self._progressive_retrieve(context, token_budget, task_type)
+        else:
+            # Standard retrieval with budget optimization
+            memories = self.retrieve_task_aware(context, top_k=50, token_budget=token_budget)
+
+            # Calculate efficiency metrics
+            total_available = self._estimate_total_available_tokens()
+            metrics = get_context_efficiency(memories, token_budget, total_available)
+
+            return {
+                "memories": memories,
+                "metrics": metrics,
+                "task_type": task_type,
+            }
+
+    def _progressive_retrieve(
+        self,
+        context: Dict[str, Any],
+        token_budget: int,
+        task_type: str,
+    ) -> Dict[str, Any]:
+        """
+        Implement progressive disclosure retrieval.
+
+        Layer 1: Topic index only (minimal tokens)
+        Layer 2: Add summaries for relevant topics
+        Layer 3: Expand full details for highest priority items
+        """
+        weights = TASK_STRATEGIES.get(task_type, TASK_STRATEGIES["implementation"])
+        query = self._build_query_from_context(context)
+
+        # Track budget usage
+        budget_remaining = token_budget
+        selected_memories: List[Dict[str, Any]] = []
+
+        # Layer 1: Load topic index (minimal cost)
+        layer1_budget = int(token_budget * 0.2)  # Reserve 20% for index
+        index_data = self.storage.read_json("index.json") or {}
+        topics = index_data.get("topics", [])
+
+        # Filter topics by relevance to query
+        relevant_topics = self._filter_relevant_topics(topics, query, weights)
+
+        # Estimate tokens for layer 1
+        layer1_tokens = sum(estimate_memory_tokens(t) for t in relevant_topics[:10])
+        if layer1_tokens <= layer1_budget:
+            for topic in relevant_topics[:10]:
+                topic["_layer"] = 1
+                selected_memories.append(topic)
+            budget_remaining -= layer1_tokens
+
+        # Layer 2: Expand summaries for top topics
+        layer2_budget = int(token_budget * 0.4)  # Reserve 40% for summaries
+        if budget_remaining > layer2_budget * 0.5:
+            summaries = self._get_topic_summaries(relevant_topics[:5], query, weights)
+            layer2_tokens = sum(estimate_memory_tokens(s) for s in summaries)
+
+            if layer2_tokens <= budget_remaining:
+                for summary in summaries:
+                    summary["_layer"] = 2
+                    selected_memories.append(summary)
+                budget_remaining -= layer2_tokens
+
+        # Layer 3: Full details for highest priority items
+        if budget_remaining > 100:  # At least 100 tokens remaining
+            full_details = self.retrieve_task_aware(context, top_k=10)
+            for detail in full_details:
+                detail["_layer"] = 3
+
+            # Optimize to fit remaining budget
+            optimized = optimize_context(full_details, budget_remaining)
+            selected_memories.extend(optimized)
+
+        # Calculate final metrics
+        total_available = self._estimate_total_available_tokens()
+        metrics = get_context_efficiency(selected_memories, token_budget, total_available)
+        metrics["layers_used"] = list(set(m.get("_layer", 2) for m in selected_memories))
+
+        return {
+            "memories": selected_memories,
+            "metrics": metrics,
+            "task_type": task_type,
+        }
+
+    def _filter_relevant_topics(
+        self,
+        topics: List[Dict[str, Any]],
+        query: str,
+        weights: Dict[str, float],
+    ) -> List[Dict[str, Any]]:
+        """Filter and score topics by relevance to query."""
+        query_lower = query.lower()
+        query_words = set(query_lower.split())
+
+        scored_topics = []
+        for topic in topics:
+            topic_name = topic.get("topic", "").lower()
+            memory_type = topic.get("type", "").lower()
+
+            # Calculate relevance score
+            score = 0.0
+
+            # Word overlap
+            topic_words = set(topic_name.split())
+            overlap = len(query_words & topic_words)
+            score += overlap * 0.3
+
+            # Memory type weight
+            type_weight = weights.get(memory_type, 0.1)
+            score += type_weight
+
+            # Recency boost
+            if topic.get("last_updated"):
+                score += 0.1
+
+            if score > 0:
+                topic["_relevance_score"] = score
+                scored_topics.append(topic)
+
+        # Sort by score
+        scored_topics.sort(key=lambda x: x.get("_relevance_score", 0), reverse=True)
+        return scored_topics
+
+    def _get_topic_summaries(
+        self,
+        topics: List[Dict[str, Any]],
+        query: str,
+        weights: Dict[str, float],
+    ) -> List[Dict[str, Any]]:
+        """Get summaries for selected topics."""
+        summaries = []
+
+        for topic in topics:
+            topic_name = topic.get("topic", "")
+            memory_type = topic.get("type", "episodic")
+
+            # Try to load summary from appropriate collection
+            if memory_type == "episodic":
+                # Get recent episodes for this topic
+                episodes = self.retrieve_from_episodic(topic_name, top_k=3)
+                for ep in episodes:
+                    # Create summary version
+                    summary = {
+                        "id": ep.get("id"),
+                        "topic": topic_name,
+                        "goal": ep.get("context", {}).get("goal", ""),
+                        "outcome": ep.get("outcome", ""),
+                        "_source": "episodic",
+                    }
+                    summaries.append(summary)
+
+            elif memory_type == "semantic":
+                patterns = self.retrieve_from_semantic(topic_name, top_k=3)
+                for pat in patterns:
+                    summary = {
+                        "id": pat.get("id"),
+                        "topic": topic_name,
+                        "pattern": pat.get("pattern", ""),
+                        "category": pat.get("category", ""),
+                        "_source": "semantic",
+                    }
+                    summaries.append(summary)
+
+            elif memory_type == "skills":
+                skills = self.retrieve_from_skills(topic_name, top_k=2)
+                for skill in skills:
+                    summary = {
+                        "id": skill.get("id"),
+                        "topic": topic_name,
+                        "name": skill.get("name", ""),
+                        "description": skill.get("description", ""),
+                        "_source": "skills",
+                    }
+                    summaries.append(summary)
+
+        return summaries
+
+    def _estimate_total_available_tokens(self) -> int:
+        """Estimate total tokens if all memories were loaded."""
+        from .token_economics import estimate_full_load_tokens
+        return estimate_full_load_tokens(str(self.base_path))
+
+    def get_token_usage_summary(
+        self,
+        context: Dict[str, Any],
+        results: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Get a summary of token usage for a retrieval operation.
+
+        Args:
+            context: The query context used
+            results: The results returned
+
+        Returns:
+            Dictionary with token usage statistics
+        """
+        total_tokens = sum(estimate_memory_tokens(r) for r in results)
+        total_available = self._estimate_total_available_tokens()
+
+        # Count by source
+        by_source: Dict[str, int] = {}
+        for result in results:
+            source = result.get("_source", "unknown")
+            tokens = estimate_memory_tokens(result)
+            by_source[source] = by_source.get(source, 0) + tokens
+
+        # Count by layer
+        by_layer: Dict[int, int] = {}
+        for result in results:
+            layer = result.get("_layer", 2)
+            tokens = estimate_memory_tokens(result)
+            by_layer[layer] = by_layer.get(layer, 0) + tokens
+
+        return {
+            "total_tokens": total_tokens,
+            "total_available": total_available,
+            "compression_ratio": round(total_tokens / total_available, 3) if total_available > 0 else 1.0,
+            "memory_count": len(results),
+            "by_source": by_source,
+            "by_layer": by_layer,
+            "task_type": self.detect_task_type(context),
+        }
 
     # -------------------------------------------------------------------------
     # Index Management

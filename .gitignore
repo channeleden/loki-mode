@@ -32,10 +32,7 @@ wiki-repo/
 .loki/logs/
 .loki/queue/
 .loki/state/
-.loki/memory/episodic/
-.loki/memory/semantic/
-.loki/memory/skills/
-.loki/memory/vectors/
+.loki/memory/
 .loki/events/pending/
 .loki/events/archive/
 .loki/PAUSE

@@ -190,9 +190,9 @@ Prompt: "Review the following claims for factual accuracy.
 
 ### Version Numbering
 Follows semantic versioning: MAJOR.MINOR.PATCH
-- Current: v5.17.0
+- Current: v5.18.0
 - MAJOR bump for architecture changes (v5.0.0 = multi-provider support)
-- MINOR bump for new features (v5.17.0 = Unified Event Bus)
+- MINOR bump for new features (v5.18.0 = Cross-Tool Synergy)
 - PATCH bump for fixes (v5.14.1 = peer review fixes)
 
 ### Code Style

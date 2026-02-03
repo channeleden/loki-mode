@@ -280,6 +280,9 @@ class EpisodeTrace:
         tokens_used: Number of tokens consumed
         files_read: List of files read during execution
         files_modified: List of files modified during execution
+        importance: Importance score (0.0-1.0), decays over time
+        last_accessed: When the memory was last accessed
+        access_count: Number of times this memory has been accessed
     """
     id: str
     task_id: str
@@ -296,13 +299,16 @@ class EpisodeTrace:
     tokens_used: int = 0
     files_read: List[str] = field(default_factory=list)
     files_modified: List[str] = field(default_factory=list)
+    importance: float = 0.5
+    last_accessed: Optional[datetime] = None
+    access_count: int = 0
 
     VALID_OUTCOMES = ["success", "failure", "partial"]
     VALID_PHASES = ["REASON", "ACT", "REFLECT", "VERIFY"]
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
-        return {
+        result = {
             "id": self.id,
             "task_id": self.task_id,
             "timestamp": self.timestamp.isoformat() + "Z",
@@ -321,7 +327,12 @@ class EpisodeTrace:
             "tokens_used": self.tokens_used,
             "files_read": self.files_read,
             "files_modified": self.files_modified,
+            "importance": self.importance,
+            "access_count": self.access_count,
         }
+        if self.last_accessed:
+            result["last_accessed"] = self.last_accessed.isoformat() + "Z"
+        return result
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> EpisodeTrace:
@@ -335,6 +346,17 @@ class EpisodeTrace:
             timestamp = datetime.fromisoformat(timestamp_str)
         else:
             timestamp = timestamp_str
+
+        # Parse last_accessed datetime
+        last_accessed = None
+        last_accessed_str = data.get("last_accessed")
+        if last_accessed_str:
+            if isinstance(last_accessed_str, str):
+                if last_accessed_str.endswith("Z"):
+                    last_accessed_str = last_accessed_str[:-1]
+                last_accessed = datetime.fromisoformat(last_accessed_str)
+            else:
+                last_accessed = last_accessed_str
 
         return cls(
             id=data.get("id", ""),
@@ -356,6 +378,9 @@ class EpisodeTrace:
             tokens_used=data.get("tokens_used", 0),
             files_read=data.get("files_read", context.get("files_involved", [])),
             files_modified=data.get("files_modified", []),
+            importance=data.get("importance", 0.5),
+            last_accessed=last_accessed,
+            access_count=data.get("access_count", 0),
         )
 
     def validate(self) -> List[str]:
@@ -381,6 +406,10 @@ class EpisodeTrace:
             errors.append("EpisodeTrace.duration_seconds must be non-negative")
         if self.tokens_used < 0:
             errors.append("EpisodeTrace.tokens_used must be non-negative")
+        if not 0.0 <= self.importance <= 1.0:
+            errors.append("EpisodeTrace.importance must be between 0.0 and 1.0")
+        if self.access_count < 0:
+            errors.append("EpisodeTrace.access_count must be non-negative")
 
         # Validate nested entries
         for i, action in enumerate(self.action_log):
@@ -441,6 +470,9 @@ class SemanticPattern:
         usage_count: How many times this pattern has been used
         last_used: When the pattern was last applied
         links: Zettelkasten-style links to related patterns
+        importance: Importance score (0.0-1.0), decays over time
+        last_accessed: When the memory was last accessed
+        access_count: Number of times this memory has been accessed
     """
     id: str
     pattern: str
@@ -453,6 +485,9 @@ class SemanticPattern:
     usage_count: int = 0
     last_used: Optional[datetime] = None
     links: List[Link] = field(default_factory=list)
+    importance: float = 0.5
+    last_accessed: Optional[datetime] = None
+    access_count: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
@@ -467,9 +502,13 @@ class SemanticPattern:
             "source_episodes": self.source_episodes,
             "usage_count": self.usage_count,
             "links": [link.to_dict() for link in self.links],
+            "importance": self.importance,
+            "access_count": self.access_count,
         }
         if self.last_used:
             result["last_used"] = self.last_used.isoformat() + "Z"
+        if self.last_accessed:
+            result["last_accessed"] = self.last_accessed.isoformat() + "Z"
         return result
 
     @classmethod
@@ -483,6 +522,14 @@ class SemanticPattern:
                     last_used_str = last_used_str[:-1]
                 last_used = datetime.fromisoformat(last_used_str)
 
+        last_accessed = None
+        if data.get("last_accessed"):
+            last_accessed_str = data["last_accessed"]
+            if isinstance(last_accessed_str, str):
+                if last_accessed_str.endswith("Z"):
+                    last_accessed_str = last_accessed_str[:-1]
+                last_accessed = datetime.fromisoformat(last_accessed_str)
+
         return cls(
             id=data.get("id", ""),
             pattern=data.get("pattern", ""),
@@ -495,6 +542,9 @@ class SemanticPattern:
             usage_count=data.get("usage_count", 0),
             last_used=last_used,
             links=[Link.from_dict(link) for link in data.get("links", [])],
+            importance=data.get("importance", 0.5),
+            last_accessed=last_accessed,
+            access_count=data.get("access_count", 0),
         )
 
     def validate(self) -> List[str]:
@@ -510,6 +560,10 @@ class SemanticPattern:
             errors.append("SemanticPattern.confidence must be between 0.0 and 1.0")
         if self.usage_count < 0:
             errors.append("SemanticPattern.usage_count must be non-negative")
+        if not 0.0 <= self.importance <= 1.0:
+            errors.append("SemanticPattern.importance must be between 0.0 and 1.0")
+        if self.access_count < 0:
+            errors.append("SemanticPattern.access_count must be non-negative")
 
         # Validate links
         for i, link in enumerate(self.links):
@@ -575,6 +629,9 @@ class ProceduralSkill:
         common_errors: Errors that commonly occur and their fixes
         exit_criteria: How to know the skill completed successfully
         example_usage: Optional example of using this skill
+        importance: Importance score (0.0-1.0), decays over time
+        last_accessed: When the memory was last accessed
+        access_count: Number of times this memory has been accessed
     """
     id: str
     name: str
@@ -584,6 +641,9 @@ class ProceduralSkill:
     common_errors: List[ErrorFix] = field(default_factory=list)
     exit_criteria: List[str] = field(default_factory=list)
     example_usage: Optional[str] = None
+    importance: float = 0.5
+    last_accessed: Optional[datetime] = None
+    access_count: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
@@ -595,14 +655,26 @@ class ProceduralSkill:
             "steps": self.steps,
             "common_errors": [e.to_dict() for e in self.common_errors],
             "exit_criteria": self.exit_criteria,
+            "importance": self.importance,
+            "access_count": self.access_count,
         }
         if self.example_usage:
             result["example_usage"] = self.example_usage
+        if self.last_accessed:
+            result["last_accessed"] = self.last_accessed.isoformat() + "Z"
         return result
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> ProceduralSkill:
         """Create from dictionary."""
+        last_accessed = None
+        if data.get("last_accessed"):
+            last_accessed_str = data["last_accessed"]
+            if isinstance(last_accessed_str, str):
+                if last_accessed_str.endswith("Z"):
+                    last_accessed_str = last_accessed_str[:-1]
+                last_accessed = datetime.fromisoformat(last_accessed_str)
+
         return cls(
             id=data.get("id", ""),
             name=data.get("name", ""),
@@ -614,6 +686,9 @@ class ProceduralSkill:
             ],
             exit_criteria=data.get("exit_criteria", []),
             example_usage=data.get("example_usage"),
+            importance=data.get("importance", 0.5),
+            last_accessed=last_accessed,
+            access_count=data.get("access_count", 0),
         )
 
     def validate(self) -> List[str]:
@@ -627,6 +702,10 @@ class ProceduralSkill:
             errors.append("ProceduralSkill.description is required")
         if not self.steps:
             errors.append("ProceduralSkill.steps must have at least one step")
+        if not 0.0 <= self.importance <= 1.0:
+            errors.append("ProceduralSkill.importance must be between 0.0 and 1.0")
+        if self.access_count < 0:
+            errors.append("ProceduralSkill.access_count must be non-negative")
 
         # Validate common_errors
         for i, error_fix in enumerate(self.common_errors):

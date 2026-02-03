@@ -85,11 +85,11 @@ This document tracks all implementation tasks to achieve tool synergy and compet
 
 | Task ID | Task | Status | Priority | Notes |
 |---------|------|--------|----------|-------|
-| SEC-001 | Fix command injection in session-init.sh | Pending | Critical | Shell vars in Python |
-| SEC-002 | Fix command injection in store-episode.sh | Pending | Critical | Shell vars in Python |
-| SEC-003 | Fix path traversal in mcp/server.py | Pending | High | Validate file paths |
-| SEC-004 | Improve fork bomb pattern detection | Pending | Medium | More comprehensive regex |
-| SEC-005 | Add input sanitization to all hooks | Pending | High | Prevent injection |
+| SEC-001 | Fix command injection in session-init.sh | Done | Critical | Fixed via env vars |
+| SEC-002 | Fix command injection in store-episode.sh | Done | Critical | Fixed via env vars |
+| SEC-003 | Fix path traversal in mcp/server.py | Done | High | Added validate_path() |
+| SEC-004 | Improve fork bomb pattern detection | Done | Medium | Regex updated in v5.16.0 |
+| SEC-005 | Add input sanitization to all hooks | Done | High | Via path validation |
 
 ---
 
@@ -97,11 +97,11 @@ This document tracks all implementation tasks to achieve tool synergy and compet
 
 | Task ID | Task | Status | Priority | Effort |
 |---------|------|--------|----------|--------|
-| QW-001 | CLI emits events on command execution | Pending | High | Low |
-| QW-002 | API returns relevant patterns with status | Pending | Medium | Low |
-| QW-003 | MCP emits tool call events | Pending | Medium | Low |
+| QW-001 | CLI emits events on command execution | Done | High | Low |
+| QW-002 | API returns relevant patterns with status | Done | Medium | Low |
+| QW-003 | MCP emits tool call events | Done | Medium | Low |
 | QW-004 | Add suggestions endpoint to API | Pending | Medium | Medium |
-| QW-005 | VS Code shows memory stats in status bar | Pending | Low | Low |
+| QW-005 | VS Code shows memory stats in status bar | Done | Low | Low |
 
 ---
 

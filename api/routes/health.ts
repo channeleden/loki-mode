@@ -6,7 +6,30 @@
 
 import { cliBridge } from "../services/cli-bridge.ts";
 import { eventBus } from "../services/event-bus.ts";
-import type { HealthResponse } from "../types/api.ts";
+import type { HealthResponse, Phase } from "../types/api.ts";
+
+// Base path for memory storage
+const MEMORY_BASE_PATH = ".loki/memory";
+
+/**
+ * Memory pattern summary for status response
+ */
+interface PatternSummary {
+  id: string;
+  pattern: string;
+  category: string;
+  confidence: number;
+}
+
+/**
+ * Memory context included in detailed status
+ */
+interface MemoryContext {
+  available: boolean;
+  currentPhase: Phase | null;
+  relevantPatterns: PatternSummary[];
+  patternCount: number;
+}
 
 const startTime = Date.now();
 const version = Deno.env.get("LOKI_VERSION") || "dev";
@@ -87,6 +110,13 @@ export async function detailedStatus(_req: Request): Promise<Response> {
   const completedCount = sessions.filter((s) => s.status === "completed").length;
   const failedCount = sessions.filter((s) => s.status === "failed").length;
 
+  // Determine current phase from active session
+  const runningSession = sessions.find((s) => s.status === "running");
+  const currentPhase = runningSession?.currentPhase || null;
+
+  // Get memory context with relevant patterns
+  const memoryContext = await getMemoryContext(currentPhase);
+
   return new Response(
     JSON.stringify({
       version,
@@ -109,6 +139,7 @@ export async function detailedStatus(_req: Request): Promise<Response> {
         denoVersion: Deno.version.deno,
         v8Version: Deno.version.v8,
       },
+      memoryContext,
     }),
     {
       headers: { "Content-Type": "application/json" },
@@ -145,6 +176,107 @@ async function checkProviders(): Promise<{
   ]);
 
   return { claude, codex, gemini };
+}
+
+/**
+ * Get memory context with relevant patterns for the current phase
+ */
+async function getMemoryContext(currentPhase: Phase | null): Promise<MemoryContext> {
+  const emptyContext: MemoryContext = {
+    available: false,
+    currentPhase,
+    relevantPatterns: [],
+    patternCount: 0,
+  };
+
+  try {
+    // Build category filter based on current phase
+    const categoryFilter = currentPhase ? `'${currentPhase}'` : "None";
+
+    const script = `
+import sys
+import json
+sys.path.insert(0, '.')
+
+try:
+    from memory.engine import MemoryEngine
+    from memory.storage import MemoryStorage
+
+    storage = MemoryStorage('${MEMORY_BASE_PATH}')
+    engine = MemoryEngine(storage=storage, base_path='${MEMORY_BASE_PATH}')
+
+    # Get patterns, optionally filtered by phase/category
+    category = ${categoryFilter}
+
+    # Get all patterns first to get total count
+    all_patterns = engine.find_patterns(min_confidence=0.5)
+    total_count = len(all_patterns)
+
+    # Get relevant patterns for the current phase
+    if category:
+        # Try to find patterns matching the phase category
+        phase_patterns = engine.find_patterns(category=category, min_confidence=0.5)
+        if not phase_patterns:
+            # Fall back to highest confidence patterns
+            phase_patterns = sorted(all_patterns, key=lambda p: getattr(p, 'confidence', 0.5) if hasattr(p, 'confidence') else p.get('confidence', 0.5), reverse=True)
+    else:
+        # No phase, return highest confidence patterns
+        phase_patterns = sorted(all_patterns, key=lambda p: getattr(p, 'confidence', 0.5) if hasattr(p, 'confidence') else p.get('confidence', 0.5), reverse=True)
+
+    # Limit to top 3
+    top_patterns = phase_patterns[:3]
+
+    results = []
+    for p in top_patterns:
+        p_dict = p.to_dict() if hasattr(p, 'to_dict') else (p.__dict__ if hasattr(p, '__dict__') else p)
+        results.append({
+            'id': p_dict.get('id', ''),
+            'pattern': p_dict.get('pattern', ''),
+            'category': p_dict.get('category', ''),
+            'confidence': p_dict.get('confidence', 0.8)
+        })
+
+    output = {
+        'available': True,
+        'relevantPatterns': results,
+        'patternCount': total_count
+    }
+    print(json.dumps(output))
+
+except ImportError:
+    # Memory module not available
+    print(json.dumps({'available': False, 'relevantPatterns': [], 'patternCount': 0}))
+except Exception as e:
+    # Any other error - memory not initialized or empty
+    print(json.dumps({'available': False, 'relevantPatterns': [], 'patternCount': 0, 'error': str(e)}))
+`;
+
+    const command = new Deno.Command("python3", {
+      args: ["-c", script],
+      cwd: Deno.cwd(),
+      stdout: "piped",
+      stderr: "piped",
+    });
+
+    const { code, stdout } = await command.output();
+
+    if (code !== 0) {
+      return emptyContext;
+    }
+
+    const result = new TextDecoder().decode(stdout);
+    const parsed = JSON.parse(result.trim());
+
+    return {
+      available: parsed.available || false,
+      currentPhase,
+      relevantPatterns: parsed.relevantPatterns || [],
+      patternCount: parsed.patternCount || 0,
+    };
+  } catch {
+    // Memory system not available or error occurred
+    return emptyContext;
+  }
 }
 
 /**
