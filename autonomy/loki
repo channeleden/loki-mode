@@ -441,7 +441,8 @@ cmd_start() {
     local effective_provider="${provider:-${LOKI_PROVIDER:-claude}}"
 
     # Handle sandbox mode - delegate to sandbox.sh
-    if [[ "${LOKI_SANDBOX_MODE:-}" == "true" ]]; then
+    # Skip if we're already inside a container (/.dockerenv exists)
+    if [[ "${LOKI_SANDBOX_MODE:-}" == "true" ]] && [[ ! -f /.dockerenv ]]; then
         if [ ! -f "$SANDBOX_SH" ]; then
             echo -e "${RED}Error: sandbox.sh not found at $SANDBOX_SH${NC}"
             exit 1

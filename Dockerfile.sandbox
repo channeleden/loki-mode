@@ -125,8 +125,9 @@ COPY --from=builder /usr/bin/npx /usr/bin/npx
 COPY --from=builder /usr/bin/gh /usr/bin/gh
 
 # Copy installed CLI tools from builder (global node_modules)
-COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=builder /usr/local/bin /usr/local/bin
+# Note: npm -g with NodeSource installs to /usr/lib/node_modules, binaries to /usr/bin
+# The /usr/local paths may not exist if CLIs aren't available on npm
+# We already copied /usr/lib/node_modules above
 
 # Create symlinks for node binaries
 RUN ln -sf /usr/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm 2>/dev/null || true \

@@ -675,6 +675,9 @@ start_sandbox() {
     # Working directory
     docker_args+=("--workdir" "/workspace")
 
+    # Override entrypoint to use bash (Dockerfile has loki as entrypoint)
+    docker_args+=("--entrypoint" "/bin/bash")
+
     # Image and command
     docker_args+=("$SANDBOX_IMAGE")
 
@@ -690,7 +693,7 @@ start_sandbox() {
     fi
     loki_cmd="$loki_cmd --provider $provider"
 
-    docker_args+=("bash" "-c" "$loki_cmd")
+    docker_args+=("-c" "$loki_cmd")
 
     # Run container
     local container_id
@@ -1190,9 +1193,9 @@ main() {
     case "$command" in
         start)
             if [[ "$sandbox_mode" == "docker" ]]; then
-                start_sandbox "${args[@]}"
+                start_sandbox ${args[@]+"${args[@]}"}
             else
-                start_worktree_sandbox "${args[@]}"
+                start_worktree_sandbox ${args[@]+"${args[@]}"}
             fi
             ;;
         stop)
@@ -1210,7 +1213,7 @@ main() {
             fi
             ;;
         logs)
-            sandbox_logs "${args[@]}"
+            sandbox_logs ${args[@]+"${args[@]}"}
             ;;
         shell)
             sandbox_shell
@@ -1220,28 +1223,28 @@ main() {
             ;;
         prompt)
             if [[ "$sandbox_mode" == "docker" ]]; then
-                sandbox_prompt "${args[@]}"
+                sandbox_prompt ${args[@]+"${args[@]}"}
             else
-                worktree_sandbox_prompt "${args[@]}"
+                worktree_sandbox_prompt ${args[@]+"${args[@]}"}
             fi
             ;;
         run)
-            sandbox_run "${args[@]}"
+            sandbox_run ${args[@]+"${args[@]}"}
             ;;
         cleanup)
             cleanup_worktrees
             ;;
         serve)
-            sandbox_serve "${args[@]}"
+            sandbox_serve ${args[@]+"${args[@]}"}
             ;;
         test)
-            sandbox_test "${args[@]}"
+            sandbox_test ${args[@]+"${args[@]}"}
             ;;
         phase)
             sandbox_phase
             ;;
         expose)
-            sandbox_expose "${args[@]}"
+            sandbox_expose ${args[@]+"${args[@]}"}
             ;;
         help|--help|-h)
             show_help
