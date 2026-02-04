@@ -38,6 +38,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.20.3] - 2026-02-04
+
+### Fixed - Dashboard Server Missing from npm Package
+
+- Added `dashboard/` to npm package files array
+- Created `.npmignore` to exclude venv, pycache, node_modules
+- Fixes "No module named 'dashboard'" error when running `loki dashboard start`
+
+---
+
 ## [5.20.2] - 2026-02-04
 
 ### Fixed - CI/CD Pipeline for VS Code Extension
