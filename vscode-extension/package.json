@@ -132,9 +132,10 @@
         },
         {
           "id": "loki-memory",
-          "name": "Memory",
-          "contextualTitle": "Loki Memory",
-          "type": "webview"
+          "name": "Memory (Deprecated)",
+          "contextualTitle": "Loki Memory - Use Dashboard Memory Tab",
+          "type": "webview",
+          "visibility": "collapsed"
         },
         {
           "id": "loki-logs",
@@ -167,7 +168,7 @@
       },
       {
         "view": "loki-memory",
-        "contents": "No memory context available.\nMemory will appear when Loki Mode is running."
+        "contents": "[DEPRECATED] This view is deprecated.\nPlease use the Memory tab in the main Dashboard instead.\n[Open Dashboard](command:loki.openDashboard)"
       },
       {
         "view": "loki-logs",
@@ -286,12 +287,14 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "node esbuild.js --production",
+    "prebuild:dashboard": "cd ../dashboard-ui && npm run build",
+    "compile": "npm run prebuild:dashboard && node esbuild.js --production",
+    "compile:extension-only": "node esbuild.js --production",
     "watch": "node esbuild.js --watch",
     "pretest": "npm run compile",
     "test": "node ./out/test/runTest.js",
     "lint": "eslint src --ext ts",
-    "package": "vsce package",
+    "package": "npm run compile && vsce package",
     "publish": "vsce publish"
   },
   "devDependencies": {

@@ -820,6 +820,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // Initialize webview providers
     chatViewProvider = new ChatViewProvider(context.extensionUri, apiClient);
     logsViewProvider = new LogsViewProvider(context.extensionUri, apiClient);
+    // TODO: Remove MemoryViewProvider in v6.0.0 - deprecated in favor of dashboard Memory tab
     memoryViewProvider = new MemoryViewProvider(context.extensionUri, apiClient);
     dashboardWebviewProvider = new DashboardWebviewProvider(context.extensionUri, apiClient);
 
@@ -845,6 +846,7 @@ export function activate(context: vscode.ExtensionContext): void {
         logsViewProvider
     );
 
+    // TODO: Remove memoryView registration in v6.0.0 - deprecated in favor of dashboard Memory tab
     const memoryView = vscode.window.registerWebviewViewProvider(
         MemoryViewProvider.viewType,
         memoryViewProvider

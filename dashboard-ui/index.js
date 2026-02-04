@@ -72,7 +72,7 @@ export { LokiMemoryBrowser } from './components/loki-memory-browser.js';
 export { LokiLearningDashboard } from './components/loki-learning-dashboard.js';
 
 // Version
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 
 /**
  * Initialize all components with default configuration

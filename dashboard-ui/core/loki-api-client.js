@@ -3,7 +3,27 @@
  *
  * Unified API client for Loki Mode web components.
  * Supports both REST API and WebSocket connections.
+ * Features adaptive polling and VS Code webview integration.
  */
+
+/**
+ * Polling interval presets for different contexts
+ */
+const POLL_INTERVALS = {
+  realtime: 1000,      // Active session monitoring
+  normal: 2000,        // Default
+  background: 5000,    // VS Code sidebar (not visible)
+  offline: 10000,      // Connectivity check only
+};
+
+/**
+ * Default polling intervals by context
+ */
+const CONTEXT_DEFAULTS = {
+  vscode: POLL_INTERVALS.normal,
+  browser: POLL_INTERVALS.realtime,
+  cli: POLL_INTERVALS.background,
+};
 
 /**
  * Default API configuration
@@ -71,6 +91,192 @@ export class LokiApiClient extends EventTarget {
     this._reconnectTimeout = null;
     this._cache = new Map();
     this._cacheTimeout = 5000; // 5 seconds cache
+    this._vscodeApi = null;
+    this._context = this._detectContext();
+    this._currentPollInterval = CONTEXT_DEFAULTS[this._context] || POLL_INTERVALS.normal;
+
+    // Setup adaptive polling and VS Code bridge
+    this._setupAdaptivePolling();
+    this._setupVSCodeBridge();
+  }
+
+  // ============================================
+  // Context Detection and Adaptive Polling
+  // ============================================
+
+  /**
+   * Detect the current execution context
+   * @returns {'vscode'|'browser'|'cli'}
+   */
+  _detectContext() {
+    // Check for VS Code webview environment
+    if (typeof acquireVsCodeApi !== 'undefined') return 'vscode';
+    // Check for browser environment
+    if (typeof window !== 'undefined' && window.location) return 'browser';
+    // Default to CLI context (Node.js or similar)
+    return 'cli';
+  }
+
+  /**
+   * Get the current execution context
+   */
+  get context() {
+    return this._context;
+  }
+
+  /**
+   * Get available polling intervals
+   */
+  static get POLL_INTERVALS() {
+    return POLL_INTERVALS;
+  }
+
+  /**
+   * Setup adaptive polling based on page visibility
+   */
+  _setupAdaptivePolling() {
+    // Only setup in browser environments with document API
+    if (typeof document === 'undefined') return;
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this._setPollInterval(POLL_INTERVALS.background);
+      } else {
+        this._setPollInterval(CONTEXT_DEFAULTS[this._context] || POLL_INTERVALS.normal);
+      }
+    });
+  }
+
+  /**
+   * Update the polling interval dynamically
+   * @param {number} interval - New polling interval in milliseconds
+   */
+  _setPollInterval(interval) {
+    this._currentPollInterval = interval;
+
+    // If actively polling, restart with new interval
+    if (this._pollInterval) {
+      this.stopPolling();
+      this.startPolling(null, interval);
+    }
+  }
+
+  /**
+   * Manually set polling mode
+   * @param {'realtime'|'normal'|'background'|'offline'} mode
+   */
+  setPollMode(mode) {
+    const interval = POLL_INTERVALS[mode];
+    if (interval) {
+      this._setPollInterval(interval);
+    }
+  }
+
+  // ============================================
+  // VS Code Message Bridge
+  // ============================================
+
+  /**
+   * Setup VS Code webview message bridge
+   */
+  _setupVSCodeBridge() {
+    // Check if running in VS Code webview
+    if (typeof acquireVsCodeApi === 'undefined') return;
+
+    try {
+      this._vscodeApi = acquireVsCodeApi();
+    } catch (e) {
+      // acquireVsCodeApi can only be called once, may already be acquired
+      console.warn('VS Code API already acquired or unavailable');
+      return;
+    }
+
+    // Listen for messages from VS Code extension
+    window.addEventListener('message', (event) => {
+      const message = event.data;
+      if (!message || !message.type) return;
+
+      switch (message.type) {
+        case 'updateStatus':
+          this._emit(ApiEvents.STATUS_UPDATE, message.data);
+          break;
+        case 'updateTasks':
+          this._emit(ApiEvents.TASK_UPDATED, message.data);
+          break;
+        case 'taskCreated':
+          this._emit(ApiEvents.TASK_CREATED, message.data);
+          break;
+        case 'taskDeleted':
+          this._emit(ApiEvents.TASK_DELETED, message.data);
+          break;
+        case 'projectCreated':
+          this._emit(ApiEvents.PROJECT_CREATED, message.data);
+          break;
+        case 'projectUpdated':
+          this._emit(ApiEvents.PROJECT_UPDATED, message.data);
+          break;
+        case 'agentUpdate':
+          this._emit(ApiEvents.AGENT_UPDATE, message.data);
+          break;
+        case 'logMessage':
+          this._emit(ApiEvents.LOG_MESSAGE, message.data);
+          break;
+        case 'memoryUpdate':
+          this._emit(ApiEvents.MEMORY_UPDATE, message.data);
+          break;
+        case 'connected':
+          this._connected = true;
+          this._emit(ApiEvents.CONNECTED, message.data);
+          break;
+        case 'disconnected':
+          this._connected = false;
+          this._emit(ApiEvents.DISCONNECTED, message.data);
+          break;
+        case 'error':
+          this._emit(ApiEvents.ERROR, message.data);
+          break;
+        case 'setPollMode':
+          this.setPollMode(message.data.mode);
+          break;
+        default:
+          // Emit unknown message types as custom events
+          this._emit(`api:${message.type}`, message.data);
+      }
+    });
+  }
+
+  /**
+   * Check if running in VS Code webview
+   */
+  get isVSCode() {
+    return this._context === 'vscode';
+  }
+
+  /**
+   * Post a message to VS Code extension host
+   * @param {string} type - Message type
+   * @param {object} data - Message data
+   */
+  postToVSCode(type, data = {}) {
+    if (this._vscodeApi) {
+      this._vscodeApi.postMessage({ type, data });
+    }
+  }
+
+  /**
+   * Request data refresh from VS Code extension
+   */
+  requestRefresh() {
+    this.postToVSCode('requestRefresh');
+  }
+
+  /**
+   * Notify VS Code of user action
+   * @param {string} action - Action name
+   * @param {object} payload - Action payload
+   */
+  notifyVSCode(action, payload = {}) {
+    this.postToVSCode('userAction', { action, ...payload });
   }
 
   /**
@@ -636,24 +842,40 @@ export class LokiApiClient extends EventTarget {
 
   /**
    * Start polling for updates
+   * Uses adaptive polling interval based on context and visibility
    */
   startPolling(callback, interval = null) {
     if (this._pollInterval) return;
+
+    // Store callback for use when restarting polling with new interval
+    this._pollCallback = callback;
 
     const pollFn = async () => {
       try {
         const status = await this.getStatus();
         this._connected = true;
-        if (callback) callback(status);
+        if (this._pollCallback) this._pollCallback(status);
         this._emit(ApiEvents.STATUS_UPDATE, status);
+
+        // Notify VS Code of successful poll if in that context
+        if (this._vscodeApi) {
+          this.postToVSCode('pollSuccess', { timestamp: Date.now() });
+        }
       } catch (error) {
         this._connected = false;
         this._emit(ApiEvents.ERROR, { error });
+
+        // Notify VS Code of poll failure
+        if (this._vscodeApi) {
+          this.postToVSCode('pollError', { error: error.message });
+        }
       }
     };
 
     pollFn(); // Initial poll
-    this._pollInterval = setInterval(pollFn, interval || this.config.pollInterval);
+    // Use provided interval, current adaptive interval, or config default
+    const effectiveInterval = interval || this._currentPollInterval || this.config.pollInterval;
+    this._pollInterval = setInterval(pollFn, effectiveInterval);
   }
 
   /**
@@ -684,5 +906,8 @@ export function createApiClient(config = {}) {
 export function getApiClient(config = {}) {
   return LokiApiClient.getInstance(config);
 }
+
+// Export polling intervals for external configuration
+export { POLL_INTERVALS, CONTEXT_DEFAULTS };
 
 export default LokiApiClient;

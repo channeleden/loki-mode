@@ -1,0 +1,2973 @@
+/* Loki Dashboard UI - IIFE Bundle (VS Code Webview) */
+
+var LokiDashboard=(()=>{var O=Object.defineProperty;var ee=Object.getOwnPropertyDescriptor;var te=Object.getOwnPropertyNames;var ae=Object.prototype.hasOwnProperty;var se=(l,e,t)=>e in l?O(l,e,{enumerable:!0,configurable:!0,writable:!0,value:t}):l[e]=t;var ie=(l,e)=>{for(var t in e)O(l,t,{get:e[t],enumerable:!0})},oe=(l,e,t,a)=>{if(e&&typeof e=="object"||typeof e=="function")for(let s of te(e))!ae.call(l,s)&&s!==t&&O(l,s,{get:()=>e[s],enumerable:!(a=ee(e,s))||a.enumerable});return l};var re=l=>oe(O({},"__esModule",{value:!0}),l);var k=(l,e,t)=>se(l,typeof e!="symbol"?e+"":e,t);var he={};ie(he,{ANIMATION:()=>w,ARIA_PATTERNS:()=>H,ApiEvents:()=>r,BASE_STYLES:()=>P,BREAKPOINTS:()=>F,COMMON_STYLES:()=>Y,KEYBOARD_SHORTCUTS:()=>N,KeyboardHandler:()=>C,LokiApiClient:()=>L,LokiElement:()=>u,LokiLearningDashboard:()=>U,LokiLogStream:()=>z,LokiMemoryBrowser:()=>B,LokiSessionControl:()=>j,LokiState:()=>I,LokiTaskBoard:()=>M,LokiTheme:()=>S,RADIUS:()=>_,SPACING:()=>x,STATE_CHANGE_EVENT:()=>G,THEMES:()=>v,THEME_VARIABLES:()=>q,TYPOGRAPHY:()=>h,UnifiedThemeManager:()=>p,VERSION:()=>ue,Z_INDEX:()=>E,createApiClient:()=>X,createStore:()=>Z,generateThemeCSS:()=>m,generateTokensCSS:()=>R,getApiClient:()=>g,getState:()=>A,init:()=>ge});var v={light:{"--loki-bg-primary":"#faf9f0","--loki-bg-secondary":"#f5f4eb","--loki-bg-tertiary":"#eeeddf","--loki-bg-card":"#ffffff","--loki-bg-hover":"#f0efe6","--loki-bg-active":"#e8e7dc","--loki-bg-overlay":"rgba(0, 0, 0, 0.5)","--loki-accent":"#d97757","--loki-accent-hover":"#c56a4c","--loki-accent-active":"#b35d40","--loki-accent-light":"#e8956f","--loki-accent-muted":"rgba(217, 119, 87, 0.12)","--loki-text-primary":"#1a1a1a","--loki-text-secondary":"#5c5c5c","--loki-text-muted":"#8a8a8a","--loki-text-disabled":"#b0b0b0","--loki-text-inverse":"#ffffff","--loki-border":"#e5e3de","--loki-border-light":"#d4d2cb","--loki-border-focus":"#d97757","--loki-success":"#16a34a","--loki-success-muted":"rgba(22, 163, 74, 0.12)","--loki-warning":"#ca8a04","--loki-warning-muted":"rgba(202, 138, 4, 0.12)","--loki-error":"#dc2626","--loki-error-muted":"rgba(220, 38, 38, 0.12)","--loki-info":"#2563eb","--loki-info-muted":"rgba(37, 99, 235, 0.12)","--loki-green":"#16a34a","--loki-green-muted":"rgba(22, 163, 74, 0.12)","--loki-yellow":"#ca8a04","--loki-yellow-muted":"rgba(202, 138, 4, 0.12)","--loki-red":"#dc2626","--loki-red-muted":"rgba(220, 38, 38, 0.12)","--loki-blue":"#2563eb","--loki-blue-muted":"rgba(37, 99, 235, 0.12)","--loki-purple":"#9333ea","--loki-purple-muted":"rgba(147, 51, 234, 0.12)","--loki-opus":"#d97706","--loki-sonnet":"#4f46e5","--loki-haiku":"#059669","--loki-shadow-sm":"0 1px 2px rgba(0, 0, 0, 0.05)","--loki-shadow-md":"0 4px 6px rgba(0, 0, 0, 0.07)","--loki-shadow-lg":"0 10px 15px rgba(0, 0, 0, 0.1)","--loki-shadow-focus":"0 0 0 3px rgba(217, 119, 87, 0.3)"},dark:{"--loki-bg-primary":"#131314","--loki-bg-secondary":"#1a1a1b","--loki-bg-tertiary":"#232325","--loki-bg-card":"#1e1e20","--loki-bg-hover":"#2a2a2d","--loki-bg-active":"#333336","--loki-bg-overlay":"rgba(0, 0, 0, 0.7)","--loki-accent":"#d97757","--loki-accent-hover":"#e08668","--loki-accent-active":"#e8956f","--loki-accent-light":"#e8956f","--loki-accent-muted":"rgba(217, 119, 87, 0.15)","--loki-text-primary":"#f5f5f5","--loki-text-secondary":"#a1a1a6","--loki-text-muted":"#6b6b70","--loki-text-disabled":"#4a4a4f","--loki-text-inverse":"#1a1a1a","--loki-border":"#2d2d30","--loki-border-light":"#3d3d42","--loki-border-focus":"#d97757","--loki-success":"#22c55e","--loki-success-muted":"rgba(34, 197, 94, 0.15)","--loki-warning":"#eab308","--loki-warning-muted":"rgba(234, 179, 8, 0.15)","--loki-error":"#ef4444","--loki-error-muted":"rgba(239, 68, 68, 0.15)","--loki-info":"#3b82f6","--loki-info-muted":"rgba(59, 130, 246, 0.15)","--loki-green":"#22c55e","--loki-green-muted":"rgba(34, 197, 94, 0.15)","--loki-yellow":"#eab308","--loki-yellow-muted":"rgba(234, 179, 8, 0.15)","--loki-red":"#ef4444","--loki-red-muted":"rgba(239, 68, 68, 0.15)","--loki-blue":"#3b82f6","--loki-blue-muted":"rgba(59, 130, 246, 0.15)","--loki-purple":"#a855f7","--loki-purple-muted":"rgba(168, 85, 247, 0.15)","--loki-opus":"#f59e0b","--loki-sonnet":"#6366f1","--loki-haiku":"#10b981","--loki-shadow-sm":"0 1px 2px rgba(0, 0, 0, 0.3)","--loki-shadow-md":"0 4px 6px rgba(0, 0, 0, 0.4)","--loki-shadow-lg":"0 10px 15px rgba(0, 0, 0, 0.5)","--loki-shadow-focus":"0 0 0 3px rgba(217, 119, 87, 0.4)"},"high-contrast":{"--loki-bg-primary":"#000000","--loki-bg-secondary":"#0a0a0a","--loki-bg-tertiary":"#141414","--loki-bg-card":"#0a0a0a","--loki-bg-hover":"#1a1a1a","--loki-bg-active":"#242424","--loki-bg-overlay":"rgba(0, 0, 0, 0.9)","--loki-accent":"#ff9d7a","--loki-accent-hover":"#ffb396","--loki-accent-active":"#ffc9b2","--loki-accent-light":"#ffb396","--loki-accent-muted":"rgba(255, 157, 122, 0.25)","--loki-text-primary":"#ffffff","--loki-text-secondary":"#e0e0e0","--loki-text-muted":"#b0b0b0","--loki-text-disabled":"#666666","--loki-text-inverse":"#000000","--loki-border":"#ffffff","--loki-border-light":"#cccccc","--loki-border-focus":"#ff9d7a","--loki-success":"#4ade80","--loki-success-muted":"rgba(74, 222, 128, 0.25)","--loki-warning":"#fde047","--loki-warning-muted":"rgba(253, 224, 71, 0.25)","--loki-error":"#f87171","--loki-error-muted":"rgba(248, 113, 113, 0.25)","--loki-info":"#60a5fa","--loki-info-muted":"rgba(96, 165, 250, 0.25)","--loki-green":"#4ade80","--loki-green-muted":"rgba(74, 222, 128, 0.25)","--loki-yellow":"#fde047","--loki-yellow-muted":"rgba(253, 224, 71, 0.25)","--loki-red":"#f87171","--loki-red-muted":"rgba(248, 113, 113, 0.25)","--loki-blue":"#60a5fa","--loki-blue-muted":"rgba(96, 165, 250, 0.25)","--loki-purple":"#c084fc","--loki-purple-muted":"rgba(192, 132, 252, 0.25)","--loki-opus":"#fbbf24","--loki-sonnet":"#818cf8","--loki-haiku":"#34d399","--loki-shadow-sm":"none","--loki-shadow-md":"none","--loki-shadow-lg":"none","--loki-shadow-focus":"0 0 0 3px #ff9d7a"},"vscode-light":{"--loki-bg-primary":"var(--vscode-editor-background, #ffffff)","--loki-bg-secondary":"var(--vscode-sideBar-background, #f3f3f3)","--loki-bg-tertiary":"var(--vscode-input-background, #ffffff)","--loki-bg-card":"var(--vscode-editor-background, #ffffff)","--loki-bg-hover":"var(--vscode-list-hoverBackground, #e8e8e8)","--loki-bg-active":"var(--vscode-list-activeSelectionBackground, #0060c0)","--loki-bg-overlay":"rgba(0, 0, 0, 0.4)","--loki-accent":"var(--vscode-focusBorder, #0066cc)","--loki-accent-hover":"var(--vscode-button-hoverBackground, #0055aa)","--loki-accent-active":"var(--vscode-button-background, #007acc)","--loki-accent-light":"var(--vscode-focusBorder, #0066cc)","--loki-accent-muted":"var(--vscode-editor-selectionBackground, rgba(0, 102, 204, 0.2))","--loki-text-primary":"var(--vscode-foreground, #333333)","--loki-text-secondary":"var(--vscode-descriptionForeground, #717171)","--loki-text-muted":"var(--vscode-disabledForeground, #a0a0a0)","--loki-text-disabled":"var(--vscode-disabledForeground, #cccccc)","--loki-text-inverse":"var(--vscode-button-foreground, #ffffff)","--loki-border":"var(--vscode-widget-border, #c8c8c8)","--loki-border-light":"var(--vscode-widget-border, #e0e0e0)","--loki-border-focus":"var(--vscode-focusBorder, #0066cc)","--loki-success":"var(--vscode-testing-iconPassed, #388a34)","--loki-success-muted":"rgba(56, 138, 52, 0.15)","--loki-warning":"var(--vscode-editorWarning-foreground, #bf8803)","--loki-warning-muted":"rgba(191, 136, 3, 0.15)","--loki-error":"var(--vscode-errorForeground, #e51400)","--loki-error-muted":"rgba(229, 20, 0, 0.15)","--loki-info":"var(--vscode-editorInfo-foreground, #1a85ff)","--loki-info-muted":"rgba(26, 133, 255, 0.15)","--loki-green":"var(--vscode-testing-iconPassed, #388a34)","--loki-green-muted":"rgba(56, 138, 52, 0.15)","--loki-yellow":"var(--vscode-editorWarning-foreground, #bf8803)","--loki-yellow-muted":"rgba(191, 136, 3, 0.15)","--loki-red":"var(--vscode-errorForeground, #e51400)","--loki-red-muted":"rgba(229, 20, 0, 0.15)","--loki-blue":"var(--vscode-editorInfo-foreground, #1a85ff)","--loki-blue-muted":"rgba(26, 133, 255, 0.15)","--loki-purple":"#9333ea","--loki-purple-muted":"rgba(147, 51, 234, 0.15)","--loki-opus":"#d97706","--loki-sonnet":"#4f46e5","--loki-haiku":"#059669","--loki-shadow-sm":"0 1px 2px rgba(0, 0, 0, 0.05)","--loki-shadow-md":"0 2px 4px rgba(0, 0, 0, 0.1)","--loki-shadow-lg":"0 4px 8px rgba(0, 0, 0, 0.15)","--loki-shadow-focus":"0 0 0 2px var(--vscode-focusBorder, #0066cc)"},"vscode-dark":{"--loki-bg-primary":"var(--vscode-editor-background, #1e1e1e)","--loki-bg-secondary":"var(--vscode-sideBar-background, #252526)","--loki-bg-tertiary":"var(--vscode-input-background, #3c3c3c)","--loki-bg-card":"var(--vscode-editor-background, #1e1e1e)","--loki-bg-hover":"var(--vscode-list-hoverBackground, #2a2d2e)","--loki-bg-active":"var(--vscode-list-activeSelectionBackground, #094771)","--loki-bg-overlay":"rgba(0, 0, 0, 0.6)","--loki-accent":"var(--vscode-focusBorder, #007fd4)","--loki-accent-hover":"var(--vscode-button-hoverBackground, #1177bb)","--loki-accent-active":"var(--vscode-button-background, #0e639c)","--loki-accent-light":"var(--vscode-focusBorder, #007fd4)","--loki-accent-muted":"var(--vscode-editor-selectionBackground, rgba(0, 127, 212, 0.25))","--loki-text-primary":"var(--vscode-foreground, #cccccc)","--loki-text-secondary":"var(--vscode-descriptionForeground, #9d9d9d)","--loki-text-muted":"var(--vscode-disabledForeground, #6b6b6b)","--loki-text-disabled":"var(--vscode-disabledForeground, #4d4d4d)","--loki-text-inverse":"var(--vscode-button-foreground, #ffffff)","--loki-border":"var(--vscode-widget-border, #454545)","--loki-border-light":"var(--vscode-widget-border, #5a5a5a)","--loki-border-focus":"var(--vscode-focusBorder, #007fd4)","--loki-success":"var(--vscode-testing-iconPassed, #89d185)","--loki-success-muted":"rgba(137, 209, 133, 0.2)","--loki-warning":"var(--vscode-editorWarning-foreground, #cca700)","--loki-warning-muted":"rgba(204, 167, 0, 0.2)","--loki-error":"var(--vscode-errorForeground, #f48771)","--loki-error-muted":"rgba(244, 135, 113, 0.2)","--loki-info":"var(--vscode-editorInfo-foreground, #75beff)","--loki-info-muted":"rgba(117, 190, 255, 0.2)","--loki-green":"var(--vscode-testing-iconPassed, #89d185)","--loki-green-muted":"rgba(137, 209, 133, 0.2)","--loki-yellow":"var(--vscode-editorWarning-foreground, #cca700)","--loki-yellow-muted":"rgba(204, 167, 0, 0.2)","--loki-red":"var(--vscode-errorForeground, #f48771)","--loki-red-muted":"rgba(244, 135, 113, 0.2)","--loki-blue":"var(--vscode-editorInfo-foreground, #75beff)","--loki-blue-muted":"rgba(117, 190, 255, 0.2)","--loki-purple":"#c084fc","--loki-purple-muted":"rgba(192, 132, 252, 0.2)","--loki-opus":"#f59e0b","--loki-sonnet":"#818cf8","--loki-haiku":"#34d399","--loki-shadow-sm":"0 1px 2px rgba(0, 0, 0, 0.3)","--loki-shadow-md":"0 2px 4px rgba(0, 0, 0, 0.4)","--loki-shadow-lg":"0 4px 8px rgba(0, 0, 0, 0.5)","--loki-shadow-focus":"0 0 0 2px var(--vscode-focusBorder, #007fd4)"}},x={xs:"4px",sm:"8px",md:"12px",lg:"16px",xl:"24px","2xl":"32px","3xl":"48px"},_={none:"0",sm:"4px",md:"6px",lg:"8px",xl:"10px",full:"9999px"},h={fontFamily:{sans:"'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",mono:"'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace"},fontSize:{xs:"10px",sm:"11px",base:"12px",md:"13px",lg:"14px",xl:"16px","2xl":"18px","3xl":"24px"},fontWeight:{normal:"400",medium:"500",semibold:"600",bold:"700"},lineHeight:{tight:"1.25",normal:"1.5",relaxed:"1.75"}},w={duration:{fast:"100ms",normal:"200ms",slow:"300ms",slower:"500ms"},easing:{default:"cubic-bezier(0.4, 0, 0.2, 1)",in:"cubic-bezier(0.4, 0, 1, 1)",out:"cubic-bezier(0, 0, 0.2, 1)",bounce:"cubic-bezier(0.68, -0.55, 0.265, 1.55)"}},F={sm:"640px",md:"768px",lg:"1024px",xl:"1280px","2xl":"1536px"},E={base:"0",dropdown:"100",sticky:"200",modal:"300",popover:"400",tooltip:"500",toast:"600"},N={"navigation.nextItem":{key:"ArrowDown",modifiers:[]},"navigation.prevItem":{key:"ArrowUp",modifiers:[]},"navigation.nextSection":{key:"Tab",modifiers:[]},"navigation.prevSection":{key:"Tab",modifiers:["Shift"]},"navigation.confirm":{key:"Enter",modifiers:[]},"navigation.cancel":{key:"Escape",modifiers:[]},"action.refresh":{key:"r",modifiers:["Meta"]},"action.search":{key:"k",modifiers:["Meta"]},"action.save":{key:"s",modifiers:["Meta"]},"action.close":{key:"w",modifiers:["Meta"]},"theme.toggle":{key:"d",modifiers:["Meta","Shift"]},"task.create":{key:"n",modifiers:["Meta"]},"task.complete":{key:"Enter",modifiers:["Meta"]},"view.toggleLogs":{key:"l",modifiers:["Meta","Shift"]},"view.toggleMemory":{key:"m",modifiers:["Meta","Shift"]}},H={button:{role:"button",tabIndex:0},tablist:{role:"tablist"},tab:{role:"tab",ariaSelected:!1,tabIndex:-1},tabpanel:{role:"tabpanel",tabIndex:0},list:{role:"list"},listitem:{role:"listitem"},livePolite:{ariaLive:"polite",ariaAtomic:!0},liveAssertive:{ariaLive:"assertive",ariaAtomic:!0},dialog:{role:"dialog",ariaModal:!0},alertdialog:{role:"alertdialog",ariaModal:!0},status:{role:"status",ariaLive:"polite"},alert:{role:"alert",ariaLive:"assertive"},log:{role:"log",ariaLive:"polite",ariaRelevant:"additions"}};function m(l){let e=v[l];return e?Object.entries(e).map(([t,a])=>`${t}: ${a};`).join(`
+    `):""}function R(){return`
+    /* Spacing */
+    --loki-space-xs: ${x.xs};
+    --loki-space-sm: ${x.sm};
+    --loki-space-md: ${x.md};
+    --loki-space-lg: ${x.lg};
+    --loki-space-xl: ${x.xl};
+    --loki-space-2xl: ${x["2xl"]};
+    --loki-space-3xl: ${x["3xl"]};
+
+    /* Border Radius */
+    --loki-radius-none: ${_.none};
+    --loki-radius-sm: ${_.sm};
+    --loki-radius-md: ${_.md};
+    --loki-radius-lg: ${_.lg};
+    --loki-radius-xl: ${_.xl};
+    --loki-radius-full: ${_.full};
+
+    /* Typography */
+    --loki-font-sans: ${h.fontFamily.sans};
+    --loki-font-mono: ${h.fontFamily.mono};
+    --loki-text-xs: ${h.fontSize.xs};
+    --loki-text-sm: ${h.fontSize.sm};
+    --loki-text-base: ${h.fontSize.base};
+    --loki-text-md: ${h.fontSize.md};
+    --loki-text-lg: ${h.fontSize.lg};
+    --loki-text-xl: ${h.fontSize.xl};
+    --loki-text-2xl: ${h.fontSize["2xl"]};
+    --loki-text-3xl: ${h.fontSize["3xl"]};
+
+    /* Animation */
+    --loki-duration-fast: ${w.duration.fast};
+    --loki-duration-normal: ${w.duration.normal};
+    --loki-duration-slow: ${w.duration.slow};
+    --loki-easing-default: ${w.easing.default};
+    --loki-transition: ${w.duration.normal} ${w.easing.default};
+
+    /* Z-Index */
+    --loki-z-dropdown: ${E.dropdown};
+    --loki-z-sticky: ${E.sticky};
+    --loki-z-modal: ${E.modal};
+    --loki-z-popover: ${E.popover};
+    --loki-z-tooltip: ${E.tooltip};
+    --loki-z-toast: ${E.toast};
+  `}var P=`
+  /* Reset and base */
+  :host {
+    font-family: var(--loki-font-sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    box-sizing: border-box;
+    color: var(--loki-text-primary);
+  }
+
+  :host *, :host *::before, :host *::after {
+    box-sizing: border-box;
+  }
+
+  /* Monospace utility */
+  .mono {
+    font-family: var(--loki-font-mono);
+  }
+
+  /* Focus visible outline */
+  :focus-visible {
+    outline: 2px solid var(--loki-border-focus);
+    outline-offset: 2px;
+  }
+
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Button base */
+  .btn {
+    padding: var(--loki-space-sm) var(--loki-space-md);
+    border-radius: var(--loki-radius-md);
+    font-size: var(--loki-text-md);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--loki-transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--loki-space-xs);
+    border: 1px solid transparent;
+    text-decoration: none;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .btn-primary {
+    background: var(--loki-accent);
+    color: var(--loki-text-inverse);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--loki-accent-hover);
+  }
+
+  .btn-primary:active:not(:disabled) {
+    background: var(--loki-accent-active);
+  }
+
+  .btn-secondary {
+    background: var(--loki-bg-tertiary);
+    color: var(--loki-text-primary);
+    border-color: var(--loki-border);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--loki-bg-hover);
+    border-color: var(--loki-border-light);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--loki-text-secondary);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--loki-bg-hover);
+    color: var(--loki-text-primary);
+  }
+
+  .btn-danger {
+    background: var(--loki-error);
+    color: var(--loki-text-inverse);
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background: var(--loki-red);
+    filter: brightness(1.1);
+  }
+
+  /* Button sizes */
+  .btn-sm {
+    padding: var(--loki-space-xs) var(--loki-space-sm);
+    font-size: var(--loki-text-sm);
+  }
+
+  .btn-lg {
+    padding: var(--loki-space-md) var(--loki-space-lg);
+    font-size: var(--loki-text-lg);
+  }
+
+  /* Status indicators */
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--loki-radius-full);
+    flex-shrink: 0;
+  }
+
+  .status-dot.active {
+    background: var(--loki-success);
+    animation: pulse 2s infinite;
+  }
+  .status-dot.idle { background: var(--loki-text-muted); }
+  .status-dot.paused { background: var(--loki-warning); }
+  .status-dot.stopped { background: var(--loki-error); }
+  .status-dot.error { background: var(--loki-error); }
+  .status-dot.offline { background: var(--loki-text-muted); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* Card base */
+  .card {
+    background: var(--loki-bg-card);
+    border: 1px solid var(--loki-border);
+    border-radius: var(--loki-radius-xl);
+    padding: var(--loki-space-lg);
+    transition: all var(--loki-transition);
+  }
+
+  .card:hover {
+    border-color: var(--loki-border-light);
+  }
+
+  .card-interactive {
+    cursor: pointer;
+  }
+
+  .card-interactive:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--loki-shadow-md);
+  }
+
+  /* Input base */
+  .input {
+    width: 100%;
+    padding: var(--loki-space-sm) var(--loki-space-md);
+    background: var(--loki-bg-tertiary);
+    border: 1px solid var(--loki-border);
+    border-radius: var(--loki-radius-md);
+    font-size: var(--loki-text-base);
+    color: var(--loki-text-primary);
+    transition: all var(--loki-transition);
+  }
+
+  .input::placeholder {
+    color: var(--loki-text-muted);
+  }
+
+  .input:hover:not(:disabled) {
+    border-color: var(--loki-border-light);
+  }
+
+  .input:focus {
+    outline: none;
+    border-color: var(--loki-border-focus);
+    box-shadow: var(--loki-shadow-focus);
+  }
+
+  .input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Badge */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--loki-space-sm);
+    border-radius: var(--loki-radius-sm);
+    font-size: var(--loki-text-xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+
+  .badge-success {
+    background: var(--loki-success-muted);
+    color: var(--loki-success);
+  }
+
+  .badge-warning {
+    background: var(--loki-warning-muted);
+    color: var(--loki-warning);
+  }
+
+  .badge-error {
+    background: var(--loki-error-muted);
+    color: var(--loki-error);
+  }
+
+  .badge-info {
+    background: var(--loki-info-muted);
+    color: var(--loki-info);
+  }
+
+  .badge-neutral {
+    background: var(--loki-bg-tertiary);
+    color: var(--loki-text-secondary);
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: var(--loki-space-xl);
+    color: var(--loki-text-muted);
+    font-size: var(--loki-text-base);
+  }
+
+  /* Loading spinner */
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--loki-border);
+    border-top-color: var(--loki-accent);
+    border-radius: var(--loki-radius-full);
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--loki-bg-primary);
+    border-radius: var(--loki-radius-sm);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--loki-border);
+    border-radius: var(--loki-radius-sm);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--loki-border-light);
+  }
+
+  /* Screen reader only */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Responsive utilities */
+  @media (max-width: ${F.md}) {
+    .hide-mobile { display: none !important; }
+  }
+
+  @media (min-width: ${F.md}) {
+    .hide-desktop { display: none !important; }
+  }
+`,c=class c{static detectContext(){return typeof acquireVsCodeApi<"u"||document.body.classList.contains("vscode-body")||getComputedStyle(document.documentElement).getPropertyValue("--vscode-editor-background")?"vscode":document.documentElement.dataset.lokiContext==="cli"?"cli":"browser"}static detectVSCodeTheme(){let e=document.body;if(e.classList.contains("vscode-high-contrast"))return"high-contrast";if(e.classList.contains("vscode-dark"))return"dark";if(e.classList.contains("vscode-light"))return"light";let t=getComputedStyle(document.documentElement).getPropertyValue("--vscode-editor-background");if(t){let a=t.match(/\d+/g);if(a)return(parseInt(a[0])*299+parseInt(a[1])*587+parseInt(a[2])*114)/1e3>128?"light":"dark"}return null}static getTheme(){if(c.detectContext()==="vscode"){let a=c.detectVSCodeTheme();return a==="high-contrast"?"high-contrast":a==="dark"?"vscode-dark":"vscode-light"}let t=localStorage.getItem(c.STORAGE_KEY);return t&&v[t]?t:window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}static setTheme(e){if(!v[e]){console.warn(`Unknown theme: ${e}`);return}localStorage.setItem(c.STORAGE_KEY,e),document.documentElement.setAttribute("data-loki-theme",e),window.dispatchEvent(new CustomEvent("loki-theme-change",{detail:{theme:e,context:c.detectContext()}}))}static toggle(){let e=c.getTheme(),t;return e.includes("dark")||e==="high-contrast"?t=e.startsWith("vscode")?"vscode-light":"light":t=e.startsWith("vscode")?"vscode-dark":"dark",c.setTheme(t),t}static getVariables(e=null){let t=e||c.getTheme();return v[t]||v.light}static generateCSS(e=null){let t=e||c.getTheme();return`
+      :host {
+        ${m(t)}
+        ${R()}
+      }
+      ${P}
+    `}static init(){let e=c.getTheme();document.documentElement.setAttribute("data-loki-theme",e),window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{localStorage.getItem(c.STORAGE_KEY)||c.setTheme(c.getTheme())}),c.detectContext()==="vscode"&&new MutationObserver(()=>{let a=c.getTheme();document.documentElement.setAttribute("data-loki-theme",a),window.dispatchEvent(new CustomEvent("loki-theme-change",{detail:{theme:a,context:"vscode"}}))}).observe(document.body,{attributes:!0,attributeFilter:["class"]})}};k(c,"STORAGE_KEY","loki-theme"),k(c,"CONTEXT_KEY","loki-context");var p=c,C=class{constructor(){this._handlers=new Map,this._enabled=!0}register(e,t){let a=N[e];if(!a){console.warn(`Unknown keyboard action: ${e}`);return}this._handlers.set(e,{shortcut:a,handler:t})}unregister(e){this._handlers.delete(e)}setEnabled(e){this._enabled=e}handleEvent(e){if(!this._enabled)return!1;for(let[t,{shortcut:a,handler:s}]of this._handlers)if(this._matchesShortcut(e,a))return e.preventDefault(),e.stopPropagation(),s(e),!0;return!1}_matchesShortcut(e,t){let a=e.key.toLowerCase(),s=t.modifiers||[];if(a!==t.key.toLowerCase())return!1;let i=s.includes("Ctrl")||s.includes("Meta"),o=s.includes("Shift"),n=s.includes("Alt"),d=(e.ctrlKey||e.metaKey)===i,b=e.shiftKey===o,D=e.altKey===n;return d&&b&&D}attach(e){e.addEventListener("keydown",t=>this.handleEvent(t))}detach(e){e.removeEventListener("keydown",t=>this.handleEvent(t))}};var q={light:{"--loki-bg-primary":"#faf9f0","--loki-bg-secondary":"#f5f4eb","--loki-bg-tertiary":"#eeeddf","--loki-bg-card":"#ffffff","--loki-bg-hover":"#f0efe6","--loki-accent":"#d97757","--loki-accent-light":"#e8956f","--loki-accent-muted":"rgba(217, 119, 87, 0.12)","--loki-text-primary":"#1a1a1a","--loki-text-secondary":"#5c5c5c","--loki-text-muted":"#8a8a8a","--loki-border":"#e5e3de","--loki-border-light":"#d4d2cb","--loki-green":"#16a34a","--loki-green-muted":"rgba(22, 163, 74, 0.12)","--loki-yellow":"#ca8a04","--loki-yellow-muted":"rgba(202, 138, 4, 0.12)","--loki-red":"#dc2626","--loki-red-muted":"rgba(220, 38, 38, 0.12)","--loki-blue":"#2563eb","--loki-blue-muted":"rgba(37, 99, 235, 0.12)","--loki-purple":"#9333ea","--loki-purple-muted":"rgba(147, 51, 234, 0.12)","--loki-opus":"#d97706","--loki-sonnet":"#4f46e5","--loki-haiku":"#059669","--loki-transition":"0.2s cubic-bezier(0.4, 0, 0.2, 1)"},dark:{"--loki-bg-primary":"#131314","--loki-bg-secondary":"#1a1a1b","--loki-bg-tertiary":"#232325","--loki-bg-card":"#1e1e20","--loki-bg-hover":"#2a2a2d","--loki-accent":"#d97757","--loki-accent-light":"#e8956f","--loki-accent-muted":"rgba(217, 119, 87, 0.15)","--loki-text-primary":"#f5f5f5","--loki-text-secondary":"#a1a1a6","--loki-text-muted":"#6b6b70","--loki-border":"#2d2d30","--loki-border-light":"#3d3d42","--loki-green":"#22c55e","--loki-green-muted":"rgba(34, 197, 94, 0.15)","--loki-yellow":"#eab308","--loki-yellow-muted":"rgba(234, 179, 8, 0.15)","--loki-red":"#ef4444","--loki-red-muted":"rgba(239, 68, 68, 0.15)","--loki-blue":"#3b82f6","--loki-blue-muted":"rgba(59, 130, 246, 0.15)","--loki-purple":"#a855f7","--loki-purple-muted":"rgba(168, 85, 247, 0.15)","--loki-opus":"#f59e0b","--loki-sonnet":"#6366f1","--loki-haiku":"#10b981","--loki-transition":"0.2s cubic-bezier(0.4, 0, 0.2, 1)"}},Y=`
+  :host {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    box-sizing: border-box;
+  }
+
+  :host *, :host *::before, :host *::after {
+    box-sizing: border-box;
+  }
+
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Button base styles */
+  .btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--loki-transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+  }
+
+  .btn-primary {
+    background: var(--loki-accent);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: var(--loki-accent-light);
+  }
+
+  .btn-secondary {
+    background: var(--loki-bg-tertiary);
+    color: var(--loki-text-primary);
+    border: 1px solid var(--loki-border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--loki-bg-hover);
+  }
+
+  /* Status dot */
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .status-dot.active {
+    background: var(--loki-green);
+    animation: pulse 2s infinite;
+  }
+  .status-dot.idle { background: var(--loki-text-muted); }
+  .status-dot.paused { background: var(--loki-yellow); }
+  .status-dot.stopped { background: var(--loki-red); }
+  .status-dot.error { background: var(--loki-red); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* Card base */
+  .card {
+    background: var(--loki-bg-card);
+    border: 1px solid var(--loki-border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: all var(--loki-transition);
+  }
+
+  .card:hover {
+    border-color: var(--loki-border-light);
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 24px;
+    color: var(--loki-text-muted);
+    font-size: 12px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--loki-bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--loki-border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--loki-border-light); }
+`,T=class T{static getTheme(){return p.getTheme()}static setTheme(e){p.setTheme(e)}static toggle(){return p.toggle()}static getVariables(e=null){let t=e||T.getTheme();return v[t]||q[t]||q.light}static toCSSString(e=null){let t=e||T.getTheme();if(v[t])return m(t);let a=T.getVariables(t);return Object.entries(a).map(([s,i])=>`${s}: ${i};`).join(`
+`)}static applyToElement(e,t=null){let a=T.getVariables(t);for(let[s,i]of Object.entries(a))e.style.setProperty(s,i)}static init(){p.init()}static detectContext(){return p.detectContext()}static getAvailableThemes(){return Object.keys(v)}};k(T,"STORAGE_KEY","loki-theme");var S=T,u=class extends HTMLElement{constructor(){super(),this.attachShadow({mode:"open"}),this._theme=S.getTheme(),this._themeChangeHandler=this._onThemeChange.bind(this),this._keyboardHandler=new C}connectedCallback(){window.addEventListener("loki-theme-change",this._themeChangeHandler),this._applyTheme(),this._setupKeyboardHandling(),this.render()}disconnectedCallback(){window.removeEventListener("loki-theme-change",this._themeChangeHandler),this._keyboardHandler.detach(this)}_onThemeChange(e){this._theme=e.detail.theme,this._applyTheme(),this.onThemeChange&&this.onThemeChange(this._theme)}_applyTheme(){S.applyToElement(this.shadowRoot.host,this._theme),this.setAttribute("data-loki-theme",this._theme)}_setupKeyboardHandling(){this._keyboardHandler.attach(this)}registerShortcut(e,t){this._keyboardHandler.register(e,t)}getBaseStyles(){return`
+      /* Design tokens */
+      :host {
+        ${R()}
+      }
+
+      /* Light theme (default) */
+      :host {
+        ${m("light")}
+      }
+
+      /* Dark theme via system preference */
+      @media (prefers-color-scheme: dark) {
+        :host {
+          ${m("dark")}
+        }
+      }
+
+      /* Explicit theme attributes */
+      :host([theme="dark"]),
+      :host([data-loki-theme="dark"]) {
+        ${m("dark")}
+      }
+
+      :host([theme="light"]),
+      :host([data-loki-theme="light"]) {
+        ${m("light")}
+      }
+
+      :host([theme="high-contrast"]),
+      :host([data-loki-theme="high-contrast"]) {
+        ${m("high-contrast")}
+      }
+
+      :host([theme="vscode-light"]),
+      :host([data-loki-theme="vscode-light"]) {
+        ${m("vscode-light")}
+      }
+
+      :host([theme="vscode-dark"]),
+      :host([data-loki-theme="vscode-dark"]) {
+        ${m("vscode-dark")}
+      }
+
+      /* Reduced motion preference */
+      @media (prefers-reduced-motion: reduce) {
+        :host *,
+        :host *::before,
+        :host *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      ${P}
+    `}getAriaPattern(e){return H[e]||{}}applyAriaPattern(e,t){let a=this.getAriaPattern(t);for(let[s,i]of Object.entries(a))if(s==="role")e.setAttribute("role",i);else{let o=s.replace(/([A-Z])/g,"-$1").toLowerCase();e.setAttribute(o,i)}}render(){}};var $={realtime:1e3,normal:2e3,background:5e3,offline:1e4},J={vscode:$.normal,browser:$.realtime,cli:$.background},W={baseUrl:"http://localhost:8420",wsUrl:"ws://localhost:8420/ws",pollInterval:2e3,timeout:1e4,retryAttempts:3,retryDelay:1e3},r={CONNECTED:"api:connected",DISCONNECTED:"api:disconnected",ERROR:"api:error",STATUS_UPDATE:"api:status-update",TASK_CREATED:"api:task-created",TASK_UPDATED:"api:task-updated",TASK_DELETED:"api:task-deleted",PROJECT_CREATED:"api:project-created",PROJECT_UPDATED:"api:project-updated",AGENT_UPDATE:"api:agent-update",LOG_MESSAGE:"api:log-message",MEMORY_UPDATE:"api:memory-update"},y=class y extends EventTarget{static getInstance(e={}){let t=e.baseUrl||W.baseUrl;return y._instances.has(t)||y._instances.set(t,new y(e)),y._instances.get(t)}static clearInstances(){y._instances.forEach(e=>e.disconnect()),y._instances.clear()}constructor(e={}){super(),this.config={...W,...e},this._ws=null,this._connected=!1,this._pollInterval=null,this._reconnectTimeout=null,this._cache=new Map,this._cacheTimeout=5e3,this._vscodeApi=null,this._context=this._detectContext(),this._currentPollInterval=J[this._context]||$.normal,this._setupAdaptivePolling(),this._setupVSCodeBridge()}_detectContext(){return typeof acquireVsCodeApi<"u"?"vscode":typeof window<"u"&&window.location?"browser":"cli"}get context(){return this._context}static get POLL_INTERVALS(){return $}_setupAdaptivePolling(){typeof document>"u"||document.addEventListener("visibilitychange",()=>{document.hidden?this._setPollInterval($.background):this._setPollInterval(J[this._context]||$.normal)})}_setPollInterval(e){this._currentPollInterval=e,this._pollInterval&&(this.stopPolling(),this.startPolling(null,e))}setPollMode(e){let t=$[e];t&&this._setPollInterval(t)}_setupVSCodeBridge(){if(!(typeof acquireVsCodeApi>"u")){try{this._vscodeApi=acquireVsCodeApi()}catch{console.warn("VS Code API already acquired or unavailable");return}window.addEventListener("message",e=>{let t=e.data;if(!(!t||!t.type))switch(t.type){case"updateStatus":this._emit(r.STATUS_UPDATE,t.data);break;case"updateTasks":this._emit(r.TASK_UPDATED,t.data);break;case"taskCreated":this._emit(r.TASK_CREATED,t.data);break;case"taskDeleted":this._emit(r.TASK_DELETED,t.data);break;case"projectCreated":this._emit(r.PROJECT_CREATED,t.data);break;case"projectUpdated":this._emit(r.PROJECT_UPDATED,t.data);break;case"agentUpdate":this._emit(r.AGENT_UPDATE,t.data);break;case"logMessage":this._emit(r.LOG_MESSAGE,t.data);break;case"memoryUpdate":this._emit(r.MEMORY_UPDATE,t.data);break;case"connected":this._connected=!0,this._emit(r.CONNECTED,t.data);break;case"disconnected":this._connected=!1,this._emit(r.DISCONNECTED,t.data);break;case"error":this._emit(r.ERROR,t.data);break;case"setPollMode":this.setPollMode(t.data.mode);break;default:this._emit(`api:${t.type}`,t.data)}})}}get isVSCode(){return this._context==="vscode"}postToVSCode(e,t={}){this._vscodeApi&&this._vscodeApi.postMessage({type:e,data:t})}requestRefresh(){this.postToVSCode("requestRefresh")}notifyVSCode(e,t={}){this.postToVSCode("userAction",{action:e,...t})}get baseUrl(){return this.config.baseUrl}set baseUrl(e){this.config.baseUrl=e,this.config.wsUrl=e.replace(/^http/,"ws")+"/ws"}get isConnected(){return this._connected}async connect(){if(!(this._ws&&this._ws.readyState===WebSocket.OPEN))return new Promise((e,t)=>{try{this._ws=new WebSocket(this.config.wsUrl),this._ws.onopen=()=>{this._connected=!0,this._emit(r.CONNECTED),e()},this._ws.onclose=()=>{this._connected=!1,this._emit(r.DISCONNECTED),this._scheduleReconnect()},this._ws.onerror=a=>{this._emit(r.ERROR,{error:a}),t(a)},this._ws.onmessage=a=>{try{let s=JSON.parse(a.data);this._handleMessage(s)}catch(s){console.error("Failed to parse WebSocket message:",s)}}}catch(a){t(a)}})}disconnect(){this._ws&&(this._ws.close(),this._ws=null),this._pollInterval&&(clearInterval(this._pollInterval),this._pollInterval=null),this._reconnectTimeout&&(clearTimeout(this._reconnectTimeout),this._reconnectTimeout=null),this._connected=!1}_scheduleReconnect(){this._reconnectTimeout||(this._reconnectTimeout=setTimeout(()=>{this._reconnectTimeout=null,this.connect().catch(()=>{})},this.config.retryDelay))}_handleMessage(e){let a={connected:r.CONNECTED,status_update:r.STATUS_UPDATE,task_created:r.TASK_CREATED,task_updated:r.TASK_UPDATED,task_deleted:r.TASK_DELETED,task_moved:r.TASK_UPDATED,project_created:r.PROJECT_CREATED,project_updated:r.PROJECT_UPDATED,agent_update:r.AGENT_UPDATE,log:r.LOG_MESSAGE}[e.type]||`api:${e.type}`;this._emit(a,e.data)}_emit(e,t={}){this.dispatchEvent(new CustomEvent(e,{detail:t}))}async _request(e,t={}){let a=`${this.config.baseUrl}${e}`,s=new AbortController,i=setTimeout(()=>s.abort(),this.config.timeout);try{let o=await fetch(a,{...t,signal:s.signal,headers:{"Content-Type":"application/json",...t.headers}});if(clearTimeout(i),!o.ok){let n=await o.json().catch(()=>({detail:o.statusText}));throw new Error(n.detail||`HTTP ${o.status}`)}return o.status===204?null:await o.json()}catch(o){throw clearTimeout(i),o.name==="AbortError"?new Error("Request timeout"):o}}async _get(e,t=!1){if(t&&this._cache.has(e)){let s=this._cache.get(e);if(Date.now()-s.timestamp<this._cacheTimeout)return s.data}let a=await this._request(e);return t&&this._cache.set(e,{data:a,timestamp:Date.now()}),a}async _post(e,t){return this._request(e,{method:"POST",body:JSON.stringify(t)})}async _put(e,t){return this._request(e,{method:"PUT",body:JSON.stringify(t)})}async _delete(e){return this._request(e,{method:"DELETE"})}async getStatus(){return this._get("/api/status")}async healthCheck(){return this._get("/health")}async listProjects(e=null){let t=e?`?status=${e}`:"";return this._get(`/api/projects${t}`)}async getProject(e){return this._get(`/api/projects/${e}`)}async createProject(e){return this._post("/api/projects",e)}async updateProject(e,t){return this._put(`/api/projects/${e}`,t)}async deleteProject(e){return this._delete(`/api/projects/${e}`)}async listTasks(e={}){let t=new URLSearchParams;e.projectId&&t.append("project_id",e.projectId),e.status&&t.append("status",e.status),e.priority&&t.append("priority",e.priority);let a=t.toString()?`?${t}`:"";return this._get(`/api/tasks${a}`)}async getTask(e){return this._get(`/api/tasks/${e}`)}async createTask(e){return this._post("/api/tasks",e)}async updateTask(e,t){return this._put(`/api/tasks/${e}`,t)}async moveTask(e,t,a){return this._post(`/api/tasks/${e}/move`,{status:t,position:a})}async deleteTask(e){return this._delete(`/api/tasks/${e}`)}async getMemorySummary(){return this._get("/api/memory/summary",!0)}async getMemoryIndex(){return this._get("/api/memory/index",!0)}async getMemoryTimeline(){return this._get("/api/memory/timeline")}async listEpisodes(e={}){let t=new URLSearchParams(e).toString();return this._get(`/api/memory/episodes${t?"?"+t:""}`)}async getEpisode(e){return this._get(`/api/memory/episodes/${e}`)}async listPatterns(e={}){let t=new URLSearchParams(e).toString();return this._get(`/api/memory/patterns${t?"?"+t:""}`)}async getPattern(e){return this._get(`/api/memory/patterns/${e}`)}async listSkills(){return this._get("/api/memory/skills")}async getSkill(e){return this._get(`/api/memory/skills/${e}`)}async retrieveMemories(e,t=null,a=5){return this._post("/api/memory/retrieve",{query:e,taskType:t,topK:a})}async consolidateMemory(e=24){return this._post("/api/memory/consolidate",{sinceHours:e})}async getTokenEconomics(){return this._get("/api/memory/economics")}async listRegisteredProjects(e=!1){return this._get(`/api/registry/projects?include_inactive=${e}`)}async registerProject(e,t=null,a=null){return this._post("/api/registry/projects",{path:e,name:t,alias:a})}async discoverProjects(e=3){return this._get(`/api/registry/discover?max_depth=${e}`)}async syncRegistry(){return this._post("/api/registry/sync",{})}async getCrossProjectTasks(e=null){let t=e?`?project_ids=${e.join(",")}`:"";return this._get(`/api/registry/tasks${t}`)}async getLearningMetrics(e={}){let t=new URLSearchParams;e.timeRange&&t.append("timeRange",e.timeRange),e.signalType&&t.append("signalType",e.signalType),e.source&&t.append("source",e.source);let a=t.toString()?`?${t}`:"";return this._get(`/api/learning/metrics${a}`)}async getLearningTrends(e={}){let t=new URLSearchParams;e.timeRange&&t.append("timeRange",e.timeRange),e.signalType&&t.append("signalType",e.signalType),e.source&&t.append("source",e.source);let a=t.toString()?`?${t}`:"";return this._get(`/api/learning/trends${a}`)}async getLearningSignals(e={}){let t=new URLSearchParams;e.timeRange&&t.append("timeRange",e.timeRange),e.signalType&&t.append("signalType",e.signalType),e.source&&t.append("source",e.source),e.limit&&t.append("limit",String(e.limit)),e.offset&&t.append("offset",String(e.offset));let a=t.toString()?`?${t}`:"";return this._get(`/api/learning/signals${a}`)}async getLatestAggregation(){return this._get("/api/learning/aggregation")}async triggerAggregation(e={}){return this._post("/api/learning/aggregate",e)}async getAggregatedPreferences(e=20){return this._get(`/api/learning/preferences?limit=${e}`)}async getAggregatedErrors(e=20){return this._get(`/api/learning/errors?limit=${e}`)}async getAggregatedSuccessPatterns(e=20){return this._get(`/api/learning/success?limit=${e}`)}async getToolEfficiency(e=20){return this._get(`/api/learning/tools?limit=${e}`)}startPolling(e,t=null){if(this._pollInterval)return;this._pollCallback=e;let a=async()=>{try{let i=await this.getStatus();this._connected=!0,this._pollCallback&&this._pollCallback(i),this._emit(r.STATUS_UPDATE,i),this._vscodeApi&&this.postToVSCode("pollSuccess",{timestamp:Date.now()})}catch(i){this._connected=!1,this._emit(r.ERROR,{error:i}),this._vscodeApi&&this.postToVSCode("pollError",{error:i.message})}};a();let s=t||this._currentPollInterval||this.config.pollInterval;this._pollInterval=setInterval(a,s)}stopPolling(){this._pollInterval&&(clearInterval(this._pollInterval),this._pollInterval=null)}};k(y,"_instances",new Map);var L=y;function X(l={}){return new L(l)}function g(l={}){return L.getInstance(l)}var G="loki-state-change",K={ui:{theme:"light",sidebarCollapsed:!1,activeSection:"kanban",terminalAutoScroll:!0},session:{connected:!1,lastSync:null,mode:"offline",phase:null,iteration:null},localTasks:[],cache:{projects:[],tasks:[],agents:[],memory:null,lastFetch:null},preferences:{pollInterval:2e3,notifications:!0,soundEnabled:!1}},f=class f extends EventTarget{static getInstance(){return f._instance||(f._instance=new f),f._instance}constructor(){super(),this._state=this._loadState(),this._subscribers=new Map,this._batchUpdates=[],this._batchTimeout=null}_loadState(){try{let e=localStorage.getItem(f.STORAGE_KEY);if(e){let t=JSON.parse(e);return this._mergeState(K,t)}}catch(e){console.warn("Failed to load state from localStorage:",e)}return{...K}}_mergeState(e,t){let a={...e};for(let s of Object.keys(t))s in e&&typeof e[s]=="object"&&!Array.isArray(e[s])?a[s]=this._mergeState(e[s],t[s]):a[s]=t[s];return a}_saveState(){try{let e={ui:this._state.ui,localTasks:this._state.localTasks,preferences:this._state.preferences};localStorage.setItem(f.STORAGE_KEY,JSON.stringify(e))}catch(e){console.warn("Failed to save state to localStorage:",e)}}get(e=null){if(!e)return{...this._state};let t=e.split("."),a=this._state;for(let s of t){if(a==null)return;a=a[s]}return a}set(e,t,a=!0){let s=e.split("."),i=s.pop(),o=this._state;for(let d of s)d in o||(o[d]={}),o=o[d];let n=o[i];o[i]=t,a&&this._saveState(),this._notifyChange(e,t,n)}update(e,t=!0){let a=[];for(let[s,i]of Object.entries(e)){let o=this.get(s);this.set(s,i,!1),a.push({path:s,value:i,oldValue:o})}t&&this._saveState();for(let s of a)this._notifyChange(s.path,s.value,s.oldValue)}_notifyChange(e,t,a){this.dispatchEvent(new CustomEvent(G,{detail:{path:e,value:t,oldValue:a}}));let s=this._subscribers.get(e)||[];for(let o of s)try{o(t,a,e)}catch(n){console.error("State subscriber error:",n)}let i=e.split(".");for(;i.length>1;){i.pop();let o=i.join("."),n=this._subscribers.get(o)||[];for(let d of n)try{d(this.get(o),null,o)}catch(b){console.error("State subscriber error:",b)}}}subscribe(e,t){return this._subscribers.has(e)||this._subscribers.set(e,[]),this._subscribers.get(e).push(t),()=>{let a=this._subscribers.get(e),s=a.indexOf(t);s>-1&&a.splice(s,1)}}reset(e=null){if(e){let t=e.split("."),a=K;for(let s of t)a=a?.[s];this.set(e,a)}else this._state={...K},this._saveState(),this.dispatchEvent(new CustomEvent(G,{detail:{path:null,value:this._state,oldValue:null}}))}addLocalTask(e){let t=this.get("localTasks")||[],a={id:`local-${Date.now()}-${Math.random().toString(36).substr(2,9)}`,createdAt:new Date().toISOString(),status:"pending",...e};return this.set("localTasks",[...t,a]),a}updateLocalTask(e,t){let a=this.get("localTasks")||[],s=a.findIndex(o=>o.id===e);if(s===-1)return null;let i={...a[s],...t,updatedAt:new Date().toISOString()};return a[s]=i,this.set("localTasks",[...a]),i}deleteLocalTask(e){let t=this.get("localTasks")||[];this.set("localTasks",t.filter(a=>a.id!==e))}moveLocalTask(e,t,a=null){let i=(this.get("localTasks")||[]).find(o=>o.id===e);return i?this.updateLocalTask(e,{status:t,position:a??i.position}):null}updateSession(e){this.update(Object.fromEntries(Object.entries(e).map(([t,a])=>[`session.${t}`,a])),!1)}updateCache(e){this.update({"cache.projects":e.projects??this.get("cache.projects"),"cache.tasks":e.tasks??this.get("cache.tasks"),"cache.agents":e.agents??this.get("cache.agents"),"cache.memory":e.memory??this.get("cache.memory"),"cache.lastFetch":new Date().toISOString()},!1)}getMergedTasks(){let e=this.get("cache.tasks")||[],a=(this.get("localTasks")||[]).map(s=>({...s,isLocal:!0}));return[...e,...a]}getTasksByStatus(e){return this.getMergedTasks().filter(t=>t.status===e)}};k(f,"STORAGE_KEY","loki-dashboard-state"),k(f,"_instance",null);var I=f;function A(){return I.getInstance()}function Z(l){let e=A();return{get:()=>e.get(l),set:t=>e.set(l,t),subscribe:t=>e.subscribe(l,t)}}var ne=[{id:"pending",label:"Pending",status:"pending",color:"var(--loki-text-muted)"},{id:"in_progress",label:"In Progress",status:"in_progress",color:"var(--loki-blue)"},{id:"review",label:"In Review",status:"review",color:"var(--loki-purple)"},{id:"done",label:"Completed",status:"done",color:"var(--loki-green)"}];var M=class extends u{static get observedAttributes(){return["api-url","project-id","theme","readonly"]}constructor(){super(),this._tasks=[],this._loading=!0,this._error=null,this._draggedTask=null,this._api=null,this._state=A()}connectedCallback(){super.connectedCallback(),this._setupApi(),this._loadTasks()}disconnectedCallback(){super.disconnectedCallback(),this._api&&(this._api.removeEventListener(r.TASK_CREATED,this._onTaskEvent),this._api.removeEventListener(r.TASK_UPDATED,this._onTaskEvent),this._api.removeEventListener(r.TASK_DELETED,this._onTaskEvent))}attributeChangedCallback(e,t,a){t!==a&&(e==="api-url"&&this._api&&(this._api.baseUrl=a,this._loadTasks()),e==="project-id"&&this._loadTasks(),e==="theme"&&this._applyTheme())}_setupApi(){let e=this.getAttribute("api-url")||"http://localhost:8420";this._api=g({baseUrl:e}),this._onTaskEvent=()=>this._loadTasks(),this._api.addEventListener(r.TASK_CREATED,this._onTaskEvent),this._api.addEventListener(r.TASK_UPDATED,this._onTaskEvent),this._api.addEventListener(r.TASK_DELETED,this._onTaskEvent)}async _loadTasks(){this._loading=!0,this._error=null,this.render();try{let e=this.getAttribute("project-id"),t=e?{projectId:parseInt(e)}:{};this._tasks=await this._api.listTasks(t);let a=this._state.get("localTasks")||[];a.length>0&&(this._tasks=[...this._tasks,...a.map(s=>({...s,isLocal:!0}))]),this._state.update({"cache.tasks":this._tasks},!1)}catch(e){this._error=e.message,this._tasks=(this._state.get("localTasks")||[]).map(t=>({...t,isLocal:!0}))}this._loading=!1,this.render()}_getTasksByStatus(e){return this._tasks.filter(t=>t.status?.toLowerCase().replace(/-/g,"_")===e)}_handleDragStart(e,t){this.hasAttribute("readonly")||(this._draggedTask=t,e.target.classList.add("dragging"),e.dataTransfer.effectAllowed="move",e.dataTransfer.setData("text/plain",t.id.toString()))}_handleDragEnd(e){e.target.classList.remove("dragging"),this._draggedTask=null,this.shadowRoot.querySelectorAll(".kanban-tasks").forEach(t=>{t.classList.remove("drag-over")})}_handleDragOver(e){e.preventDefault(),e.dataTransfer.dropEffect="move"}_handleDragEnter(e){e.preventDefault(),e.currentTarget.classList.add("drag-over")}_handleDragLeave(e){e.currentTarget.contains(e.relatedTarget)||e.currentTarget.classList.remove("drag-over")}async _handleDrop(e,t){if(e.preventDefault(),e.currentTarget.classList.remove("drag-over"),!this._draggedTask||this.hasAttribute("readonly"))return;let a=this._draggedTask.id,s=this._tasks.find(o=>o.id===a);if(!s)return;let i=s.status;if(i!==t){s.status=t,this.render();try{s.isLocal?this._state.moveLocalTask(a,t):await this._api.moveTask(a,t,0),this.dispatchEvent(new CustomEvent("task-moved",{detail:{taskId:a,oldStatus:i,newStatus:t}}))}catch(o){s.status=i,this.render(),console.error("Failed to move task:",o)}}}_openAddTaskModal(e="pending"){this.dispatchEvent(new CustomEvent("add-task",{detail:{status:e}}))}_openTaskDetail(e){this.dispatchEvent(new CustomEvent("task-click",{detail:{task:e}}))}render(){let e=`
+      <style>
+        :host {
+          display: block;
+          ${this.getBaseStyles()}
+        }
+
+        .board-container {
+          width: 100%;
+        }
+
+        .board-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+        }
+
+        .board-title {
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--loki-text-primary);
+        }
+
+        .board-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .loading, .error {
+          padding: 40px;
+          text-align: center;
+          color: var(--loki-text-muted);
+        }
+
+        .error {
+          color: var(--loki-red);
+        }
+
+        .kanban-board {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 12px;
+          min-height: 350px;
+        }
+
+        @media (max-width: 1200px) {
+          .kanban-board { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+          .kanban-board { grid-template-columns: 1fr; }
+        }
+
+        .kanban-column {
+          background: var(--loki-bg-secondary);
+          border-radius: 10px;
+          padding: 12px;
+          display: flex;
+          flex-direction: column;
+          transition: background var(--loki-transition);
+        }
+
+        .kanban-column-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid var(--loki-border);
+        }
+
+        .kanban-column[data-status="pending"] .kanban-column-header { border-color: var(--loki-text-muted); }
+        .kanban-column[data-status="in_progress"] .kanban-column-header { border-color: var(--loki-blue); }
+        .kanban-column[data-status="review"] .kanban-column-header { border-color: var(--loki-purple); }
+        .kanban-column[data-status="done"] .kanban-column-header { border-color: var(--loki-green); }
+
+        .kanban-column-title {
+          font-size: 13px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: var(--loki-text-primary);
+        }
+
+        .kanban-column-count {
+          background: var(--loki-bg-tertiary);
+          padding: 2px 8px;
+          border-radius: 10px;
+          font-size: 11px;
+          font-weight: 600;
+          font-family: 'JetBrains Mono', monospace;
+          color: var(--loki-text-secondary);
+        }
+
+        .kanban-tasks {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-height: 80px;
+          transition: background var(--loki-transition);
+          border-radius: 6px;
+          padding: 4px;
+        }
+
+        .kanban-tasks.drag-over {
+          background: var(--loki-bg-hover);
+        }
+
+        .task-card {
+          background: var(--loki-bg-card);
+          border: 1px solid var(--loki-border);
+          border-radius: 6px;
+          padding: 10px;
+          cursor: pointer;
+          transition: all var(--loki-transition);
+        }
+
+        .task-card:hover {
+          border-color: var(--loki-border-light);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .task-card.draggable {
+          cursor: grab;
+        }
+
+        .task-card.dragging {
+          opacity: 0.5;
+          cursor: grabbing;
+        }
+
+        .task-card.local {
+          border-left: 3px solid var(--loki-accent);
+        }
+
+        .task-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 6px;
+        }
+
+        .task-id {
+          font-size: 11px;
+          font-weight: 600;
+          font-family: 'JetBrains Mono', monospace;
+          color: var(--loki-accent);
+        }
+
+        .task-priority {
+          font-size: 9px;
+          padding: 2px 5px;
+          border-radius: 3px;
+          font-weight: 500;
+          text-transform: uppercase;
+        }
+
+        .task-priority.high, .task-priority.critical {
+          background: var(--loki-red-muted);
+          color: var(--loki-red);
+        }
+
+        .task-priority.medium {
+          background: var(--loki-yellow-muted);
+          color: var(--loki-yellow);
+        }
+
+        .task-priority.low {
+          background: var(--loki-green-muted);
+          color: var(--loki-green);
+        }
+
+        .task-title {
+          font-size: 12px;
+          font-weight: 500;
+          margin-bottom: 6px;
+          line-height: 1.4;
+          color: var(--loki-text-primary);
+        }
+
+        .task-meta {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 10px;
+          color: var(--loki-text-muted);
+        }
+
+        .task-type {
+          background: var(--loki-bg-tertiary);
+          padding: 2px 6px;
+          border-radius: 3px;
+        }
+
+        .add-task-btn {
+          background: transparent;
+          border: 1px dashed var(--loki-border);
+          border-radius: 6px;
+          padding: 10px;
+          color: var(--loki-text-muted);
+          font-size: 12px;
+          cursor: pointer;
+          transition: all var(--loki-transition);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          margin-top: 8px;
+        }
+
+        .add-task-btn:hover {
+          border-color: var(--loki-accent);
+          color: var(--loki-accent);
+          background: var(--loki-accent-muted);
+        }
+
+        .empty-column {
+          text-align: center;
+          padding: 20px;
+          color: var(--loki-text-muted);
+          font-size: 12px;
+        }
+
+        /* Column icons */
+        .column-icon {
+          width: 14px;
+          height: 14px;
+          stroke: currentColor;
+          stroke-width: 2;
+          fill: none;
+        }
+      </style>
+    `,t=s=>{switch(s){case"pending":return'<circle cx="12" cy="12" r="10"/>';case"in_progress":return'<path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>';case"review":return'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';case"done":return'<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>';default:return'<circle cx="12" cy="12" r="10"/>'}},a;if(this._loading)a='<div class="loading">Loading tasks...</div>';else if(this._error&&this._tasks.length===0)a=`<div class="error">Error: ${this._error}</div>`;else{let s=this.hasAttribute("readonly");a=`
+        <div class="kanban-board">
+          ${ne.map(i=>{let o=this._getTasksByStatus(i.status);return`
+              <div class="kanban-column" data-status="${i.status}">
+                <div class="kanban-column-header">
+                  <span class="kanban-column-title">
+                    <svg class="column-icon" viewBox="0 0 24 24" style="color: ${i.color}">
+                      ${t(i.status)}
+                    </svg>
+                    ${i.label}
+                  </span>
+                  <span class="kanban-column-count">${o.length}</span>
+                </div>
+                <div class="kanban-tasks" data-status="${i.status}">
+                  ${o.length===0?'<div class="empty-column">No tasks</div>':""}
+                  ${o.map(n=>`
+                    <div class="task-card ${!s&&!n.fromServer?"draggable":""} ${n.isLocal?"local":""}"
+                         data-task-id="${n.id}"
+                         tabindex="0"
+                         role="button"
+                         aria-label="Task: ${this._escapeHtml(n.title||"Untitled")}, ${n.priority||"medium"} priority"
+                         ${!s&&!n.fromServer?'draggable="true"':""}>
+                      <div class="task-card-header">
+                        <span class="task-id">${n.isLocal?"LOCAL":"#"+n.id}</span>
+                        <span class="task-priority ${(n.priority||"medium").toLowerCase()}">${n.priority||"medium"}</span>
+                      </div>
+                      <div class="task-title">${this._escapeHtml(n.title||"Untitled")}</div>
+                      <div class="task-meta">
+                        <span class="task-type">${n.type||"task"}</span>
+                        ${n.assigned_agent_id?`<span>Agent #${n.assigned_agent_id}</span>`:""}
+                      </div>
+                    </div>
+                  `).join("")}
+                </div>
+                ${!s&&i.status==="pending"?`
+                  <button class="add-task-btn" data-status="${i.status}" aria-label="Add new task to ${i.label}">+ Add Task</button>
+                `:""}
+              </div>
+            `}).join("")}
+        </div>
+      `}this.shadowRoot.innerHTML=`
+      ${e}
+      <div class="board-container">
+        <div class="board-header">
+          <h2 class="board-title">Task Queue</h2>
+          <div class="board-actions">
+            <button class="btn btn-secondary" id="refresh-btn" aria-label="Refresh task board">
+              <svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" aria-hidden="true">
+                <polyline points="23 4 23 10 17 10"/>
+                <polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+              </svg>
+              Refresh
+            </button>
+          </div>
+        </div>
+        ${a}
+      </div>
+    `,this._attachEventListeners()}_attachEventListeners(){let e=this.shadowRoot.getElementById("refresh-btn");e&&e.addEventListener("click",()=>this._loadTasks()),this.shadowRoot.querySelectorAll(".add-task-btn").forEach(t=>{t.addEventListener("click",()=>{this._openAddTaskModal(t.dataset.status)})}),this.shadowRoot.querySelectorAll(".task-card").forEach(t=>{let a=t.dataset.taskId,s=this._tasks.find(i=>i.id.toString()===a);s&&(t.addEventListener("click",()=>this._openTaskDetail(s)),t.addEventListener("keydown",i=>{i.key==="Enter"||i.key===" "?(i.preventDefault(),this._openTaskDetail(s)):(i.key==="ArrowDown"||i.key==="ArrowUp")&&(i.preventDefault(),this._navigateTaskCards(t,i.key==="ArrowDown"?"next":"prev"))}),t.classList.contains("draggable")&&(t.addEventListener("dragstart",i=>this._handleDragStart(i,s)),t.addEventListener("dragend",i=>this._handleDragEnd(i))))}),this.shadowRoot.querySelectorAll(".kanban-tasks").forEach(t=>{t.addEventListener("dragover",a=>this._handleDragOver(a)),t.addEventListener("dragenter",a=>this._handleDragEnter(a)),t.addEventListener("dragleave",a=>this._handleDragLeave(a)),t.addEventListener("drop",a=>this._handleDrop(a,t.dataset.status))})}_escapeHtml(e){let t=document.createElement("div");return t.textContent=e,t.innerHTML}_navigateTaskCards(e,t){let a=Array.from(this.shadowRoot.querySelectorAll(".task-card")),s=a.indexOf(e);if(s===-1)return;let i=t==="next"?s+1:s-1;i>=0&&i<a.length&&a[i].focus()}};customElements.define("loki-task-board",M);var j=class extends u{static get observedAttributes(){return["api-url","theme","compact"]}constructor(){super(),this._status={mode:"offline",phase:null,iteration:null,complexity:null,connected:!1,version:null,uptime:0,activeAgents:0,pendingTasks:0},this._api=null,this._state=A()}connectedCallback(){super.connectedCallback(),this._setupApi(),this._loadStatus(),this._startPolling()}disconnectedCallback(){super.disconnectedCallback(),this._stopPolling()}attributeChangedCallback(e,t,a){t!==a&&(e==="api-url"&&this._api&&(this._api.baseUrl=a,this._loadStatus()),e==="theme"&&this._applyTheme(),e==="compact"&&this.render())}_setupApi(){let e=this.getAttribute("api-url")||"http://localhost:8420";this._api=g({baseUrl:e}),this._api.addEventListener(r.STATUS_UPDATE,t=>{this._updateFromStatus(t.detail)}),this._api.addEventListener(r.CONNECTED,()=>{this._status.connected=!0,this.render()}),this._api.addEventListener(r.DISCONNECTED,()=>{this._status.connected=!1,this._status.mode="offline",this.render()})}async _loadStatus(){try{let e=await this._api.getStatus();this._updateFromStatus(e)}catch{this._status.connected=!1,this._status.mode="offline",this.render()}}_updateFromStatus(e){e&&(this._status={...this._status,connected:!0,mode:e.status||"running",version:e.version,uptime:e.uptime_seconds||0,activeAgents:e.running_agents||0,pendingTasks:e.pending_tasks||0,phase:e.phase,iteration:e.iteration,complexity:e.complexity},this._state.updateSession({connected:!0,mode:this._status.mode,lastSync:new Date().toISOString()}),this.render())}_startPolling(){this._api.startPolling(e=>{this._updateFromStatus(e)})}_stopPolling(){this._api&&this._api.stopPolling()}_formatUptime(e){if(!e||e<0)return"--";let t=Math.floor(e/3600),a=Math.floor(e%3600/60),s=Math.floor(e%60);return t>0?`${t}h ${a}m`:a>0?`${a}m ${s}s`:`${s}s`}_getStatusClass(){switch(this._status.mode){case"running":case"autonomous":return"active";case"paused":return"paused";case"stopped":return"stopped";case"error":return"error";default:return"offline"}}_getStatusLabel(){switch(this._status.mode){case"running":case"autonomous":return"AUTONOMOUS";case"paused":return"PAUSED";case"stopped":return"STOPPED";case"error":return"ERROR";default:return"OFFLINE"}}_triggerStart(){this.dispatchEvent(new CustomEvent("session-start",{detail:this._status}))}_triggerPause(){this.dispatchEvent(new CustomEvent("session-pause",{detail:this._status}))}_triggerResume(){this.dispatchEvent(new CustomEvent("session-resume",{detail:this._status}))}_triggerStop(){this.dispatchEvent(new CustomEvent("session-stop",{detail:this._status}))}render(){let e=this.hasAttribute("compact"),t=this._getStatusClass(),a=this._getStatusLabel(),s=["running","autonomous"].includes(this._status.mode),i=this._status.mode==="paused",o=`
+      <style>
+        :host {
+          display: block;
+          ${this.getBaseStyles()}
+        }
+
+        .control-panel {
+          background: var(--loki-bg-tertiary);
+          border-radius: 10px;
+          padding: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          transition: background var(--loki-transition);
+        }
+
+        .control-panel.compact {
+          padding: 10px;
+          gap: 8px;
+        }
+
+        .panel-title {
+          font-size: 10px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--loki-text-muted);
+          margin-bottom: 4px;
+        }
+
+        .status-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 12px;
+        }
+
+        .status-label {
+          color: var(--loki-text-secondary);
+        }
+
+        .status-value {
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: var(--loki-text-primary);
+        }
+
+        .status-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+        }
+
+        .status-dot.active {
+          background: var(--loki-green);
+          animation: pulse 2s infinite;
+        }
+        .status-dot.idle { background: var(--loki-text-muted); }
+        .status-dot.paused { background: var(--loki-yellow); }
+        .status-dot.stopped { background: var(--loki-red); }
+        .status-dot.error { background: var(--loki-red); }
+        .status-dot.offline { background: var(--loki-text-muted); }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+
+        .control-buttons {
+          display: flex;
+          gap: 6px;
+          margin-top: 6px;
+        }
+
+        .control-btn {
+          flex: 1;
+          padding: 6px 10px;
+          border-radius: 6px;
+          border: 1px solid var(--loki-border);
+          background: var(--loki-bg-card);
+          color: var(--loki-text-secondary);
+          font-size: 11px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all var(--loki-transition);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+        }
+
+        .control-btn:hover {
+          background: var(--loki-bg-hover);
+          color: var(--loki-text-primary);
+        }
+
+        .control-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .control-btn.start:hover:not(:disabled) {
+          background: var(--loki-green-muted);
+          color: var(--loki-green);
+          border-color: var(--loki-green);
+        }
+
+        .control-btn.pause:hover:not(:disabled) {
+          background: var(--loki-yellow-muted);
+          color: var(--loki-yellow);
+          border-color: var(--loki-yellow);
+        }
+
+        .control-btn.resume:hover:not(:disabled) {
+          background: var(--loki-green-muted);
+          color: var(--loki-green);
+          border-color: var(--loki-green);
+        }
+
+        .control-btn.stop:hover:not(:disabled) {
+          background: var(--loki-red-muted);
+          color: var(--loki-red);
+          border-color: var(--loki-red);
+        }
+
+        .control-btn svg {
+          width: 10px;
+          height: 10px;
+          fill: currentColor;
+        }
+
+        .connection-status {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background: var(--loki-bg-tertiary);
+          border-radius: 6px;
+          font-size: 11px;
+          color: var(--loki-text-muted);
+          margin-top: 4px;
+        }
+
+        .connection-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: var(--loki-red);
+        }
+
+        .connection-dot.connected {
+          background: var(--loki-green);
+          animation: pulse 2s infinite;
+        }
+
+        .stats-row {
+          display: flex;
+          justify-content: space-around;
+          padding: 8px 0;
+          border-top: 1px solid var(--loki-border);
+          margin-top: 4px;
+        }
+
+        .stat-item {
+          text-align: center;
+        }
+
+        .stat-value {
+          font-size: 16px;
+          font-weight: 600;
+          font-family: 'JetBrains Mono', monospace;
+          color: var(--loki-text-primary);
+        }
+
+        .stat-label {
+          font-size: 10px;
+          color: var(--loki-text-muted);
+        }
+      </style>
+    `,n=`
+      <div class="control-panel compact">
+        <div class="status-row">
+          <span class="status-value">
+            <span class="status-dot ${t}"></span>
+            ${a}
+          </span>
+        </div>
+        <div class="control-buttons" role="group" aria-label="Session controls">
+          ${i?`
+            <button class="control-btn resume" id="resume-btn" aria-label="Resume session">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Resume
+            </button>
+          `:`
+            <button class="control-btn pause" id="pause-btn" aria-label="Pause session" ${s?"":"disabled"}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              Pause
+            </button>
+          `}
+          <button class="control-btn stop" id="stop-btn" aria-label="Stop session" ${!s&&!i?"disabled":""}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+            Stop
+          </button>
+        </div>
+      </div>
+    `,d=`
+      <div class="control-panel">
+        <div class="panel-title">System Status</div>
+
+        <div class="status-row">
+          <span class="status-label">Mode</span>
+          <span class="status-value">
+            <span class="status-dot ${t}"></span>
+            ${a}
+          </span>
+        </div>
+
+        <div class="status-row">
+          <span class="status-label">Phase</span>
+          <span class="status-value">${this._status.phase||"--"}</span>
+        </div>
+
+        <div class="status-row">
+          <span class="status-label">Complexity</span>
+          <span class="status-value">${(this._status.complexity||"--").toUpperCase()}</span>
+        </div>
+
+        <div class="status-row">
+          <span class="status-label">Iteration</span>
+          <span class="status-value">${this._status.iteration||"--"}</span>
+        </div>
+
+        <div class="status-row">
+          <span class="status-label">Uptime</span>
+          <span class="status-value">${this._formatUptime(this._status.uptime)}</span>
+        </div>
+
+        <div class="control-buttons" role="group" aria-label="Session controls">
+          ${i?`
+            <button class="control-btn resume" id="resume-btn" aria-label="Resume session">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Resume
+            </button>
+          `:`
+            <button class="control-btn pause" id="pause-btn" aria-label="Pause session" ${s?"":"disabled"}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              Pause
+            </button>
+          `}
+          <button class="control-btn stop" id="stop-btn" aria-label="Stop session" ${!s&&!i?"disabled":""}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+            Stop
+          </button>
+        </div>
+
+        <div class="connection-status">
+          <span class="connection-dot ${this._status.connected?"connected":""}"></span>
+          <span>${this._status.connected?"Connected":"Disconnected"}</span>
+          ${this._status.version?`<span style="margin-left: auto">v${this._status.version}</span>`:""}
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-item">
+            <div class="stat-value">${this._status.activeAgents}</div>
+            <div class="stat-label">Agents</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">${this._status.pendingTasks}</div>
+            <div class="stat-label">Pending</div>
+          </div>
+        </div>
+      </div>
+    `;this.shadowRoot.innerHTML=`
+      ${o}
+      ${e?n:d}
+    `,this._attachEventListeners()}_attachEventListeners(){let e=this.shadowRoot.getElementById("pause-btn"),t=this.shadowRoot.getElementById("resume-btn"),a=this.shadowRoot.getElementById("stop-btn"),s=this.shadowRoot.getElementById("start-btn");e&&e.addEventListener("click",()=>this._triggerPause()),t&&t.addEventListener("click",()=>this._triggerResume()),a&&a.addEventListener("click",()=>this._triggerStop()),s&&s.addEventListener("click",()=>this._triggerStart())}};customElements.define("loki-session-control",j);var Q={info:{color:"var(--loki-blue)",label:"INFO"},success:{color:"var(--loki-green)",label:"SUCCESS"},warning:{color:"var(--loki-yellow)",label:"WARN"},error:{color:"var(--loki-red)",label:"ERROR"},step:{color:"var(--loki-purple)",label:"STEP"},agent:{color:"var(--loki-accent)",label:"AGENT"},debug:{color:"var(--loki-text-muted)",label:"DEBUG"}},z=class extends u{static get observedAttributes(){return["api-url","max-lines","auto-scroll","theme","log-file"]}constructor(){super(),this._logs=[],this._maxLines=500,this._autoScroll=!0,this._filter="",this._levelFilter="all",this._api=null,this._pollInterval=null}connectedCallback(){super.connectedCallback(),this._maxLines=parseInt(this.getAttribute("max-lines"))||500,this._autoScroll=this.hasAttribute("auto-scroll"),this._setupApi(),this._startLogPolling()}disconnectedCallback(){super.disconnectedCallback(),this._stopLogPolling()}attributeChangedCallback(e,t,a){if(t!==a)switch(e){case"api-url":this._api&&(this._api.baseUrl=a);break;case"max-lines":this._maxLines=parseInt(a)||500,this._trimLogs(),this.render();break;case"auto-scroll":this._autoScroll=this.hasAttribute("auto-scroll"),this.render();break;case"theme":this._applyTheme();break}}_setupApi(){let e=this.getAttribute("api-url")||"http://localhost:8420";this._api=g({baseUrl:e}),this._api.addEventListener(r.LOG_MESSAGE,t=>{this._addLog(t.detail)})}_startLogPolling(){let e=this.getAttribute("log-file");e&&this._pollLogFile(e)}async _pollLogFile(e){let t=0,a=async()=>{try{let s=await fetch(`${e}?t=${Date.now()}`);if(!s.ok)return;let o=(await s.text()).split(`
+`);if(o.length>t){let n=o.slice(t);for(let d of n)d.trim()&&this._addLog(this._parseLine(d));t=o.length}}catch{}};a(),this._pollInterval=setInterval(a,1e3)}_stopLogPolling(){this._pollInterval&&(clearInterval(this._pollInterval),this._pollInterval=null)}_parseLine(e){let t=e.match(/^\[([^\]]+)\]\s*\[([^\]]+)\]\s*(.+)$/);if(t)return{timestamp:t[1],level:t[2].toLowerCase(),message:t[3]};let a=e.match(/^(\d{2}:\d{2}:\d{2})\s+(\w+)\s+(.+)$/);return a?{timestamp:a[1],level:a[2].toLowerCase(),message:a[3]}:{timestamp:new Date().toLocaleTimeString(),level:"info",message:e}}_addLog(e){if(!e)return;let t={id:Date.now()+Math.random(),timestamp:e.timestamp||new Date().toLocaleTimeString(),level:(e.level||"info").toLowerCase(),message:e.message||e};this._logs.push(t),this._trimLogs(),this.dispatchEvent(new CustomEvent("log-received",{detail:t})),this._renderLogs(),this._autoScroll&&this._scrollToBottom()}_trimLogs(){this._logs.length>this._maxLines&&(this._logs=this._logs.slice(-this._maxLines))}_clearLogs(){this._logs=[],this.dispatchEvent(new CustomEvent("logs-cleared")),this._renderLogs()}_toggleAutoScroll(){this._autoScroll=!this._autoScroll,this.render(),this._autoScroll&&this._scrollToBottom()}_scrollToBottom(){requestAnimationFrame(()=>{let e=this.shadowRoot.getElementById("log-output");e&&(e.scrollTop=e.scrollHeight)})}_downloadLogs(){let e=this._logs.map(i=>`[${i.timestamp}] [${i.level.toUpperCase()}] ${i.message}`).join(`
+`),t=new Blob([e],{type:"text/plain"}),a=URL.createObjectURL(t),s=document.createElement("a");s.href=a,s.download=`loki-logs-${new Date().toISOString().split("T")[0]}.txt`,s.click(),URL.revokeObjectURL(a)}_setFilter(e){this._filter=e.toLowerCase(),this._renderLogs()}_setLevelFilter(e){this._levelFilter=e,this._renderLogs()}_getFilteredLogs(){return this._logs.filter(e=>!(this._levelFilter!=="all"&&e.level!==this._levelFilter||this._filter&&!e.message.toLowerCase().includes(this._filter)))}_renderLogs(){let e=this.shadowRoot.getElementById("log-output");if(!e)return;let t=this._getFilteredLogs();if(t.length===0){e.innerHTML='<div class="log-empty">No log output yet. Terminal will update when Loki Mode is running.</div>';return}e.innerHTML=t.map(a=>{let s=Q[a.level]||Q.info;return`
+        <div class="log-line">
+          <span class="timestamp">${a.timestamp}</span>
+          <span class="level" style="color: ${s.color}">[${s.label}]</span>
+          <span class="message">${this._escapeHtml(a.message)}</span>
+        </div>
+      `}).join(""),this._autoScroll&&this._scrollToBottom()}_escapeHtml(e){let t=document.createElement("div");return t.textContent=e,t.innerHTML}render(){let e=`
+      <style>
+        :host {
+          display: block;
+          ${this.getBaseStyles()}
+        }
+
+        .terminal-container {
+          background: #1a1a1b;
+          border: 1px solid var(--loki-border);
+          border-radius: 10px;
+          overflow: hidden;
+        }
+
+        .terminal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px 14px;
+          background: #232325;
+          border-bottom: 1px solid var(--loki-border);
+        }
+
+        .terminal-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #a1a1a6;
+        }
+
+        .terminal-dots {
+          display: flex;
+          gap: 6px;
+        }
+
+        .terminal-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+        }
+
+        .terminal-dot.red { background: #ff5f56; }
+        .terminal-dot.yellow { background: #ffbd2e; }
+        .terminal-dot.green { background: #27c93f; }
+
+        .terminal-controls {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+
+        .terminal-btn {
+          padding: 4px 10px;
+          background: #2a2a2d;
+          border: 1px solid #3d3d42;
+          border-radius: 4px;
+          color: #a1a1a6;
+          font-size: 11px;
+          cursor: pointer;
+          transition: all var(--loki-transition);
+        }
+
+        .terminal-btn:hover {
+          background: #3d3d42;
+          color: #f5f5f5;
+        }
+
+        .terminal-btn.active {
+          background: var(--loki-accent);
+          border-color: var(--loki-accent);
+          color: white;
+        }
+
+        .filter-input {
+          padding: 4px 10px;
+          background: #2a2a2d;
+          border: 1px solid #3d3d42;
+          border-radius: 4px;
+          color: #f5f5f5;
+          font-size: 11px;
+          width: 120px;
+        }
+
+        .filter-input:focus {
+          outline: none;
+          border-color: var(--loki-accent);
+        }
+
+        .filter-input::placeholder {
+          color: #6b6b70;
+        }
+
+        .level-select {
+          padding: 4px 10px;
+          background: #2a2a2d;
+          border: 1px solid #3d3d42;
+          border-radius: 4px;
+          color: #a1a1a6;
+          font-size: 11px;
+          cursor: pointer;
+        }
+
+        .log-output {
+          padding: 14px;
+          max-height: 350px;
+          overflow-y: auto;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 12px;
+          line-height: 1.6;
+          color: #e5e5e5;
+          background: #1a1a1b;
+        }
+
+        .log-line {
+          display: flex;
+          gap: 10px;
+          white-space: pre-wrap;
+          word-break: break-all;
+        }
+
+        .log-line .timestamp {
+          color: #6b6b70;
+          flex-shrink: 0;
+        }
+
+        .log-line .level {
+          flex-shrink: 0;
+          font-weight: 500;
+        }
+
+        .log-line .message {
+          flex: 1;
+        }
+
+        .log-empty {
+          color: #6b6b70;
+          text-align: center;
+          padding: 40px;
+        }
+
+        .log-count {
+          font-size: 10px;
+          color: #6b6b70;
+          padding: 4px 14px;
+          border-top: 1px solid #2d2d30;
+          background: #1a1a1b;
+        }
+
+        /* Scrollbar */
+        .log-output::-webkit-scrollbar { width: 6px; }
+        .log-output::-webkit-scrollbar-track { background: #1a1a1b; }
+        .log-output::-webkit-scrollbar-thumb { background: #3d3d42; border-radius: 3px; }
+        .log-output::-webkit-scrollbar-thumb:hover { background: #505055; }
+      </style>
+    `;this.shadowRoot.innerHTML=`
+      ${e}
+      <div class="terminal-container">
+        <div class="terminal-header">
+          <div class="terminal-title">
+            <div class="terminal-dots">
+              <span class="terminal-dot red"></span>
+              <span class="terminal-dot yellow"></span>
+              <span class="terminal-dot green"></span>
+            </div>
+            loki-mode -- agent output
+          </div>
+          <div class="terminal-controls">
+            <input type="text" class="filter-input" id="filter-input" placeholder="Filter logs...">
+            <select class="level-select" id="level-select">
+              <option value="all">All Levels</option>
+              <option value="info">Info</option>
+              <option value="success">Success</option>
+              <option value="warning">Warning</option>
+              <option value="error">Error</option>
+              <option value="step">Step</option>
+              <option value="agent">Agent</option>
+              <option value="debug">Debug</option>
+            </select>
+            <button class="terminal-btn ${this._autoScroll?"active":""}" id="auto-scroll-btn" aria-label="Toggle auto-scroll" aria-pressed="${this._autoScroll}">Auto-scroll</button>
+            <button class="terminal-btn" id="clear-btn" aria-label="Clear all logs">Clear</button>
+            <button class="terminal-btn" id="download-btn" aria-label="Download logs as text file">Download</button>
+          </div>
+        </div>
+        <div class="log-output" id="log-output" role="log" aria-live="polite" aria-label="Log output">
+          <div class="log-empty">No log output yet. Terminal will update when Loki Mode is running.</div>
+        </div>
+        <div class="log-count">
+          ${this._logs.length} lines (${this._getFilteredLogs().length} shown)
+        </div>
+      </div>
+    `,this._attachEventListeners(),this._renderLogs()}_attachEventListeners(){let e=this.shadowRoot.getElementById("filter-input"),t=this.shadowRoot.getElementById("level-select"),a=this.shadowRoot.getElementById("auto-scroll-btn"),s=this.shadowRoot.getElementById("clear-btn"),i=this.shadowRoot.getElementById("download-btn");e&&(e.value=this._filter,e.addEventListener("input",o=>this._setFilter(o.target.value))),t&&(t.value=this._levelFilter,t.addEventListener("change",o=>this._setLevelFilter(o.target.value))),a&&a.addEventListener("click",()=>this._toggleAutoScroll()),s&&s.addEventListener("click",()=>this._clearLogs()),i&&i.addEventListener("click",()=>this._downloadLogs())}addLog(e,t="info"){this._addLog({message:e,level:t,timestamp:new Date().toLocaleTimeString()})}clear(){this._clearLogs()}};customElements.define("loki-log-stream",z);var le=[{id:"summary",label:"Summary",icon:"M4 6h16M4 12h16M4 18h16"},{id:"episodes",label:"Episodes",icon:"M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"},{id:"patterns",label:"Patterns",icon:"M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"},{id:"skills",label:"Skills",icon:"M13 10V3L4 14h7v7l9-11h-7z"}],B=class extends u{static get observedAttributes(){return["api-url","theme","tab"]}constructor(){super(),this._activeTab="summary",this._loading=!1,this._error=null,this._api=null,this._summary=null,this._episodes=[],this._patterns=[],this._skills=[],this._tokenEconomics=null,this._selectedItem=null,this._lastFocusedElement=null}connectedCallback(){super.connectedCallback(),this._activeTab=this.getAttribute("tab")||"summary",this._setupApi(),this._loadData()}attributeChangedCallback(e,t,a){if(t!==a)switch(e){case"api-url":this._api&&(this._api.baseUrl=a,this._loadData());break;case"theme":this._applyTheme();break;case"tab":this._setTab(a);break}}_setupApi(){let e=this.getAttribute("api-url")||"http://localhost:8420";this._api=g({baseUrl:e})}async _loadData(){this._loading=!0,this._error=null,this.render();try{this._summary=await this._api.getMemorySummary().catch(()=>null),this._tokenEconomics=await this._api.getTokenEconomics().catch(()=>null),await this._loadTabData()}catch(e){this._error=e.message||"Failed to load memory data"}this._loading=!1,this.render()}async _loadTabData(){switch(this._activeTab){case"episodes":this._episodes=await this._api.listEpisodes({limit:50}).catch(()=>[]);break;case"patterns":this._patterns=await this._api.listPatterns().catch(()=>[]);break;case"skills":this._skills=await this._api.listSkills().catch(()=>[]);break}}_setTab(e){this._activeTab!==e&&(this._activeTab=e,this._selectedItem=null,this._loadTabData().then(()=>this.render()))}async _selectEpisode(e){try{this._lastFocusedElement=this.shadowRoot.activeElement,this._selectedItem=await this._api.getEpisode(e),this.dispatchEvent(new CustomEvent("episode-select",{detail:this._selectedItem})),this.render(),this._focusDetailPanel()}catch(t){console.error("Failed to load episode:",t)}}async _selectPattern(e){try{this._lastFocusedElement=this.shadowRoot.activeElement,this._selectedItem=await this._api.getPattern(e),this.dispatchEvent(new CustomEvent("pattern-select",{detail:this._selectedItem})),this.render(),this._focusDetailPanel()}catch(t){console.error("Failed to load pattern:",t)}}async _selectSkill(e){try{this._lastFocusedElement=this.shadowRoot.activeElement,this._selectedItem=await this._api.getSkill(e),this.dispatchEvent(new CustomEvent("skill-select",{detail:this._selectedItem})),this.render(),this._focusDetailPanel()}catch(t){console.error("Failed to load skill:",t)}}_focusDetailPanel(){requestAnimationFrame(()=>{let e=this.shadowRoot.getElementById("close-detail");e&&e.focus()})}_closeDetail(){this._selectedItem=null,this.render(),this._lastFocusedElement&&requestAnimationFrame(()=>{this._lastFocusedElement.focus(),this._lastFocusedElement=null})}async _triggerConsolidation(){try{let e=await this._api.consolidateMemory(24);alert(`Consolidation complete:
+- Patterns created: ${e.patternsCreated}
+- Patterns merged: ${e.patternsMerged}
+- Episodes processed: ${e.episodesProcessed}`),this._loadData()}catch(e){alert("Consolidation failed: "+e.message)}}_renderSummary(){if(!this._summary)return'<div class="empty-state">No memory data available</div>';let{episodic:e,semantic:t,procedural:a,tokenEconomics:s}=this._summary;return`
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-card-header">
+            <span class="summary-card-title">Episodic Memory</span>
+            <span class="summary-card-count">${e?.count||0}</span>
+          </div>
+          <div class="summary-card-detail">
+            Specific interaction traces and outcomes
+          </div>
+          ${e?.latestDate?`<div class="summary-card-meta">Latest: ${new Date(e.latestDate).toLocaleDateString()}</div>`:""}
+          <div class="memory-bar">
+            <div class="memory-bar-fill episodic" style="width: ${Math.min((e?.count||0)/100*100,100)}%"></div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-card-header">
+            <span class="summary-card-title">Semantic Memory</span>
+            <span class="summary-card-count">${t?.patterns||0}</span>
+          </div>
+          <div class="summary-card-detail">
+            Generalized patterns and anti-patterns
+          </div>
+          <div class="summary-card-meta">Anti-patterns: ${t?.antiPatterns||0}</div>
+          <div class="memory-bar">
+            <div class="memory-bar-fill semantic" style="width: ${Math.min((t?.patterns||0)/100*100,100)}%"></div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-card-header">
+            <span class="summary-card-title">Procedural Memory</span>
+            <span class="summary-card-count">${a?.skills||0}</span>
+          </div>
+          <div class="summary-card-detail">
+            Learned skills and procedures
+          </div>
+          <div class="memory-bar">
+            <div class="memory-bar-fill procedural" style="width: ${Math.min((a?.skills||0)/100*100,100)}%"></div>
+          </div>
+        </div>
+
+        ${this._tokenEconomics?`
+          <div class="summary-card token-economics">
+            <div class="summary-card-header">
+              <span class="summary-card-title">Token Economics</span>
+            </div>
+            <div class="economics-stats">
+              <div class="econ-stat">
+                <span class="econ-label">Discovery</span>
+                <span class="econ-value">${this._tokenEconomics.discoveryTokens?.toLocaleString()||0}</span>
+              </div>
+              <div class="econ-stat">
+                <span class="econ-label">Read</span>
+                <span class="econ-value">${this._tokenEconomics.readTokens?.toLocaleString()||0}</span>
+              </div>
+              <div class="econ-stat">
+                <span class="econ-label">Savings</span>
+                <span class="econ-value savings">${(this._tokenEconomics.savingsPercent||0).toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+        `:""}
+      </div>
+
+      <div class="summary-actions">
+        <button class="btn btn-secondary" id="consolidate-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none">
+            <polyline points="23 4 23 10 17 10"/>
+            <polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+          </svg>
+          Consolidate Memory
+        </button>
+        <button class="btn btn-secondary" id="refresh-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+          </svg>
+          Refresh
+        </button>
+      </div>
+    `}_renderEpisodes(){return this._episodes.length===0?'<div class="empty-state">No episodes recorded yet</div>':`
+      <div class="item-list" role="list" aria-label="Episodes list">
+        ${this._episodes.map(e=>`
+          <div class="item-card" data-id="${e.id}" data-type="episode" tabindex="0" role="listitem" aria-label="Episode ${e.id}: ${this._escapeHtml(e.taskId||"Task")}, outcome ${e.outcome||"unknown"}">
+            <div class="item-header">
+              <span class="item-id mono">${e.id}</span>
+              <span class="item-outcome ${e.outcome?.toLowerCase()}">${e.outcome||"unknown"}</span>
+            </div>
+            <div class="item-title">${this._escapeHtml(e.taskId||"Task")}</div>
+            <div class="item-meta">
+              <span>${e.agent||"unknown agent"}</span>
+              <span>${e.phase||"unknown phase"}</span>
+              <span>${new Date(e.timestamp).toLocaleString()}</span>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `}_renderPatterns(){return this._patterns.length===0?'<div class="empty-state">No patterns discovered yet</div>':`
+      <div class="item-list" role="list" aria-label="Patterns list">
+        ${this._patterns.map(e=>`
+          <div class="item-card" data-id="${e.id}" data-type="pattern" tabindex="0" role="listitem" aria-label="Pattern: ${this._escapeHtml(e.pattern)}, ${(e.confidence*100).toFixed(0)} percent confidence">
+            <div class="item-header">
+              <span class="item-category">${e.category||"general"}</span>
+              <span class="confidence-badge">${(e.confidence*100).toFixed(0)}%</span>
+            </div>
+            <div class="item-title">${this._escapeHtml(e.pattern)}</div>
+            <div class="item-meta">
+              <span>Used ${e.usageCount||0} times</span>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `}_renderSkills(){return this._skills.length===0?'<div class="empty-state">No skills learned yet</div>':`
+      <div class="item-list" role="list" aria-label="Skills list">
+        ${this._skills.map(e=>`
+          <div class="item-card" data-id="${e.id}" data-type="skill" tabindex="0" role="listitem" aria-label="Skill: ${this._escapeHtml(e.name)}">
+            <div class="item-header">
+              <span class="item-id mono">${e.id}</span>
+            </div>
+            <div class="item-title">${this._escapeHtml(e.name)}</div>
+            <div class="item-description">${this._escapeHtml(e.description||"")}</div>
+          </div>
+        `).join("")}
+      </div>
+    `}_renderDetail(){if(!this._selectedItem)return"";let e=this._selectedItem;return e.actionLog!==void 0?`
+        <div class="detail-panel">
+          <div class="detail-header">
+            <h3>Episode: ${e.id}</h3>
+            <button class="close-btn" id="close-detail">&times;</button>
+          </div>
+          <div class="detail-body">
+            <div class="detail-row">
+              <span class="detail-label">Task</span>
+              <span class="detail-value">${e.taskId||"--"}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Agent</span>
+              <span class="detail-value">${e.agent||"--"}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Phase</span>
+              <span class="detail-value">${e.phase||"--"}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Outcome</span>
+              <span class="detail-value outcome ${e.outcome?.toLowerCase()}">${e.outcome||"--"}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Duration</span>
+              <span class="detail-value">${e.durationSeconds||0}s</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Tokens Used</span>
+              <span class="detail-value">${e.tokensUsed?.toLocaleString()||0}</span>
+            </div>
+            ${e.goal?`
+              <div class="detail-section">
+                <div class="detail-label">Goal</div>
+                <div class="detail-content">${this._escapeHtml(e.goal)}</div>
+              </div>
+            `:""}
+            ${e.actionLog?.length?`
+              <div class="detail-section">
+                <div class="detail-label">Action Log (${e.actionLog.length})</div>
+                <div class="action-log">
+                  ${e.actionLog.map(t=>`
+                    <div class="action-entry">
+                      <span class="action-time">+${t.t}s</span>
+                      <span class="action-type">${t.action}</span>
+                      <span class="action-target">${this._escapeHtml(t.target)}</span>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            `:""}
+          </div>
+        </div>
+      `:e.conditions!==void 0?`
+        <div class="detail-panel">
+          <div class="detail-header">
+            <h3>Pattern: ${e.id}</h3>
+            <button class="close-btn" id="close-detail">&times;</button>
+          </div>
+          <div class="detail-body">
+            <div class="detail-row">
+              <span class="detail-label">Category</span>
+              <span class="detail-value">${e.category||"general"}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Confidence</span>
+              <span class="detail-value">${(e.confidence*100).toFixed(0)}%</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Usage Count</span>
+              <span class="detail-value">${e.usageCount||0}</span>
+            </div>
+            <div class="detail-section">
+              <div class="detail-label">Pattern</div>
+              <div class="detail-content">${this._escapeHtml(e.pattern)}</div>
+            </div>
+            ${e.conditions?.length?`
+              <div class="detail-section">
+                <div class="detail-label">Conditions</div>
+                <ul class="detail-list">
+                  ${e.conditions.map(t=>`<li>${this._escapeHtml(t)}</li>`).join("")}
+                </ul>
+              </div>
+            `:""}
+            ${e.correctApproach?`
+              <div class="detail-section">
+                <div class="detail-label">Correct Approach</div>
+                <div class="detail-content success">${this._escapeHtml(e.correctApproach)}</div>
+              </div>
+            `:""}
+            ${e.incorrectApproach?`
+              <div class="detail-section">
+                <div class="detail-label">Incorrect Approach</div>
+                <div class="detail-content error">${this._escapeHtml(e.incorrectApproach)}</div>
+              </div>
+            `:""}
+          </div>
+        </div>
+      `:e.steps!==void 0?`
+        <div class="detail-panel">
+          <div class="detail-header">
+            <h3>Skill: ${e.name}</h3>
+            <button class="close-btn" id="close-detail">&times;</button>
+          </div>
+          <div class="detail-body">
+            <div class="detail-section">
+              <div class="detail-label">Description</div>
+              <div class="detail-content">${this._escapeHtml(e.description)}</div>
+            </div>
+            ${e.prerequisites?.length?`
+              <div class="detail-section">
+                <div class="detail-label">Prerequisites</div>
+                <ul class="detail-list">
+                  ${e.prerequisites.map(t=>`<li>${this._escapeHtml(t)}</li>`).join("")}
+                </ul>
+              </div>
+            `:""}
+            ${e.steps?.length?`
+              <div class="detail-section">
+                <div class="detail-label">Steps</div>
+                <ol class="detail-list numbered">
+                  ${e.steps.map(t=>`<li>${this._escapeHtml(t)}</li>`).join("")}
+                </ol>
+              </div>
+            `:""}
+            ${e.exitCriteria?.length?`
+              <div class="detail-section">
+                <div class="detail-label">Exit Criteria</div>
+                <ul class="detail-list">
+                  ${e.exitCriteria.map(t=>`<li>${this._escapeHtml(t)}</li>`).join("")}
+                </ul>
+              </div>
+            `:""}
+          </div>
+        </div>
+      `:""}_escapeHtml(e){if(!e)return"";let t=document.createElement("div");return t.textContent=e,t.innerHTML}render(){let e=`
+      <style>
+        :host {
+          display: block;
+          ${this.getBaseStyles()}
+        }
+
+        .memory-browser {
+          background: var(--loki-bg-card);
+          border: 1px solid var(--loki-border);
+          border-radius: 10px;
+          overflow: hidden;
+        }
+
+        .browser-header {
+          padding: 12px 16px;
+          border-bottom: 1px solid var(--loki-border);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .browser-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--loki-text-primary);
+        }
+
+        .tabs {
+          display: flex;
+          border-bottom: 1px solid var(--loki-border);
+          background: var(--loki-bg-secondary);
+        }
+
+        .tab {
+          padding: 10px 16px;
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--loki-text-secondary);
+          cursor: pointer;
+          border: none;
+          background: none;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          transition: all var(--loki-transition);
+          border-bottom: 2px solid transparent;
+          margin-bottom: -1px;
+        }
+
+        .tab:hover {
+          color: var(--loki-text-primary);
+          background: var(--loki-bg-hover);
+        }
+
+        .tab.active {
+          color: var(--loki-accent);
+          border-bottom-color: var(--loki-accent);
+        }
+
+        .tab svg {
+          width: 14px;
+          height: 14px;
+          stroke: currentColor;
+          stroke-width: 2;
+          fill: none;
+        }
+
+        .browser-content {
+          padding: 16px;
+          min-height: 300px;
+          max-height: 500px;
+          overflow-y: auto;
+          display: flex;
+        }
+
+        .content-main {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .loading, .error-state {
+          text-align: center;
+          padding: 40px;
+          color: var(--loki-text-muted);
+        }
+
+        .error-state {
+          color: var(--loki-red);
+        }
+
+        /* Summary styles */
+        .summary-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 12px;
+        }
+
+        .summary-card {
+          background: var(--loki-bg-secondary);
+          border-radius: 8px;
+          padding: 14px;
+        }
+
+        .summary-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        }
+
+        .summary-card-title {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--loki-text-primary);
+        }
+
+        .summary-card-count {
+          font-size: 18px;
+          font-weight: 600;
+          font-family: 'JetBrains Mono', monospace;
+          color: var(--loki-accent);
+        }
+
+        .summary-card-detail {
+          font-size: 11px;
+          color: var(--loki-text-muted);
+          margin-bottom: 8px;
+        }
+
+        .summary-card-meta {
+          font-size: 10px;
+          color: var(--loki-text-secondary);
+          margin-bottom: 8px;
+        }
+
+        .memory-bar {
+          height: 4px;
+          background: var(--loki-bg-tertiary);
+          border-radius: 2px;
+          overflow: hidden;
+        }
+
+        .memory-bar-fill {
+          height: 100%;
+          border-radius: 2px;
+          transition: width 0.3s ease;
+        }
+
+        .memory-bar-fill.episodic { background: var(--loki-blue); }
+        .memory-bar-fill.semantic { background: var(--loki-purple); }
+        .memory-bar-fill.procedural { background: var(--loki-green); }
+
+        .token-economics .economics-stats {
+          display: flex;
+          gap: 16px;
+          margin-top: 8px;
+        }
+
+        .econ-stat {
+          text-align: center;
+        }
+
+        .econ-label {
+          font-size: 10px;
+          color: var(--loki-text-muted);
+          display: block;
+        }
+
+        .econ-value {
+          font-size: 14px;
+          font-weight: 600;
+          font-family: 'JetBrains Mono', monospace;
+          color: var(--loki-text-primary);
+        }
+
+        .econ-value.savings {
+          color: var(--loki-green);
+        }
+
+        .summary-actions {
+          display: flex;
+          gap: 8px;
+          margin-top: 16px;
+        }
+
+        /* Item list styles */
+        .item-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .item-card {
+          background: var(--loki-bg-secondary);
+          border: 1px solid var(--loki-border);
+          border-radius: 6px;
+          padding: 12px;
+          cursor: pointer;
+          transition: all var(--loki-transition);
+        }
+
+        .item-card:hover {
+          border-color: var(--loki-border-light);
+          transform: translateX(2px);
+        }
+
+        .item-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 6px;
+        }
+
+        .item-id {
+          font-size: 10px;
+          color: var(--loki-accent);
+        }
+
+        .item-category {
+          font-size: 10px;
+          padding: 2px 6px;
+          background: var(--loki-bg-tertiary);
+          border-radius: 3px;
+          color: var(--loki-text-secondary);
+        }
+
+        .item-outcome {
+          font-size: 9px;
+          padding: 2px 6px;
+          border-radius: 3px;
+          text-transform: uppercase;
+          font-weight: 500;
+        }
+
+        .item-outcome.success { background: var(--loki-green-muted); color: var(--loki-green); }
+        .item-outcome.failure { background: var(--loki-red-muted); color: var(--loki-red); }
+        .item-outcome.partial { background: var(--loki-yellow-muted); color: var(--loki-yellow); }
+
+        .confidence-badge {
+          font-size: 10px;
+          font-weight: 500;
+          color: var(--loki-blue);
+        }
+
+        .item-title {
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--loki-text-primary);
+          margin-bottom: 4px;
+        }
+
+        .item-description {
+          font-size: 11px;
+          color: var(--loki-text-secondary);
+          margin-bottom: 4px;
+        }
+
+        .item-meta {
+          display: flex;
+          gap: 12px;
+          font-size: 10px;
+          color: var(--loki-text-muted);
+        }
+
+        /* Detail panel */
+        .detail-panel {
+          width: 300px;
+          min-width: 300px;
+          background: var(--loki-bg-secondary);
+          border-left: 1px solid var(--loki-border);
+          margin: -16px -16px -16px 16px;
+          padding: 16px;
+          overflow-y: auto;
+        }
+
+        .detail-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+        }
+
+        .detail-header h3 {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--loki-text-primary);
+        }
+
+        .close-btn {
+          background: none;
+          border: none;
+          font-size: 20px;
+          color: var(--loki-text-muted);
+          cursor: pointer;
+          padding: 0;
+          line-height: 1;
+        }
+
+        .close-btn:hover {
+          color: var(--loki-text-primary);
+        }
+
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 6px 0;
+          border-bottom: 1px solid var(--loki-border);
+          font-size: 12px;
+        }
+
+        .detail-label {
+          color: var(--loki-text-secondary);
+          font-weight: 500;
+          font-size: 11px;
+          margin-bottom: 6px;
+        }
+
+        .detail-value {
+          color: var(--loki-text-primary);
+        }
+
+        .detail-value.outcome.success { color: var(--loki-green); }
+        .detail-value.outcome.failure { color: var(--loki-red); }
+
+        .detail-section {
+          margin-top: 16px;
+        }
+
+        .detail-content {
+          background: var(--loki-bg-tertiary);
+          padding: 10px;
+          border-radius: 6px;
+          font-size: 12px;
+          color: var(--loki-text-primary);
+        }
+
+        .detail-content.success {
+          border-left: 3px solid var(--loki-green);
+        }
+
+        .detail-content.error {
+          border-left: 3px solid var(--loki-red);
+        }
+
+        .detail-list {
+          padding-left: 20px;
+          font-size: 12px;
+          color: var(--loki-text-primary);
+        }
+
+        .detail-list li {
+          margin-bottom: 4px;
+        }
+
+        .action-log {
+          background: var(--loki-bg-tertiary);
+          border-radius: 6px;
+          padding: 8px;
+          max-height: 200px;
+          overflow-y: auto;
+        }
+
+        .action-entry {
+          display: flex;
+          gap: 8px;
+          font-size: 11px;
+          padding: 4px 0;
+          border-bottom: 1px solid var(--loki-border);
+        }
+
+        .action-entry:last-child {
+          border-bottom: none;
+        }
+
+        .action-time {
+          color: var(--loki-text-muted);
+          font-family: 'JetBrains Mono', monospace;
+        }
+
+        .action-type {
+          color: var(--loki-blue);
+          font-weight: 500;
+        }
+
+        .action-target {
+          color: var(--loki-text-secondary);
+          flex: 1;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: 40px;
+          color: var(--loki-text-muted);
+          font-size: 12px;
+        }
+      </style>
+    `,t;if(this._loading)t='<div class="loading">Loading memory data...</div>';else if(this._error)t=`<div class="error-state">Error: ${this._error}</div>`;else{let a;switch(this._activeTab){case"summary":a=this._renderSummary();break;case"episodes":a=this._renderEpisodes();break;case"patterns":a=this._renderPatterns();break;case"skills":a=this._renderSkills();break;default:a=this._renderSummary()}t=`
+        <div class="content-main">${a}</div>
+        ${this._renderDetail()}
+      `}this.shadowRoot.innerHTML=`
+      ${e}
+      <div class="memory-browser">
+        <div class="browser-header">
+          <span class="browser-title">Memory System</span>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Memory browser sections">
+          ${le.map((a,s)=>`
+            <button class="tab ${this._activeTab===a.id?"active":""}"
+                    data-tab="${a.id}"
+                    role="tab"
+                    id="tab-${a.id}"
+                    aria-selected="${this._activeTab===a.id}"
+                    aria-controls="tabpanel-${a.id}"
+                    tabindex="${this._activeTab===a.id?"0":"-1"}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="${a.icon}"/></svg>
+              ${a.label}
+            </button>
+          `).join("")}
+        </div>
+        <div class="browser-content" role="tabpanel" id="tabpanel-${this._activeTab}" aria-labelledby="tab-${this._activeTab}">
+          ${t}
+        </div>
+      </div>
+    `,this._attachEventListeners()}_attachEventListeners(){let e=this.shadowRoot.querySelectorAll(".tab");e.forEach((t,a)=>{t.addEventListener("click",()=>this._setTab(t.dataset.tab)),t.addEventListener("keydown",s=>{if(s.key==="ArrowRight"||s.key==="ArrowLeft"){s.preventDefault();let i=Array.from(e),o=s.key==="ArrowRight"?(a+1)%i.length:(a-1+i.length)%i.length;i[o].focus(),this._setTab(i[o].dataset.tab)}})}),this.shadowRoot.querySelectorAll(".item-card").forEach(t=>{t.addEventListener("click",()=>this._handleItemClick(t)),t.addEventListener("keydown",a=>{a.key==="Enter"||a.key===" "?(a.preventDefault(),this._handleItemClick(t)):(a.key==="ArrowDown"||a.key==="ArrowUp")&&(a.preventDefault(),this._navigateItemCards(t,a.key==="ArrowDown"?"next":"prev"))})})}_handleItemClick(e){let t=e.dataset.id;switch(e.dataset.type){case"episode":this._selectEpisode(t);break;case"pattern":this._selectPattern(t);break;case"skill":this._selectSkill(t);break}}_navigateItemCards(e,t){let a=Array.from(this.shadowRoot.querySelectorAll(".item-card")),s=a.indexOf(e);if(s===-1)return;let i=t==="next"?s+1:s-1;i>=0&&i<a.length&&a[i].focus();let o=this.shadowRoot.getElementById("close-detail");o&&o.addEventListener("click",()=>this._closeDetail());let n=this.shadowRoot.getElementById("consolidate-btn");n&&n.addEventListener("click",()=>this._triggerConsolidation());let d=this.shadowRoot.getElementById("refresh-btn");d&&d.addEventListener("click",()=>this._loadData())}};customElements.define("loki-memory-browser",B);var de=[{id:"1h",label:"1 Hour",hours:1},{id:"24h",label:"24 Hours",hours:24},{id:"7d",label:"7 Days",hours:168},{id:"30d",label:"30 Days",hours:720}],ce=[{id:"all",label:"All Signals"},{id:"user_preference",label:"User Preferences"},{id:"error_pattern",label:"Error Patterns"},{id:"success_pattern",label:"Success Patterns"},{id:"tool_efficiency",label:"Tool Efficiency"},{id:"context_relevance",label:"Context Relevance"}],pe=[{id:"all",label:"All Sources"},{id:"cli",label:"CLI"},{id:"api",label:"API"},{id:"vscode",label:"VS Code"},{id:"mcp",label:"MCP"},{id:"dashboard",label:"Dashboard"}],U=class extends u{static get observedAttributes(){return["api-url","theme","time-range","signal-type","source"]}constructor(){super(),this._loading=!1,this._error=null,this._api=null,this._timeRange="7d",this._signalType="all",this._source="all",this._metrics=null,this._trends=null,this._signals=[],this._selectedMetric=null}connectedCallback(){super.connectedCallback(),this._timeRange=this.getAttribute("time-range")||"7d",this._signalType=this.getAttribute("signal-type")||"all",this._source=this.getAttribute("source")||"all",this._setupApi(),this._loadData()}attributeChangedCallback(e,t,a){if(t!==a)switch(e){case"api-url":this._api&&(this._api.baseUrl=a,this._loadData());break;case"theme":this._applyTheme();break;case"time-range":this._timeRange=a,this._loadData();break;case"signal-type":this._signalType=a,this._loadData();break;case"source":this._source=a,this._loadData();break}}_setupApi(){let e=this.getAttribute("api-url")||"http://localhost:8420";this._api=g({baseUrl:e})}async _loadData(){this._loading=!0,this._error=null,this.render();try{let e={timeRange:this._timeRange,signalType:this._signalType!=="all"?this._signalType:void 0,source:this._source!=="all"?this._source:void 0},[t,a,s]=await Promise.all([this._api.getLearningMetrics(e).catch(()=>null),this._api.getLearningTrends(e).catch(()=>null),this._api.getLearningSignals({...e,limit:50}).catch(()=>[])]);this._metrics=t,this._trends=a,this._signals=s||[]}catch(e){this._error=e.message||"Failed to load learning data"}this._loading=!1,this.render()}_setFilter(e,t){switch(e){case"timeRange":this._timeRange=t,this.setAttribute("time-range",t);break;case"signalType":this._signalType=t,this.setAttribute("signal-type",t);break;case"source":this._source=t,this.setAttribute("source",t);break}this.dispatchEvent(new CustomEvent("filter-change",{detail:{timeRange:this._timeRange,signalType:this._signalType,source:this._source}})),this._loadData()}_selectMetric(e,t){this._selectedMetric={type:e,item:t},this.dispatchEvent(new CustomEvent("metric-select",{detail:{type:e,item:t}})),this.render()}_closeDetail(){this._selectedMetric=null,this.render()}_formatNumber(e){return e>=1e6?(e/1e6).toFixed(1)+"M":e>=1e3?(e/1e3).toFixed(1)+"K":e?.toString()||"0"}_formatPercent(e){return(e*100).toFixed(1)+"%"}_formatDuration(e){return e<60?e.toFixed(0)+"s":e<3600?(e/60).toFixed(1)+"m":(e/3600).toFixed(1)+"h"}_escapeHtml(e){if(!e)return"";let t=document.createElement("div");return t.textContent=e,t.innerHTML}_renderFilters(){return`
+      <div class="filters">
+        <div class="filter-group">
+          <label>Time Range</label>
+          <select id="time-range-select" class="filter-select">
+            ${de.map(e=>`
+              <option value="${e.id}" ${this._timeRange===e.id?"selected":""}>${e.label}</option>
+            `).join("")}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Signal Type</label>
+          <select id="signal-type-select" class="filter-select">
+            ${ce.map(e=>`
+              <option value="${e.id}" ${this._signalType===e.id?"selected":""}>${e.label}</option>
+            `).join("")}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Source</label>
+          <select id="source-select" class="filter-select">
+            ${pe.map(e=>`
+              <option value="${e.id}" ${this._source===e.id?"selected":""}>${e.label}</option>
+            `).join("")}
+          </select>
+        </div>
+        <button class="btn btn-secondary" id="refresh-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+          </svg>
+          Refresh
+        </button>
+      </div>
+    `}_renderSummaryCards(){if(!this._metrics)return'<div class="empty-state">No metrics available</div>';let{totalSignals:e,signalsByType:t,signalsBySource:a,aggregation:s}=this._metrics;return`
+      <div class="summary-cards">
+        <div class="summary-card">
+          <div class="summary-card-header">
+            <span class="summary-card-title">Total Signals</span>
+            <span class="summary-card-count">${this._formatNumber(e||0)}</span>
+          </div>
+          <div class="summary-card-detail">Learning signals collected</div>
+          <div class="signal-breakdown">
+            ${Object.entries(t||{}).map(([i,o])=>`
+              <div class="breakdown-item">
+                <span class="breakdown-label">${i.replace("_"," ")}</span>
+                <span class="breakdown-value">${this._formatNumber(o)}</span>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-card-header">
+            <span class="summary-card-title">Sources</span>
+            <span class="summary-card-count">${Object.keys(a||{}).length}</span>
+          </div>
+          <div class="summary-card-detail">Signal sources active</div>
+          <div class="signal-breakdown">
+            ${Object.entries(a||{}).map(([i,o])=>`
+              <div class="breakdown-item">
+                <span class="breakdown-label source-badge ${i}">${i}</span>
+                <span class="breakdown-value">${this._formatNumber(o)}</span>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-card-header">
+            <span class="summary-card-title">Patterns Found</span>
+            <span class="summary-card-count">${this._formatNumber((s?.preferences?.length||0)+(s?.error_patterns?.length||0)+(s?.success_patterns?.length||0))}</span>
+          </div>
+          <div class="summary-card-detail">Aggregated learnings</div>
+          <div class="pattern-counts">
+            <div class="pattern-count">
+              <span class="pattern-icon preferences">P</span>
+              <span>${s?.preferences?.length||0} Preferences</span>
+            </div>
+            <div class="pattern-count">
+              <span class="pattern-icon errors">E</span>
+              <span>${s?.error_patterns?.length||0} Errors</span>
+            </div>
+            <div class="pattern-count">
+              <span class="pattern-icon success">S</span>
+              <span>${s?.success_patterns?.length||0} Success</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-card-header">
+            <span class="summary-card-title">Avg Confidence</span>
+            <span class="summary-card-count confidence-high">
+              ${this._formatPercent(this._metrics.avgConfidence||0)}
+            </span>
+          </div>
+          <div class="summary-card-detail">Signal reliability</div>
+          <div class="confidence-bar">
+            <div class="confidence-fill" style="width: ${(this._metrics.avgConfidence||0)*100}%"></div>
+          </div>
+        </div>
+      </div>
+    `}_renderTrendChart(){if(!this._trends||!this._trends.dataPoints||this._trends.dataPoints.length===0)return'<div class="chart-empty">No trend data available</div>';let{dataPoints:e,maxValue:t}=this._trends,a=120,s=400,i=20,o=e.map((d,b)=>{let D=i+b/(e.length-1||1)*(s-i*2),V=a-i-d.count/(t||1)*(a-i*2);return`${D},${V}`}).join(" "),n=`${i},${a-i} ${o} ${s-i},${a-i}`;return`
+      <div class="trend-chart">
+        <div class="chart-header">
+          <span class="chart-title">Signal Volume Over Time</span>
+          <span class="chart-subtitle">${this._trends.period}</span>
+        </div>
+        <svg class="chart-svg" viewBox="0 0 ${s} ${a}">
+          <!-- Grid lines -->
+          <line x1="${i}" y1="${i}" x2="${i}" y2="${a-i}" stroke="var(--loki-border)" stroke-width="1"/>
+          <line x1="${i}" y1="${a-i}" x2="${s-i}" y2="${a-i}" stroke="var(--loki-border)" stroke-width="1"/>
+
+          <!-- Area fill -->
+          <polygon points="${n}" fill="var(--loki-accent-muted)" />
+
+          <!-- Trend line -->
+          <polyline points="${o}" fill="none" stroke="var(--loki-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- Data points -->
+          ${e.map((d,b)=>{let D=i+b/(e.length-1||1)*(s-i*2),V=a-i-d.count/(t||1)*(a-i*2);return`<circle cx="${D}" cy="${V}" r="3" fill="var(--loki-accent)" />`}).join("")}
+        </svg>
+        <div class="chart-labels">
+          ${e.length>0?`
+            <span class="chart-label-start">${e[0].label}</span>
+            <span class="chart-label-end">${e[e.length-1].label}</span>
+          `:""}
+        </div>
+      </div>
+    `}_renderTopLists(){if(!this._metrics?.aggregation)return"";let{preferences:e,error_patterns:t,success_patterns:a,tool_efficiencies:s}=this._metrics.aggregation;return`
+      <div class="top-lists">
+        <!-- User Preferences -->
+        <div class="top-list">
+          <div class="list-header">
+            <span class="list-title">Top User Preferences</span>
+            <span class="list-count">${e?.length||0}</span>
+          </div>
+          <div class="list-items" role="list">
+            ${(e||[]).slice(0,5).map(i=>`
+              <div class="list-item" data-type="preference" data-id="${i.preference_key}" tabindex="0" role="listitem">
+                <div class="item-main">
+                  <span class="item-key">${this._escapeHtml(i.preference_key)}</span>
+                  <span class="item-value">${this._escapeHtml(String(i.preferred_value))}</span>
+                </div>
+                <div class="item-meta">
+                  <span class="item-freq">${i.frequency}x</span>
+                  <span class="item-conf">${this._formatPercent(i.confidence)}</span>
+                </div>
+              </div>
+            `).join("")||'<div class="list-empty">No preferences found</div>'}
+          </div>
+        </div>
+
+        <!-- Error Patterns -->
+        <div class="top-list">
+          <div class="list-header">
+            <span class="list-title">Common Error Patterns</span>
+            <span class="list-count">${t?.length||0}</span>
+          </div>
+          <div class="list-items" role="list">
+            ${(t||[]).slice(0,5).map(i=>`
+              <div class="list-item error-item" data-type="error_pattern" data-id="${i.error_type}" tabindex="0" role="listitem">
+                <div class="item-main">
+                  <span class="item-key">${this._escapeHtml(i.error_type)}</span>
+                  <span class="resolution-rate ${i.resolution_rate>.5?"good":"poor"}">${this._formatPercent(i.resolution_rate)} resolved</span>
+                </div>
+                <div class="item-meta">
+                  <span class="item-freq">${i.frequency}x</span>
+                  <span class="item-conf">${this._formatPercent(i.confidence)}</span>
+                </div>
+              </div>
+            `).join("")||'<div class="list-empty">No error patterns found</div>'}
+          </div>
+        </div>
+
+        <!-- Success Patterns -->
+        <div class="top-list">
+          <div class="list-header">
+            <span class="list-title">Success Patterns</span>
+            <span class="list-count">${a?.length||0}</span>
+          </div>
+          <div class="list-items" role="list">
+            ${(a||[]).slice(0,5).map(i=>`
+              <div class="list-item success-item" data-type="success_pattern" data-id="${i.pattern_name}" tabindex="0" role="listitem">
+                <div class="item-main">
+                  <span class="item-key">${this._escapeHtml(i.pattern_name)}</span>
+                  <span class="item-duration">${this._formatDuration(i.avg_duration_seconds)}</span>
+                </div>
+                <div class="item-meta">
+                  <span class="item-freq">${i.frequency}x</span>
+                  <span class="item-conf">${this._formatPercent(i.confidence)}</span>
+                </div>
+              </div>
+            `).join("")||'<div class="list-empty">No success patterns found</div>'}
+          </div>
+        </div>
+
+        <!-- Tool Efficiency -->
+        <div class="top-list">
+          <div class="list-header">
+            <span class="list-title">Tool Efficiency Rankings</span>
+            <span class="list-count">${s?.length||0}</span>
+          </div>
+          <div class="list-items" role="list">
+            ${(s||[]).slice(0,5).map((i,o)=>`
+              <div class="list-item tool-item" data-type="tool_efficiency" data-id="${i.tool_name}" tabindex="0" role="listitem">
+                <div class="item-rank">#${o+1}</div>
+                <div class="item-main">
+                  <span class="item-key">${this._escapeHtml(i.tool_name)}</span>
+                  <span class="efficiency-score">${(i.efficiency_score*100).toFixed(0)}</span>
+                </div>
+                <div class="item-meta">
+                  <span class="success-rate ${i.success_rate>.8?"good":""}">${this._formatPercent(i.success_rate)}</span>
+                  <span class="item-time">${i.avg_execution_time_ms.toFixed(0)}ms</span>
+                </div>
+              </div>
+            `).join("")||'<div class="list-empty">No tool data found</div>'}
+          </div>
+        </div>
+      </div>
+    `}_renderRecentSignals(){return!this._signals||this._signals.length===0?'<div class="signals-empty">No recent signals</div>':`
+      <div class="recent-signals">
+        <div class="signals-header">
+          <span class="signals-title">Recent Signals</span>
+          <span class="signals-count">${this._signals.length}</span>
+        </div>
+        <div class="signals-list">
+          ${this._signals.slice(0,10).map(e=>`
+            <div class="signal-item">
+              <div class="signal-type ${e.type}">${e.type.replace("_"," ")}</div>
+              <div class="signal-content">
+                <span class="signal-action">${this._escapeHtml(e.action)}</span>
+                <span class="signal-source">${e.source}</span>
+              </div>
+              <div class="signal-meta">
+                <span class="signal-outcome ${e.outcome}">${e.outcome}</span>
+                <span class="signal-time">${new Date(e.timestamp).toLocaleTimeString()}</span>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `}_renderDetailPanel(){if(!this._selectedMetric)return"";let{type:e,item:t}=this._selectedMetric,a="";switch(e){case"preference":a=`
+          <div class="detail-row">
+            <span class="detail-label">Preference Key</span>
+            <span class="detail-value">${this._escapeHtml(t.preference_key)}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Preferred Value</span>
+            <span class="detail-value">${this._escapeHtml(String(t.preferred_value))}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Frequency</span>
+            <span class="detail-value">${t.frequency} occurrences</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Confidence</span>
+            <span class="detail-value">${this._formatPercent(t.confidence)}</span>
+          </div>
+          ${t.alternatives_rejected?.length?`
+            <div class="detail-section">
+              <div class="detail-label">Alternatives Rejected</div>
+              <ul class="detail-list">
+                ${t.alternatives_rejected.map(s=>`<li>${this._escapeHtml(s)}</li>`).join("")}
+              </ul>
+            </div>
+          `:""}
+        `;break;case"error_pattern":a=`
+          <div class="detail-row">
+            <span class="detail-label">Error Type</span>
+            <span class="detail-value">${this._escapeHtml(t.error_type)}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Resolution Rate</span>
+            <span class="detail-value">${this._formatPercent(t.resolution_rate)}</span>
+          </div>
+          ${t.common_messages?.length?`
+            <div class="detail-section">
+              <div class="detail-label">Common Messages</div>
+              <ul class="detail-list">
+                ${t.common_messages.map(s=>`<li>${this._escapeHtml(s)}</li>`).join("")}
+              </ul>
+            </div>
+          `:""}
+          ${t.resolutions?.length?`
+            <div class="detail-section">
+              <div class="detail-label">Known Resolutions</div>
+              <ul class="detail-list success">
+                ${t.resolutions.map(s=>`<li>${this._escapeHtml(s)}</li>`).join("")}
+              </ul>
+            </div>
+          `:""}
+        `;break;case"success_pattern":a=`
+          <div class="detail-row">
+            <span class="detail-label">Pattern Name</span>
+            <span class="detail-value">${this._escapeHtml(t.pattern_name)}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Avg Duration</span>
+            <span class="detail-value">${this._formatDuration(t.avg_duration_seconds)}</span>
+          </div>
+          ${t.common_actions?.length?`
+            <div class="detail-section">
+              <div class="detail-label">Common Actions</div>
+              <ol class="detail-list numbered">
+                ${t.common_actions.map(s=>`<li>${this._escapeHtml(s)}</li>`).join("")}
+              </ol>
+            </div>
+          `:""}
+        `;break;case"tool_efficiency":a=`
+          <div class="detail-row">
+            <span class="detail-label">Tool Name</span>
+            <span class="detail-value">${this._escapeHtml(t.tool_name)}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Usage Count</span>
+            <span class="detail-value">${t.usage_count}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Success Rate</span>
+            <span class="detail-value">${this._formatPercent(t.success_rate)}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Avg Execution Time</span>
+            <span class="detail-value">${t.avg_execution_time_ms.toFixed(0)}ms</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Total Tokens</span>
+            <span class="detail-value">${this._formatNumber(t.total_tokens_used)}</span>
+          </div>
+          ${t.alternative_tools?.length?`
+            <div class="detail-section">
+              <div class="detail-label">Alternative Tools</div>
+              <div class="tag-list">
+                ${t.alternative_tools.map(s=>`<span class="tag">${this._escapeHtml(s)}</span>`).join("")}
+              </div>
+            </div>
+          `:""}
+        `;break}return`
+      <div class="detail-panel">
+        <div class="detail-header">
+          <h3>${e.replace("_"," ").replace(/\b\w/g,s=>s.toUpperCase())}</h3>
+          <button class="close-btn" id="close-detail">&times;</button>
+        </div>
+        <div class="detail-body">
+          ${a}
+          <div class="detail-row">
+            <span class="detail-label">Sources</span>
+            <div class="source-tags">
+              ${(t.sources||[]).map(s=>`<span class="source-badge ${s}">${s}</span>`).join("")}
+            </div>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">First Seen</span>
+            <span class="detail-value">${t.first_seen?new Date(t.first_seen).toLocaleDateString():"--"}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Last Seen</span>
+            <span class="detail-value">${t.last_seen?new Date(t.last_seen).toLocaleDateString():"--"}</span>
+          </div>
+        </div>
+      </div>
+    `}render(){let e=`
+      <style>
+        :host {
+          display: block;
+          ${this.getBaseStyles()}
+        }
+
+        .learning-dashboard {
+          background: var(--loki-bg-card);
+          border: 1px solid var(--loki-border);
+          border-radius: 10px;
+          overflow: hidden;
+        }
+
+        .dashboard-header {
+          padding: 12px 16px;
+          border-bottom: 1px solid var(--loki-border);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .dashboard-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--loki-text-primary);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .dashboard-title svg {
+          color: var(--loki-accent);
+        }
+
+        /* Filters */
+        .filters {
+          display: flex;
+          gap: 12px;
+          align-items: center;
+          padding: 12px 16px;
+          background: var(--loki-bg-secondary);
+          border-bottom: 1px solid var(--loki-border);
+          flex-wrap: wrap;
+        }
+
+        .filter-group {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .filter-group label {
+          font-size: 10px;
+          font-weight: 500;
+          color: var(--loki-text-muted);
+          text-transform: uppercase;
+        }
+
+        .filter-select {
+          padding: 6px 10px;
+          background: var(--loki-bg-card);
+          border: 1px solid var(--loki-border);
+          border-radius: 4px;
+          font-size: 12px;
+          color: var(--loki-text-primary);
+          cursor: pointer;
+        }
+
+        .filter-select:focus {
+          outline: none;
+          border-color: var(--loki-accent);
+        }
+
+        /* Dashboard Content */
+        .dashboard-content {
+          padding: 16px;
+          display: flex;
+          gap: 16px;
+          min-height: 400px;
+        }
+
+        .content-main {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .loading, .error-state {
+          text-align: center;
+          padding: 40px;
+          color: var(--loki-text-muted);
+        }
+
+        .error-state {
+          color: var(--loki-red);
+        }
+
+        /* Summary Cards */
+        .summary-cards {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+
+        .summary-card {
+          background: var(--loki-bg-secondary);
+          border-radius: 8px;
+          padding: 14px;
+        }
+
+        .summary-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 6px;
+        }
+
+        .summary-card-title {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--loki-text-primary);
+        }
+
+        .summary-card-count {
+          font-size: 20px;
+          font-weight: 600;
+          font-family: 'JetBrains Mono', monospace;
+          color: var(--loki-accent);
+        }
+
+        .summary-card-count.confidence-high {
+          color: var(--loki-green);
+        }
+
+        .summary-card-detail {
+          font-size: 11px;
+          color: var(--loki-text-muted);
+          margin-bottom: 10px;
+        }
+
+        .signal-breakdown {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .breakdown-item {
+          display: flex;
+          justify-content: space-between;
+          font-size: 11px;
+        }
+
+        .breakdown-label {
+          color: var(--loki-text-secondary);
+          text-transform: capitalize;
+        }
+
+        .breakdown-value {
+          color: var(--loki-text-primary);
+          font-family: 'JetBrains Mono', monospace;
+        }
+
+        .source-badge {
+          padding: 2px 6px;
+          border-radius: 3px;
+          font-size: 9px;
+          text-transform: uppercase;
+          font-weight: 500;
+        }
+
+        .source-badge.cli { background: var(--loki-blue-muted); color: var(--loki-blue); }
+        .source-badge.api { background: var(--loki-green-muted); color: var(--loki-green); }
+        .source-badge.vscode { background: var(--loki-purple-muted); color: var(--loki-purple); }
+        .source-badge.mcp { background: var(--loki-yellow-muted); color: var(--loki-yellow); }
+        .source-badge.dashboard { background: var(--loki-accent-muted); color: var(--loki-accent); }
+
+        .pattern-counts {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .pattern-count {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 11px;
+          color: var(--loki-text-secondary);
+        }
+
+        .pattern-icon {
+          width: 18px;
+          height: 18px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          font-weight: 600;
+        }
+
+        .pattern-icon.preferences { background: var(--loki-blue-muted); color: var(--loki-blue); }
+        .pattern-icon.errors { background: var(--loki-red-muted); color: var(--loki-red); }
+        .pattern-icon.success { background: var(--loki-green-muted); color: var(--loki-green); }
+
+        .confidence-bar {
+          height: 4px;
+          background: var(--loki-bg-tertiary);
+          border-radius: 2px;
+          overflow: hidden;
+        }
+
+        .confidence-fill {
+          height: 100%;
+          background: var(--loki-green);
+          border-radius: 2px;
+          transition: width 0.3s ease;
+        }
+
+        /* Trend Chart */
+        .trend-chart {
+          background: var(--loki-bg-secondary);
+          border-radius: 8px;
+          padding: 14px;
+          margin-bottom: 20px;
+        }
+
+        .chart-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+
+        .chart-title {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--loki-text-primary);
+        }
+
+        .chart-subtitle {
+          font-size: 11px;
+          color: var(--loki-text-muted);
+        }
+
+        .chart-svg {
+          width: 100%;
+          height: 120px;
+        }
+
+        .chart-labels {
+          display: flex;
+          justify-content: space-between;
+          font-size: 10px;
+          color: var(--loki-text-muted);
+          margin-top: 4px;
+        }
+
+        .chart-empty {
+          text-align: center;
+          padding: 40px;
+          color: var(--loki-text-muted);
+          font-size: 12px;
+          background: var(--loki-bg-secondary);
+          border-radius: 8px;
+          margin-bottom: 20px;
+        }
+
+        /* Top Lists */
+        .top-lists {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+
+        .top-list {
+          background: var(--loki-bg-secondary);
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        .list-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px 12px;
+          background: var(--loki-bg-tertiary);
+        }
+
+        .list-title {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--loki-text-primary);
+        }
+
+        .list-count {
+          font-size: 10px;
+          padding: 2px 6px;
+          background: var(--loki-bg-card);
+          border-radius: 10px;
+          color: var(--loki-text-muted);
+        }
+
+        .list-items {
+          max-height: 200px;
+          overflow-y: auto;
+        }
+
+        .list-item {
+          padding: 10px 12px;
+          border-bottom: 1px solid var(--loki-border);
+          cursor: pointer;
+          transition: background var(--loki-transition);
+        }
+
+        .list-item:hover {
+          background: var(--loki-bg-hover);
+        }
+
+        .list-item:last-child {
+          border-bottom: none;
+        }
+
+        .item-main {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 4px;
+        }
+
+        .item-key {
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--loki-text-primary);
+          flex: 1;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .item-value {
+          font-size: 11px;
+          color: var(--loki-accent);
+          margin-left: 8px;
+        }
+
+        .item-meta {
+          display: flex;
+          gap: 12px;
+          font-size: 10px;
+          color: var(--loki-text-muted);
+        }
+
+        .item-freq {
+          color: var(--loki-blue);
+        }
+
+        .item-conf {
+          color: var(--loki-green);
+        }
+
+        .item-rank {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--loki-accent);
+          margin-right: 8px;
+        }
+
+        .efficiency-score {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--loki-green);
+        }
+
+        .success-rate.good {
+          color: var(--loki-green);
+        }
+
+        .resolution-rate {
+          font-size: 10px;
+          padding: 2px 6px;
+          border-radius: 3px;
+        }
+
+        .resolution-rate.good {
+          background: var(--loki-green-muted);
+          color: var(--loki-green);
+        }
+
+        .resolution-rate.poor {
+          background: var(--loki-red-muted);
+          color: var(--loki-red);
+        }
+
+        .item-duration {
+          font-size: 10px;
+          color: var(--loki-text-muted);
+        }
+
+        .list-empty {
+          padding: 20px;
+          text-align: center;
+          font-size: 11px;
+          color: var(--loki-text-muted);
+        }
+
+        /* Recent Signals */
+        .recent-signals {
+          background: var(--loki-bg-secondary);
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        .signals-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px 12px;
+          background: var(--loki-bg-tertiary);
+        }
+
+        .signals-title {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--loki-text-primary);
+        }
+
+        .signals-count {
+          font-size: 10px;
+          padding: 2px 6px;
+          background: var(--loki-bg-card);
+          border-radius: 10px;
+          color: var(--loki-text-muted);
+        }
+
+        .signals-list {
+          max-height: 300px;
+          overflow-y: auto;
+        }
+
+        .signal-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 12px;
+          border-bottom: 1px solid var(--loki-border);
+        }
+
+        .signal-item:last-child {
+          border-bottom: none;
+        }
+
+        .signal-type {
+          font-size: 9px;
+          padding: 3px 6px;
+          border-radius: 3px;
+          text-transform: uppercase;
+          font-weight: 500;
+          white-space: nowrap;
+        }
+
+        .signal-type.user_preference { background: var(--loki-blue-muted); color: var(--loki-blue); }
+        .signal-type.error_pattern { background: var(--loki-red-muted); color: var(--loki-red); }
+        .signal-type.success_pattern { background: var(--loki-green-muted); color: var(--loki-green); }
+        .signal-type.tool_efficiency { background: var(--loki-purple-muted); color: var(--loki-purple); }
+        .signal-type.context_relevance { background: var(--loki-yellow-muted); color: var(--loki-yellow); }
+
+        .signal-content {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .signal-action {
+          font-size: 12px;
+          color: var(--loki-text-primary);
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .signal-source {
+          font-size: 10px;
+          color: var(--loki-text-muted);
+        }
+
+        .signal-meta {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 2px;
+        }
+
+        .signal-outcome {
+          font-size: 9px;
+          padding: 2px 5px;
+          border-radius: 3px;
+          text-transform: uppercase;
+        }
+
+        .signal-outcome.success { background: var(--loki-green-muted); color: var(--loki-green); }
+        .signal-outcome.failure { background: var(--loki-red-muted); color: var(--loki-red); }
+        .signal-outcome.partial { background: var(--loki-yellow-muted); color: var(--loki-yellow); }
+        .signal-outcome.unknown { background: var(--loki-bg-tertiary); color: var(--loki-text-muted); }
+
+        .signal-time {
+          font-size: 10px;
+          color: var(--loki-text-muted);
+        }
+
+        .signals-empty {
+          padding: 30px;
+          text-align: center;
+          font-size: 12px;
+          color: var(--loki-text-muted);
+        }
+
+        /* Detail Panel */
+        .detail-panel {
+          width: 300px;
+          min-width: 300px;
+          background: var(--loki-bg-secondary);
+          border-left: 1px solid var(--loki-border);
+          margin: -16px -16px -16px 16px;
+          padding: 16px;
+          overflow-y: auto;
+        }
+
+        .detail-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+        }
+
+        .detail-header h3 {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--loki-text-primary);
+          text-transform: capitalize;
+        }
+
+        .close-btn {
+          background: none;
+          border: none;
+          font-size: 20px;
+          color: var(--loki-text-muted);
+          cursor: pointer;
+          padding: 0;
+          line-height: 1;
+        }
+
+        .close-btn:hover {
+          color: var(--loki-text-primary);
+        }
+
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 0;
+          border-bottom: 1px solid var(--loki-border);
+          font-size: 12px;
+        }
+
+        .detail-label {
+          color: var(--loki-text-secondary);
+          font-weight: 500;
+        }
+
+        .detail-value {
+          color: var(--loki-text-primary);
+        }
+
+        .detail-section {
+          margin-top: 12px;
+        }
+
+        .detail-list {
+          padding-left: 18px;
+          margin-top: 6px;
+          font-size: 11px;
+          color: var(--loki-text-primary);
+        }
+
+        .detail-list li {
+          margin-bottom: 4px;
+        }
+
+        .detail-list.success li {
+          color: var(--loki-green);
+        }
+
+        .source-tags {
+          display: flex;
+          gap: 4px;
+          flex-wrap: wrap;
+        }
+
+        .tag-list {
+          display: flex;
+          gap: 4px;
+          flex-wrap: wrap;
+          margin-top: 6px;
+        }
+
+        .tag {
+          font-size: 10px;
+          padding: 3px 8px;
+          background: var(--loki-bg-tertiary);
+          border-radius: 4px;
+          color: var(--loki-text-secondary);
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: 40px;
+          color: var(--loki-text-muted);
+          font-size: 12px;
+        }
+      </style>
+    `,t;this._loading?t='<div class="loading">Loading learning metrics...</div>':this._error?t=`<div class="error-state">Error: ${this._error}</div>`:t=`
+        <div class="content-main">
+          ${this._renderSummaryCards()}
+          ${this._renderTrendChart()}
+          ${this._renderTopLists()}
+          ${this._renderRecentSignals()}
+        </div>
+        ${this._renderDetailPanel()}
+      `,this.shadowRoot.innerHTML=`
+      ${e}
+      <div class="learning-dashboard">
+        <div class="dashboard-header">
+          <span class="dashboard-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none">
+              <path d="M12 20V10"/>
+              <path d="M18 20V4"/>
+              <path d="M6 20v-4"/>
+            </svg>
+            Learning Metrics Dashboard
+          </span>
+        </div>
+        ${this._renderFilters()}
+        <div class="dashboard-content">
+          ${t}
+        </div>
+      </div>
+    `,this._attachEventListeners()}_attachEventListeners(){let e=this.shadowRoot.getElementById("time-range-select");e&&e.addEventListener("change",o=>this._setFilter("timeRange",o.target.value));let t=this.shadowRoot.getElementById("signal-type-select");t&&t.addEventListener("change",o=>this._setFilter("signalType",o.target.value));let a=this.shadowRoot.getElementById("source-select");a&&a.addEventListener("change",o=>this._setFilter("source",o.target.value));let s=this.shadowRoot.getElementById("refresh-btn");s&&s.addEventListener("click",()=>this._loadData());let i=this.shadowRoot.getElementById("close-detail");i&&i.addEventListener("click",()=>this._closeDetail()),this.shadowRoot.querySelectorAll(".list-item").forEach(o=>{o.addEventListener("click",()=>{let n=o.dataset.type,d=o.dataset.id,b=this._findItemData(n,d);b&&this._selectMetric(n,b)}),o.addEventListener("keydown",n=>{(n.key==="Enter"||n.key===" ")&&(n.preventDefault(),o.click())})})}_findItemData(e,t){if(!this._metrics?.aggregation)return null;switch(e){case"preference":return this._metrics.aggregation.preferences?.find(a=>a.preference_key===t);case"error_pattern":return this._metrics.aggregation.error_patterns?.find(a=>a.error_type===t);case"success_pattern":return this._metrics.aggregation.success_patterns?.find(a=>a.pattern_name===t);case"tool_efficiency":return this._metrics.aggregation.tool_efficiencies?.find(a=>a.tool_name===t);default:return null}}};customElements.define("loki-learning-dashboard",U);var ue="1.2.0";function ge(l={}){return l.theme?p.setTheme(l.theme):l.autoDetectContext!==!1?p.init():S.init(),l.apiUrl&&g({baseUrl:l.apiUrl}),{theme:p.getTheme(),context:p.detectContext()}}return re(he);})();
+
+// Expose init at top level for convenience
+if (typeof window !== 'undefined') {
+  window.LokiDashboard = LokiDashboard;
+}
+
+//# sourceMappingURL=loki-dashboard.iife.js.map

@@ -1,6 +1,10 @@
 /**
  * Memory View Provider
  * Provides a webview panel for viewing memory context, patterns, and token economics
+ *
+ * @deprecated This view is deprecated in favor of the Memory tab in the main dashboard.
+ * Will be removed in v6.0.0. Use `loki.openDashboard` command with memory tab instead.
+ * The dashboard provides a unified view with better integration of all Loki features.
  */
 
 import * as vscode from 'vscode';
@@ -46,6 +50,10 @@ interface MemoryData {
     lastUpdated: Date;
 }
 
+/**
+ * @deprecated This view is deprecated in favor of the Memory tab in the main dashboard.
+ * Will be removed in v6.0.0. Use `loki.openDashboard` command with memory tab instead.
+ */
 export class MemoryViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     public static readonly viewType = 'loki-memory';
     private static readonly REFRESH_INTERVAL = 10000;
@@ -68,7 +76,9 @@ export class MemoryViewProvider implements vscode.WebviewViewProvider, vscode.Di
     constructor(
         private readonly _extensionUri: vscode.Uri,
         private readonly _apiClient: LokiApiClient
-    ) {}
+    ) {
+        console.warn('[DEPRECATED] MemoryViewProvider is deprecated. Use the Memory tab in the main dashboard instead. This view will be removed in v6.0.0.');
+    }
 
     public dispose(): void {
         if (this._refreshTimer) {

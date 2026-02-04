@@ -7,7 +7,9 @@ node_modules/**
 esbuild.js
 tsconfig.json
 **/*.ts
-**/*.map
+# Exclude source maps except dashboard for debugging
+dist/**/*.map
+src/**/*.map
 *.vsix
 .eslintrc.json
 .eslintrc.js

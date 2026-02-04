@@ -3,13 +3,41 @@
   "version": "1.2.0",
   "description": "Loki Mode dashboard web components",
   "type": "module",
-  "main": "index.js",
+  "main": "dist/loki-dashboard.esm.js",
+  "module": "dist/loki-dashboard.esm.js",
+  "browser": "dist/loki-dashboard.iife.js",
+  "types": "types/index.d.ts",
   "exports": {
-    ".": "./index.js",
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./dist/loki-dashboard.esm.js",
+      "default": "./dist/loki-dashboard.esm.js"
+    },
+    "./esm": "./dist/loki-dashboard.esm.js",
+    "./iife": "./dist/loki-dashboard.iife.js",
+    "./standalone": "./dist/loki-dashboard-standalone.html",
     "./components/*": "./components/*",
-    "./core/*": "./core/*"
+    "./core/*": "./core/*",
+    "./source": "./index.js",
+    "./types": "./types/index.d.ts"
   },
+  "files": [
+    "dist/",
+    "components/",
+    "core/",
+    "types/",
+    "index.js"
+  ],
   "scripts": {
+    "build": "node esbuild.config.cjs",
+    "build:esm": "node esbuild.config.cjs --esm",
+    "build:iife": "node esbuild.config.cjs --iife",
+    "build:standalone": "node scripts/build-standalone.js",
+    "build:standalone:watch": "node scripts/build-standalone.js --watch",
+    "build:all": "npm run build && npm run build:standalone",
+    "build:watch": "node esbuild.config.cjs --watch",
+    "prebuild": "mkdir -p dist",
+    "prepublishOnly": "npm run build:all",
     "test": "npm run test:parity",
     "test:visual": "jest --config jest.config.js tests/visual-regression.test.js",
     "test:parity": "node scripts/check-parity.js",
@@ -28,6 +56,7 @@
   "author": "Lokesh",
   "license": "MIT",
   "devDependencies": {
+    "esbuild": "^0.24.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "jsdom": "^24.0.0"
