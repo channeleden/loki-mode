@@ -3481,11 +3481,8 @@ EXTRACT_SCRIPT
 start_dashboard() {
     log_header "Starting Loki Dashboard"
 
-    # Create dashboard directory
-    mkdir -p .loki/dashboard
-
-    # Generate HTML
-    generate_dashboard
+    # Create dashboard directory for logs
+    mkdir -p .loki/dashboard/logs
 
     # Find available port - don't kill other loki instances
     local original_port=$DASHBOARD_PORT
@@ -3493,25 +3490,18 @@ start_dashboard() {
     local attempt=0
 
     while lsof -i :$DASHBOARD_PORT &>/dev/null && [ $attempt -lt $max_attempts ]; do
-        # Check if it's our own dashboard (same project)
+        # Check if it's our own dashboard
         local existing_pid=$(lsof -ti :$DASHBOARD_PORT 2>/dev/null | head -1)
-        local existing_cwd=""
         if [ -n "$existing_pid" ]; then
-            existing_cwd=$(lsof -p "$existing_pid" 2>/dev/null | grep cwd | awk '{print $NF}')
-        fi
-
-        if [ "$existing_cwd" = "$(pwd)/.loki" ]; then
-            # Same project - kill and reuse port
-            log_step "Killing existing dashboard for this project on port $DASHBOARD_PORT..."
-            lsof -ti :$DASHBOARD_PORT | xargs kill -9 2>/dev/null || true
+            # Kill existing dashboard on this port
+            log_step "Killing existing dashboard on port $DASHBOARD_PORT..."
+            kill "$existing_pid" 2>/dev/null || true
             sleep 1
             break
-        else
-            # Different project - find new port
-            ((DASHBOARD_PORT++))
-            ((attempt++))
-            log_info "Port $((DASHBOARD_PORT-1)) in use by another instance, trying $DASHBOARD_PORT..."
         fi
+        ((DASHBOARD_PORT++))
+        ((attempt++))
+        log_info "Port $((DASHBOARD_PORT-1)) in use, trying $DASHBOARD_PORT..."
     done
 
     if [ $attempt -ge $max_attempts ]; then
@@ -3519,39 +3509,57 @@ start_dashboard() {
         return 1
     fi
 
-    # Start Python HTTP server from .loki/ root so it can serve queue/ and state/
-    log_step "Starting dashboard server..."
-    local loki_dir="$(pwd)/.loki"
-    (
-        cd "$loki_dir" || { echo "[dashboard] Failed to cd to $loki_dir" >&2; exit 1; }
-        python3 -m http.server $DASHBOARD_PORT --bind 127.0.0.1 2>&1 | while read line; do
-            echo "[dashboard] $line" >> logs/dashboard.log
-        done
-    ) &
+    # Start FastAPI dashboard server (unified UI + API)
+    log_step "Starting unified dashboard server..."
+    local log_file=".loki/dashboard/logs/dashboard.log"
+    local project_path=$(pwd)
+
+    # Set environment for dashboard
+    export LOKI_DASHBOARD_PORT="$DASHBOARD_PORT"
+    export LOKI_DASHBOARD_HOST="127.0.0.1"
+    export LOKI_PROJECT_PATH="$project_path"
+
+    # Start the FastAPI dashboard server
+    # Dashboard module is at project root (parent of autonomy/)
+    PYTHONPATH="${SCRIPT_DIR%/*}" nohup python3 -m dashboard.server > "$log_file" 2>&1 &
     DASHBOARD_PID=$!
 
-    sleep 1
+    # Save PID for later cleanup
+    echo "$DASHBOARD_PID" > .loki/dashboard/dashboard.pid
+
+    sleep 2
 
     if kill -0 $DASHBOARD_PID 2>/dev/null; then
         log_info "Dashboard started (PID: $DASHBOARD_PID)"
-        log_info "Dashboard: ${CYAN}http://127.0.0.1:$DASHBOARD_PORT/dashboard/index.html${NC}"
+        log_info "Dashboard: ${CYAN}http://127.0.0.1:$DASHBOARD_PORT/${NC}"
 
         # Open in browser (macOS)
         if [[ "$OSTYPE" == "darwin"* ]]; then
-            open "http://127.0.0.1:$DASHBOARD_PORT/dashboard/index.html" 2>/dev/null || true
+            open "http://127.0.0.1:$DASHBOARD_PORT/" 2>/dev/null || true
         fi
         return 0
     else
         log_warn "Dashboard failed to start"
+        log_warn "Check logs: $log_file"
         DASHBOARD_PID=""
         return 1
     fi
 }
 
 stop_dashboard() {
+    # Try to kill using saved PID
     if [ -n "$DASHBOARD_PID" ]; then
         kill "$DASHBOARD_PID" 2>/dev/null || true
         wait "$DASHBOARD_PID" 2>/dev/null || true
+    fi
+
+    # Also try PID file
+    if [ -f ".loki/dashboard/dashboard.pid" ]; then
+        local saved_pid=$(cat ".loki/dashboard/dashboard.pid" 2>/dev/null)
+        if [ -n "$saved_pid" ]; then
+            kill "$saved_pid" 2>/dev/null || true
+        fi
+        rm -f ".loki/dashboard/dashboard.pid"
     fi
 }
 
@@ -5079,7 +5087,7 @@ main() {
         # CRITICAL: Unset LOKI_RUNNING_FROM_TEMP so the background process does its own self-copy
         # Otherwise it would run directly from the original file and the trap would delete it
         local original_script="$SCRIPT_DIR/run.sh"
-        LOKI_RUNNING_FROM_TEMP= nohup "$original_script" "${cmd_args[@]}" > "$log_file" 2>&1 &
+        LOKI_RUNNING_FROM_TEMP='' nohup "$original_script" "${cmd_args[@]}" > "$log_file" 2>&1 &
         local bg_pid=$!
         echo "$bg_pid" > "$pid_file"
 
@@ -5092,7 +5100,7 @@ main() {
         echo -e "  ${CYAN}Path:${NC}       $project_path"
         echo -e "  ${CYAN}PID:${NC}        $bg_pid"
         echo -e "  ${CYAN}Log:${NC}        $log_file"
-        echo -e "  ${CYAN}Dashboard:${NC}  http://127.0.0.1:${DASHBOARD_PORT}/dashboard/index.html"
+        echo -e "  ${CYAN}Dashboard:${NC}  http://127.0.0.1:${DASHBOARD_PORT}/"
         echo ""
         echo -e "${YELLOW}Control Commands:${NC}"
         echo -e "  ${DIM}Pause:${NC}      touch .loki/PAUSE"
