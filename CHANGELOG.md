@@ -38,6 +38,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.20.5] - 2026-02-04
+
+### Fixed - Docker Files Missing from npm Package
+
+- Added `Dockerfile`, `Dockerfile.sandbox`, and `docker-compose.yml` to npm package
+- Fixes `loki sandbox build` failing with "Dockerfile.sandbox not found"
+- Comprehensive CLI testing verified all commands working
+
+---
+
 ## [5.20.4] - 2026-02-04
 
 ### Fixed - loki issue --start Unbound Variable Error
