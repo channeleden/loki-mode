@@ -1989,6 +1989,10 @@ check_skill_installed() {
 init_loki_dir() {
     log_header "Initializing Loki Mode Directory"
 
+    # Clean up stale control files from previous sessions
+    # These can cause new sessions to pause/stop immediately
+    rm -f .loki/PAUSE .loki/STOP .loki/HUMAN_INPUT.md 2>/dev/null
+
     mkdir -p .loki/{state,queue,messages,logs,config,prompts,artifacts,scripts}
     mkdir -p .loki/queue
     mkdir -p .loki/state/checkpoints
