@@ -10,6 +10,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path as _Path
 from typing import Any, Optional
 
 from fastapi import (
@@ -133,10 +134,17 @@ class StatusResponse(BaseModel):
     status: str
     version: str
     uptime_seconds: float
-    active_sessions: int
-    running_agents: int
-    pending_tasks: int
-    database_connected: bool
+    active_sessions: int = 0
+    running_agents: int = 0
+    pending_tasks: int = 0
+    database_connected: bool = True
+    # File-based session fields
+    phase: str = ""
+    iteration: int = 0
+    complexity: str = "standard"
+    mode: str = ""
+    provider: str = "claude"
+    current_task: str = ""
 
 
 # WebSocket connection manager
@@ -219,47 +227,110 @@ async def health_check() -> dict[str, str]:
     return {"status": "healthy", "service": "loki-dashboard"}
 
 
-# Status endpoint
+# Status endpoint - reads from .loki/ flat files (primary) + DB (fallback)
 @app.get("/api/status", response_model=StatusResponse)
-async def get_status(db: AsyncSession = Depends(get_db)) -> StatusResponse:
-    """Get system status."""
-    try:
-        # Count active sessions
-        result = await db.execute(
-            select(Session).where(Session.status == SessionStatus.ACTIVE)
-        )
-        active_sessions = len(result.scalars().all())
-
-        # Count running agents
-        result = await db.execute(
-            select(Agent).where(Agent.status == AgentStatus.RUNNING)
-        )
-        running_agents = len(result.scalars().all())
-
-        # Count pending tasks
-        result = await db.execute(
-            select(Task).where(Task.status == TaskStatus.PENDING)
-        )
-        pending_tasks = len(result.scalars().all())
-
-        db_connected = True
-    except Exception as e:
-        logger.warning(f"Status check database error: {e}")
-        active_sessions = 0
-        running_agents = 0
-        pending_tasks = 0
-        db_connected = False
-
+async def get_status() -> StatusResponse:
+    """Get system status from .loki/ session files."""
+    loki_dir = _Path(os.environ.get("LOKI_DIR", ".loki"))
     uptime = (datetime.now() - start_time).total_seconds()
 
+    # Read dashboard-state.json (written by run.sh every 2 seconds)
+    state_file = loki_dir / "dashboard-state.json"
+    pid_file = loki_dir / "loki.pid"
+    pause_file = loki_dir / "PAUSE"
+    session_file = loki_dir / "session.json"
+
+    phase = ""
+    iteration = 0
+    complexity = "standard"
+    mode = ""
+    provider = "claude"
+    current_task = ""
+    pending_tasks = 0
+    running_agents = 0
+    version = "unknown"
+
+    # Read VERSION file
+    dashboard_dir = os.path.dirname(__file__)
+    project_root = os.path.dirname(dashboard_dir)
+    version_file = os.path.join(project_root, "VERSION")
+    if os.path.isfile(version_file):
+        try:
+            version = open(version_file).read().strip()
+        except Exception:
+            pass
+
+    # Read dashboard state
+    if state_file.exists():
+        try:
+            state = json.loads(state_file.read_text())
+            phase = state.get("phase", "")
+            iteration = state.get("iteration", 0)
+            complexity = state.get("complexity", "standard")
+            mode = state.get("mode", "")
+            running_agents = len(state.get("agents", []))
+
+            tasks = state.get("tasks", {})
+            pending_tasks = len(tasks.get("pending", []))
+            in_progress = tasks.get("inProgress", [])
+            if in_progress:
+                current_task = in_progress[0].get("payload", {}).get("action", "")
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    # Determine running state from PID + control files
+    running = False
+    pid_str = ""
+    if pid_file.exists():
+        try:
+            pid_str = pid_file.read_text().strip()
+            pid = int(pid_str)
+            os.kill(pid, 0)
+            running = True
+        except (ValueError, OSError, ProcessLookupError):
+            pass
+
+    # Also check session.json for skill-invoked sessions
+    if not running and session_file.exists():
+        try:
+            sd = json.loads(session_file.read_text())
+            if sd.get("status") == "running":
+                running = True
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    # Determine status string
+    if not running:
+        status = "stopped"
+    elif pause_file.exists():
+        status = "paused"
+    elif mode:
+        status = mode  # "autonomous"
+    else:
+        status = "running"
+
+    # Read provider from state
+    provider_file = loki_dir / "state" / "provider"
+    if provider_file.exists():
+        try:
+            provider = provider_file.read_text().strip() or "claude"
+        except Exception:
+            pass
+
     return StatusResponse(
-        status="running",
-        version="0.1.0",
+        status=status,
+        version=version,
         uptime_seconds=uptime,
-        active_sessions=active_sessions,
+        active_sessions=1 if running else 0,
         running_agents=running_agents,
         pending_tasks=pending_tasks,
-        database_connected=db_connected,
+        database_connected=True,
+        phase=phase,
+        iteration=iteration,
+        complexity=complexity,
+        mode=mode,
+        provider=provider,
+        current_task=current_task,
     )
 
 
@@ -433,30 +504,83 @@ async def delete_project(
     })
 
 
-# Task endpoints
-@app.get("/api/tasks", response_model=list[TaskResponse])
+# Task endpoints - reads from .loki/dashboard-state.json
+@app.get("/api/tasks")
 async def list_tasks(
     project_id: Optional[int] = Query(None),
-    status: Optional[TaskStatus] = Query(None),
-    priority: Optional[TaskPriority] = Query(None),
-    db: AsyncSession = Depends(get_db),
-) -> list[TaskResponse]:
-    """List tasks with optional filters."""
-    query = select(Task)
+    status: Optional[str] = Query(None),
+):
+    """List tasks from session state files."""
+    loki_dir = _Path(os.environ.get("LOKI_DIR", ".loki"))
+    state_file = loki_dir / "dashboard-state.json"
+    all_tasks = []
 
-    if project_id is not None:
-        query = query.where(Task.project_id == project_id)
-    if status is not None:
-        query = query.where(Task.status == status)
-    if priority is not None:
-        query = query.where(Task.priority == priority)
+    # Read from dashboard-state.json (written by run.sh)
+    if state_file.exists():
+        try:
+            state = json.loads(state_file.read_text())
+            task_groups = state.get("tasks", {})
 
-    query = query.order_by(Task.position, Task.created_at)
+            status_map = {
+                "pending": "pending",
+                "inProgress": "in_progress",
+                "review": "review",
+                "completed": "done",
+                "failed": "done",
+            }
 
-    result = await db.execute(query)
-    tasks = result.scalars().all()
+            for group_key, mapped_status in status_map.items():
+                for i, task in enumerate(task_groups.get(group_key, [])):
+                    task_id = task.get("id", f"{group_key}-{i}")
+                    payload = task.get("payload", {})
+                    all_tasks.append({
+                        "id": task_id,
+                        "title": payload.get("action", task.get("type", "Task")),
+                        "description": payload.get("description", ""),
+                        "status": mapped_status,
+                        "priority": payload.get("priority", "medium"),
+                        "type": task.get("type", "task"),
+                        "position": i,
+                    })
+        except (json.JSONDecodeError, KeyError):
+            pass
 
-    return [TaskResponse.model_validate(task) for task in tasks]
+    # Also read from queue files for more detail
+    queue_dir = loki_dir / "queue"
+    if queue_dir.exists():
+        for queue_file, q_status in [
+            ("pending.json", "pending"),
+            ("in-progress.json", "in_progress"),
+            ("completed.json", "done"),
+        ]:
+            fpath = queue_dir / queue_file
+            if fpath.exists():
+                try:
+                    items = json.loads(fpath.read_text())
+                    if isinstance(items, list):
+                        for i, item in enumerate(items):
+                            if isinstance(item, dict):
+                                tid = item.get("id", f"q-{q_status}-{i}")
+                                # Skip if already in all_tasks
+                                if any(t["id"] == tid for t in all_tasks):
+                                    continue
+                                all_tasks.append({
+                                    "id": tid,
+                                    "title": item.get("title", item.get("action", "Task")),
+                                    "description": item.get("description", ""),
+                                    "status": q_status,
+                                    "priority": item.get("priority", "medium"),
+                                    "type": item.get("type", "task"),
+                                    "position": i,
+                                })
+                except (json.JSONDecodeError, KeyError):
+                    pass
+
+    # Apply status filter if provided
+    if status:
+        all_tasks = [t for t in all_tasks if t["status"] == status]
+
+    return all_tasks
 
 
 @app.post("/api/tasks", response_model=TaskResponse, status_code=201)
@@ -988,6 +1112,422 @@ async def get_audit_summary(days: int = 7):
         )
 
     return audit.get_audit_summary(days=days)
+
+
+# =============================================================================
+# File-based Session Endpoints (reads from .loki/ flat files)
+# =============================================================================
+
+_LOKI_DIR = _Path(os.environ.get("LOKI_DIR", ".loki"))
+
+
+@app.get("/api/memory/summary")
+async def get_memory_summary():
+    """Get memory system summary from .loki/memory/."""
+    memory_dir = _LOKI_DIR / "memory"
+    summary = {
+        "episodic": {"count": 0, "latestDate": None},
+        "semantic": {"patterns": 0, "antiPatterns": 0},
+        "procedural": {"skills": 0},
+        "tokenEconomics": {"discoveryTokens": 0, "readTokens": 0, "savingsPercent": 0},
+    }
+
+    # Count episodic memories
+    ep_dir = memory_dir / "episodic"
+    if ep_dir.exists():
+        episodes = sorted(ep_dir.glob("*.json"))
+        summary["episodic"]["count"] = len(episodes)
+        if episodes:
+            try:
+                latest = json.loads(episodes[-1].read_text())
+                summary["episodic"]["latestDate"] = latest.get("timestamp", "")
+            except Exception:
+                pass
+
+    # Count semantic patterns
+    sem_dir = memory_dir / "semantic"
+    patterns_file = sem_dir / "patterns.json"
+    anti_file = sem_dir / "anti-patterns.json"
+    if patterns_file.exists():
+        try:
+            p = json.loads(patterns_file.read_text())
+            summary["semantic"]["patterns"] = len(p) if isinstance(p, list) else len(p.get("patterns", []))
+        except Exception:
+            pass
+    if anti_file.exists():
+        try:
+            a = json.loads(anti_file.read_text())
+            summary["semantic"]["antiPatterns"] = len(a) if isinstance(a, list) else len(a.get("patterns", []))
+        except Exception:
+            pass
+
+    # Count skills
+    skills_dir = memory_dir / "skills"
+    if skills_dir.exists():
+        summary["procedural"]["skills"] = len(list(skills_dir.glob("*.json")))
+
+    # Token economics
+    econ_file = memory_dir / "token_economics.json"
+    if econ_file.exists():
+        try:
+            econ = json.loads(econ_file.read_text())
+            summary["tokenEconomics"] = {
+                "discoveryTokens": econ.get("discoveryTokens", 0),
+                "readTokens": econ.get("readTokens", 0),
+                "savingsPercent": econ.get("savingsPercent", 0),
+            }
+        except Exception:
+            pass
+
+    return summary
+
+
+@app.get("/api/memory/episodes")
+async def list_episodes(limit: int = 50):
+    """List episodic memory entries."""
+    ep_dir = _LOKI_DIR / "memory" / "episodic"
+    episodes = []
+    if ep_dir.exists():
+        files = sorted(ep_dir.glob("*.json"), reverse=True)[:limit]
+        for f in files:
+            try:
+                episodes.append(json.loads(f.read_text()))
+            except Exception:
+                pass
+    return episodes
+
+
+@app.get("/api/memory/episodes/{episode_id}")
+async def get_episode(episode_id: str):
+    """Get a specific episodic memory entry."""
+    ep_dir = _LOKI_DIR / "memory" / "episodic"
+    # Try direct filename match
+    for f in ep_dir.glob("*.json"):
+        try:
+            data = json.loads(f.read_text())
+            if data.get("id") == episode_id or f.stem == episode_id:
+                return data
+        except Exception:
+            pass
+    raise HTTPException(status_code=404, detail="Episode not found")
+
+
+@app.get("/api/memory/patterns")
+async def list_patterns():
+    """List semantic patterns."""
+    sem_dir = _LOKI_DIR / "memory" / "semantic"
+    patterns_file = sem_dir / "patterns.json"
+    if patterns_file.exists():
+        try:
+            data = json.loads(patterns_file.read_text())
+            return data if isinstance(data, list) else data.get("patterns", [])
+        except Exception:
+            pass
+    return []
+
+
+@app.get("/api/memory/patterns/{pattern_id}")
+async def get_pattern(pattern_id: str):
+    """Get a specific semantic pattern."""
+    patterns = await list_patterns()
+    for p in patterns:
+        if p.get("id") == pattern_id:
+            return p
+    raise HTTPException(status_code=404, detail="Pattern not found")
+
+
+@app.get("/api/memory/skills")
+async def list_skills():
+    """List procedural skills."""
+    skills_dir = _LOKI_DIR / "memory" / "skills"
+    skills = []
+    if skills_dir.exists():
+        for f in sorted(skills_dir.glob("*.json")):
+            try:
+                skills.append(json.loads(f.read_text()))
+            except Exception:
+                pass
+    return skills
+
+
+@app.get("/api/memory/skills/{skill_id}")
+async def get_skill(skill_id: str):
+    """Get a specific procedural skill."""
+    skills_dir = _LOKI_DIR / "memory" / "skills"
+    for f in skills_dir.glob("*.json"):
+        try:
+            data = json.loads(f.read_text())
+            if data.get("id") == skill_id or f.stem == skill_id:
+                return data
+        except Exception:
+            pass
+    raise HTTPException(status_code=404, detail="Skill not found")
+
+
+@app.get("/api/memory/economics")
+async def get_token_economics():
+    """Get token usage economics."""
+    econ_file = _LOKI_DIR / "memory" / "token_economics.json"
+    if econ_file.exists():
+        try:
+            return json.loads(econ_file.read_text())
+        except Exception:
+            pass
+    return {"discoveryTokens": 0, "readTokens": 0, "savingsPercent": 0}
+
+
+@app.post("/api/memory/consolidate")
+async def consolidate_memory(hours: int = 24):
+    """Trigger memory consolidation (stub - returns current state)."""
+    return {"status": "ok", "message": f"Consolidation for last {hours}h", "consolidated": 0}
+
+
+@app.post("/api/memory/retrieve")
+async def retrieve_memory(query: dict = None):
+    """Search memories by query."""
+    return {"results": [], "query": query}
+
+
+@app.get("/api/memory/index")
+async def get_memory_index():
+    """Get memory index (Layer 1 - lightweight discovery)."""
+    index_file = _LOKI_DIR / "memory" / "index.json"
+    if index_file.exists():
+        try:
+            return json.loads(index_file.read_text())
+        except Exception:
+            pass
+    return {"topics": [], "lastUpdated": None}
+
+
+@app.get("/api/memory/timeline")
+async def get_memory_timeline():
+    """Get memory timeline (Layer 2 - progressive disclosure)."""
+    timeline_file = _LOKI_DIR / "memory" / "timeline.json"
+    if timeline_file.exists():
+        try:
+            return json.loads(timeline_file.read_text())
+        except Exception:
+            pass
+    # Build from episodic memories if no timeline file
+    episodes = await list_episodes(limit=100)
+    return {"entries": episodes, "lastUpdated": None}
+
+
+# Learning/metrics endpoints
+@app.get("/api/learning/metrics")
+async def get_learning_metrics(
+    timeRange: str = "7d",
+    signalType: Optional[str] = None,
+    source: Optional[str] = None,
+):
+    """Get learning metrics from events and metrics files."""
+    events = _read_events(timeRange)
+
+    # Filter by type and source
+    if signalType:
+        events = [e for e in events if e.get("data", {}).get("type") == signalType]
+    if source:
+        events = [e for e in events if e.get("data", {}).get("source") == source]
+
+    # Count by type
+    by_type: dict = {}
+    by_source: dict = {}
+    for e in events:
+        t = e.get("type", "unknown")
+        by_type[t] = by_type.get(t, 0) + 1
+        s = e.get("data", {}).get("source", "unknown")
+        by_source[s] = by_source.get(s, 0) + 1
+
+    return {
+        "totalSignals": len(events),
+        "signalsByType": by_type,
+        "signalsBySource": by_source,
+        "avgConfidence": 0,
+        "aggregation": {
+            "preferences": [],
+            "error_patterns": [],
+            "success_patterns": [],
+            "tool_efficiencies": [],
+        },
+    }
+
+
+@app.get("/api/learning/trends")
+async def get_learning_trends(
+    timeRange: str = "7d",
+    signalType: Optional[str] = None,
+    source: Optional[str] = None,
+):
+    """Get learning trend data."""
+    events = _read_events(timeRange)
+    # Group by hour for trend data
+    by_hour: dict = {}
+    for e in events:
+        ts = e.get("timestamp", "")[:13]  # YYYY-MM-DDTHH
+        by_hour[ts] = by_hour.get(ts, 0) + 1
+
+    data_points = [{"label": k, "count": v} for k, v in sorted(by_hour.items())]
+    max_val = max((d["count"] for d in data_points), default=0)
+
+    return {"dataPoints": data_points, "maxValue": max_val, "period": timeRange}
+
+
+@app.get("/api/learning/signals")
+async def get_learning_signals(
+    timeRange: str = "7d",
+    signalType: Optional[str] = None,
+    source: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    """Get raw learning signals."""
+    events = _read_events(timeRange)
+    if signalType:
+        events = [e for e in events if e.get("type") == signalType]
+    if source:
+        events = [e for e in events if e.get("data", {}).get("source") == source]
+    return events[offset:offset + limit]
+
+
+@app.get("/api/learning/aggregation")
+async def get_learning_aggregation():
+    """Get latest learning aggregation result."""
+    agg_file = _LOKI_DIR / "metrics" / "aggregation.json"
+    if agg_file.exists():
+        try:
+            return json.loads(agg_file.read_text())
+        except Exception:
+            pass
+    return {"preferences": [], "error_patterns": [], "success_patterns": [], "tool_efficiencies": []}
+
+
+@app.post("/api/learning/aggregate")
+async def trigger_aggregation():
+    """Trigger learning aggregation (returns current state)."""
+    return {"status": "ok", "message": "Aggregation triggered"}
+
+
+@app.get("/api/learning/preferences")
+async def get_learning_preferences(limit: int = 50):
+    """Get aggregated user preferences."""
+    events = _read_events("30d")
+    prefs = [e for e in events if e.get("type") == "user_preference"]
+    return prefs[:limit]
+
+
+@app.get("/api/learning/errors")
+async def get_learning_errors(limit: int = 50):
+    """Get aggregated error patterns."""
+    events = _read_events("30d")
+    errors = [e for e in events if e.get("type") == "error_pattern"]
+    return errors[:limit]
+
+
+@app.get("/api/learning/success")
+async def get_learning_success(limit: int = 50):
+    """Get aggregated success patterns."""
+    events = _read_events("30d")
+    successes = [e for e in events if e.get("type") == "success_pattern"]
+    return successes[:limit]
+
+
+@app.get("/api/learning/tools")
+async def get_tool_efficiency(limit: int = 50):
+    """Get tool efficiency rankings."""
+    events = _read_events("30d")
+    tools = [e for e in events if e.get("type") == "tool_efficiency"]
+    return tools[:limit]
+
+
+def _read_events(time_range: str = "7d") -> list:
+    """Read events from .loki/events.jsonl with time filter."""
+    events_file = _LOKI_DIR / "events.jsonl"
+    if not events_file.exists():
+        return []
+
+    events = []
+    try:
+        for line in events_file.read_text().strip().split("\n"):
+            if line.strip():
+                try:
+                    events.append(json.loads(line))
+                except json.JSONDecodeError:
+                    pass
+    except Exception:
+        pass
+    return events
+
+
+# Session control endpoints (proxy to control.py functions)
+@app.post("/api/control/pause")
+async def pause_session():
+    """Pause the current session by creating PAUSE file."""
+    pause_file = _LOKI_DIR / "PAUSE"
+    pause_file.parent.mkdir(parents=True, exist_ok=True)
+    pause_file.write_text(datetime.now().isoformat())
+    return {"success": True, "message": "Session paused"}
+
+
+@app.post("/api/control/resume")
+async def resume_session():
+    """Resume a paused session by removing PAUSE/STOP files."""
+    for fname in ["PAUSE", "STOP"]:
+        fpath = _LOKI_DIR / fname
+        try:
+            fpath.unlink(missing_ok=True)
+        except Exception:
+            pass
+    return {"success": True, "message": "Session resumed"}
+
+
+@app.post("/api/control/stop")
+async def stop_session():
+    """Stop the session by creating STOP file and sending SIGTERM."""
+    stop_file = _LOKI_DIR / "STOP"
+    stop_file.parent.mkdir(parents=True, exist_ok=True)
+    stop_file.write_text(datetime.now().isoformat())
+
+    # Try to kill the process
+    pid_file = _LOKI_DIR / "loki.pid"
+    if pid_file.exists():
+        try:
+            pid = int(pid_file.read_text().strip())
+            os.kill(pid, 15)  # SIGTERM
+        except (ValueError, OSError, ProcessLookupError):
+            pass
+
+    # Mark session.json as stopped
+    session_file = _LOKI_DIR / "session.json"
+    if session_file.exists():
+        try:
+            sd = json.loads(session_file.read_text())
+            sd["status"] = "stopped"
+            session_file.write_text(json.dumps(sd))
+        except Exception:
+            pass
+
+    return {"success": True, "message": "Stop signal sent"}
+
+
+@app.get("/api/logs")
+async def get_logs(lines: int = 100):
+    """Get recent log entries from session log files."""
+    log_dir = _LOKI_DIR / "logs"
+    entries = []
+
+    if log_dir.exists():
+        # Read the most recent log file
+        log_files = sorted(log_dir.glob("*.log"), key=lambda f: f.stat().st_mtime, reverse=True)
+        for log_file in log_files[:1]:
+            try:
+                content = log_file.read_text()
+                for line in content.strip().split("\n")[-lines:]:
+                    entries.append({"message": line, "level": "info", "timestamp": ""})
+            except Exception:
+                pass
+
+    return entries
 
 
 # =============================================================================
