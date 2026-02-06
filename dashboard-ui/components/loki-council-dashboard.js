@@ -181,7 +181,7 @@ export class LokiCouncilDashboard extends LokiElement {
     if (!s) return;
 
     s.innerHTML = `
-      <style>${this._getStyles()}</style>
+      <style>${this.getBaseStyles()}${this._getStyles()}</style>
       <div class="council-dashboard">
         <div class="council-header">
           <div class="header-left">
@@ -427,7 +427,7 @@ export class LokiCouncilDashboard extends LokiElement {
       :host {
         display: block;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        color: var(--text-primary, #f5f5f5);
+        color: var(--loki-text-primary);
       }
 
       .council-dashboard {
@@ -463,21 +463,21 @@ export class LokiCouncilDashboard extends LokiElement {
       }
 
       .badge-active {
-        background: rgba(34, 197, 94, 0.15);
-        color: #22c55e;
-        border: 1px solid rgba(34, 197, 94, 0.3);
+        background: var(--loki-success-muted);
+        color: var(--loki-success);
+        border: 1px solid var(--loki-success-muted);
       }
 
       .badge-inactive {
-        background: rgba(107, 114, 128, 0.15);
-        color: #9ca3af;
-        border: 1px solid rgba(107, 114, 128, 0.3);
+        background: var(--loki-bg-hover);
+        color: var(--loki-text-muted);
+        border: 1px solid var(--loki-border-light);
       }
 
       .tabs {
         display: flex;
         gap: 2px;
-        border-bottom: 1px solid var(--border, #2d2d30);
+        border-bottom: 1px solid var(--loki-border);
         margin-bottom: 16px;
       }
 
@@ -485,7 +485,7 @@ export class LokiCouncilDashboard extends LokiElement {
         padding: 8px 16px;
         background: none;
         border: none;
-        color: var(--text-muted, #6b6b70);
+        color: var(--loki-text-muted);
         cursor: pointer;
         font-size: 13px;
         font-weight: 500;
@@ -494,20 +494,20 @@ export class LokiCouncilDashboard extends LokiElement {
       }
 
       .tab:hover {
-        color: var(--text-primary, #f5f5f5);
+        color: var(--loki-text-primary);
       }
 
       .tab.active {
-        color: var(--accent, #d97757);
-        border-bottom-color: var(--accent, #d97757);
+        color: var(--loki-accent);
+        border-bottom-color: var(--loki-accent);
       }
 
       .btn {
         padding: 6px 14px;
-        border: 1px solid var(--border, #2d2d30);
+        border: 1px solid var(--loki-border);
         border-radius: 6px;
-        background: var(--bg-tertiary, #232325);
-        color: var(--text-primary, #f5f5f5);
+        background: var(--loki-bg-tertiary);
+        color: var(--loki-text-primary);
         cursor: pointer;
         font-size: 12px;
         font-weight: 500;
@@ -515,19 +515,19 @@ export class LokiCouncilDashboard extends LokiElement {
       }
 
       .btn:hover {
-        background: var(--accent, #d97757);
-        border-color: var(--accent, #d97757);
+        background: var(--loki-accent);
+        border-color: var(--loki-accent);
         color: white;
       }
 
       .btn-primary {
-        background: var(--accent, #d97757);
-        border-color: var(--accent, #d97757);
+        background: var(--loki-accent);
+        border-color: var(--loki-accent);
         color: white;
       }
 
       .btn-primary:hover {
-        background: var(--accent-light, #e8956f);
+        background: var(--loki-accent-hover);
       }
 
       .btn-sm {
@@ -536,23 +536,25 @@ export class LokiCouncilDashboard extends LokiElement {
       }
 
       .btn-warn {
-        background: rgba(234, 179, 8, 0.15);
-        border-color: rgba(234, 179, 8, 0.3);
-        color: #eab308;
+        background: var(--loki-warning-muted);
+        border-color: var(--loki-warning-muted);
+        color: var(--loki-warning);
       }
 
       .btn-warn:hover {
-        background: rgba(234, 179, 8, 0.3);
+        background: var(--loki-warning-muted);
+        opacity: 0.85;
       }
 
       .btn-danger {
-        background: rgba(239, 68, 68, 0.15);
-        border-color: rgba(239, 68, 68, 0.3);
-        color: #ef4444;
+        background: var(--loki-error-muted);
+        border-color: var(--loki-error-muted);
+        color: var(--loki-error);
       }
 
       .btn-danger:hover {
-        background: rgba(239, 68, 68, 0.3);
+        background: var(--loki-error-muted);
+        opacity: 0.85;
       }
 
       /* Overview Grid */
@@ -564,8 +566,8 @@ export class LokiCouncilDashboard extends LokiElement {
       }
 
       .stat-card {
-        background: var(--bg-card, #1e1e20);
-        border: 1px solid var(--border, #2d2d30);
+        background: var(--loki-bg-card);
+        border: 1px solid var(--loki-border);
         border-radius: 8px;
         padding: 14px;
       }
@@ -573,7 +575,7 @@ export class LokiCouncilDashboard extends LokiElement {
       .stat-label {
         font-size: 11px;
         font-weight: 500;
-        color: var(--text-muted, #6b6b70);
+        color: var(--loki-text-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-bottom: 6px;
@@ -587,13 +589,13 @@ export class LokiCouncilDashboard extends LokiElement {
 
       .stat-sub {
         font-size: 11px;
-        color: var(--text-muted, #6b6b70);
+        color: var(--loki-text-muted);
         margin-top: 2px;
       }
 
-      .text-green { color: #22c55e; }
-      .text-warn { color: #eab308; }
-      .text-muted { color: var(--text-muted, #6b6b70); }
+      .text-green { color: var(--loki-success); }
+      .text-warn { color: var(--loki-warning); }
+      .text-muted { color: var(--loki-text-muted); }
 
       /* Section */
       .section {
@@ -604,7 +606,7 @@ export class LokiCouncilDashboard extends LokiElement {
         font-size: 14px;
         font-weight: 600;
         margin-bottom: 12px;
-        color: var(--text-secondary, #a1a1a6);
+        color: var(--loki-text-secondary);
       }
 
       /* Bar Chart */
@@ -614,8 +616,8 @@ export class LokiCouncilDashboard extends LokiElement {
         gap: 4px;
         height: 80px;
         padding: 8px;
-        background: var(--bg-card, #1e1e20);
-        border: 1px solid var(--border, #2d2d30);
+        background: var(--loki-bg-card);
+        border: 1px solid var(--loki-border);
         border-radius: 8px;
       }
 
@@ -635,16 +637,16 @@ export class LokiCouncilDashboard extends LokiElement {
       }
 
       .bar-active {
-        background: var(--accent, #d97757);
+        background: var(--loki-accent);
       }
 
       .bar-stagnant {
-        background: rgba(234, 179, 8, 0.4);
+        background: var(--loki-warning-muted);
       }
 
       .bar-label {
         font-size: 9px;
-        color: var(--text-muted, #6b6b70);
+        color: var(--loki-text-muted);
         margin-top: 4px;
       }
 
@@ -656,19 +658,19 @@ export class LokiCouncilDashboard extends LokiElement {
       }
 
       .decision-card {
-        background: var(--bg-card, #1e1e20);
-        border: 1px solid var(--border, #2d2d30);
+        background: var(--loki-bg-card);
+        border: 1px solid var(--loki-border);
         border-radius: 8px;
         padding: 12px 16px;
         border-left: 3px solid transparent;
       }
 
       .decision-approved {
-        border-left-color: #22c55e;
+        border-left-color: var(--loki-success);
       }
 
       .decision-rejected {
-        border-left-color: #ef4444;
+        border-left-color: var(--loki-error);
       }
 
       .decision-header {
@@ -685,12 +687,12 @@ export class LokiCouncilDashboard extends LokiElement {
 
       .decision-iter {
         font-size: 12px;
-        color: var(--text-secondary, #a1a1a6);
+        color: var(--loki-text-secondary);
       }
 
       .decision-time {
         font-size: 11px;
-        color: var(--text-muted, #6b6b70);
+        color: var(--loki-text-muted);
         margin-left: auto;
       }
 
@@ -701,17 +703,17 @@ export class LokiCouncilDashboard extends LokiElement {
       }
 
       .vote-approve {
-        color: #22c55e;
+        color: var(--loki-success);
       }
 
       .vote-reject {
-        color: #ef4444;
+        color: var(--loki-error);
       }
 
       /* Convergence Table */
       .convergence-table {
-        background: var(--bg-card, #1e1e20);
-        border: 1px solid var(--border, #2d2d30);
+        background: var(--loki-bg-card);
+        border: 1px solid var(--loki-border);
         border-radius: 8px;
         overflow: hidden;
       }
@@ -729,14 +731,14 @@ export class LokiCouncilDashboard extends LokiElement {
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        color: var(--text-muted, #6b6b70);
-        border-bottom: 1px solid var(--border, #2d2d30);
-        background: var(--bg-tertiary, #232325);
+        color: var(--loki-text-muted);
+        border-bottom: 1px solid var(--loki-border);
+        background: var(--loki-bg-tertiary);
       }
 
       td {
         padding: 8px 14px;
-        border-bottom: 1px solid var(--border, #2d2d30);
+        border-bottom: 1px solid var(--loki-border);
       }
 
       tr:last-child td {
@@ -744,7 +746,7 @@ export class LokiCouncilDashboard extends LokiElement {
       }
 
       .row-warn {
-        background: rgba(234, 179, 8, 0.05);
+        background: var(--loki-warning-muted);
       }
 
       /* Agent List */
@@ -755,8 +757,8 @@ export class LokiCouncilDashboard extends LokiElement {
       }
 
       .agent-card {
-        background: var(--bg-card, #1e1e20);
-        border: 1px solid var(--border, #2d2d30);
+        background: var(--loki-bg-card);
+        border: 1px solid var(--loki-border);
         border-radius: 8px;
         padding: 12px 16px;
         cursor: pointer;
@@ -764,12 +766,12 @@ export class LokiCouncilDashboard extends LokiElement {
       }
 
       .agent-card:hover {
-        border-color: var(--accent, #d97757);
+        border-color: var(--loki-accent);
       }
 
       .agent-selected {
-        border-color: var(--accent, #d97757);
-        background: rgba(217, 119, 87, 0.05);
+        border-color: var(--loki-accent);
+        background: var(--loki-accent-muted);
       }
 
       .agent-header {
@@ -792,20 +794,20 @@ export class LokiCouncilDashboard extends LokiElement {
       }
 
       .status-alive {
-        background: rgba(34, 197, 94, 0.15);
-        color: #22c55e;
+        background: var(--loki-success-muted);
+        color: var(--loki-success);
       }
 
       .status-dead {
-        background: rgba(107, 114, 128, 0.15);
-        color: #9ca3af;
+        background: var(--loki-bg-hover);
+        color: var(--loki-text-muted);
       }
 
       .agent-meta {
         display: flex;
         gap: 12px;
         font-size: 11px;
-        color: var(--text-muted, #6b6b70);
+        color: var(--loki-text-muted);
       }
 
       .agent-actions {
@@ -813,14 +815,14 @@ export class LokiCouncilDashboard extends LokiElement {
         gap: 8px;
         margin-top: 10px;
         padding-top: 10px;
-        border-top: 1px solid var(--border, #2d2d30);
+        border-top: 1px solid var(--loki-border);
       }
 
       /* Empty State */
       .empty-state {
         padding: 40px;
         text-align: center;
-        color: var(--text-muted, #6b6b70);
+        color: var(--loki-text-muted);
         font-size: 13px;
       }
 
@@ -828,10 +830,10 @@ export class LokiCouncilDashboard extends LokiElement {
       .error-banner {
         margin-top: 12px;
         padding: 10px 14px;
-        background: rgba(239, 68, 68, 0.1);
-        border: 1px solid rgba(239, 68, 68, 0.2);
+        background: var(--loki-error-muted);
+        border: 1px solid var(--loki-error-muted);
         border-radius: 6px;
-        color: #ef4444;
+        color: var(--loki-error);
         font-size: 12px;
       }
     `;

@@ -38,6 +38,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.25.0] - 2026-02-06
+
+### Added - Completion Council Multi-Agent System
+- 3-member council votes on project completion (2/3 majority required)
+- Anti-sycophancy devil's advocate on unanimous votes
+- Convergence detection via git diff hash tracking
+- Circuit breaker: 5 consecutive no-progress iterations triggers force stop
+- State stored in `.loki/council/` (state.json, convergence.log, votes/, report.md)
+- Dashboard: `loki-council-dashboard` web component (4 tabs)
+- API: 8 council endpoints in server.py
+- CLI: `loki council` with 7 subcommands
+
+### Fixed
+- Dashboard frontend resolution and `loki stop` behavior
+- VSCode auto-start configuration
+
+---
+
+## [5.24.0] - 2026-02-05
+
+### Added - Enterprise Dashboard Pipeline
+- GPT-5.3 Codex and Claude Opus 4.6 model support
+- Enterprise dashboard pipeline with comprehensive E2E tests
+- 32 Playwright tests covering all dashboard components
+
+---
+
+## [5.23.0] - 2026-02-05
+
+### Fixed - Dashboard File-Based API
+- server.py now reads from `.loki/` flat files instead of empty SQLAlchemy DB
+- All 19 API endpoints read from dashboard-state.json, queue/, memory/, events.jsonl, metrics/
+- Web components changed from hardcoded `localhost:8420` to `window.location.origin`
+
+---
+
+## [5.21.0] - 2026-02-04
+
+### Added - Dashboard Web Components Architecture
+- Unified 5 dashboards into reusable Web Components (71-87% code reduction)
+- LokiElement base class with shadow DOM, theme support, keyboard shortcuts
+- API client with adaptive polling, WebSocket, VS Code integration
+- Cross-tool learning dashboard with signal aggregation
+- State management with file locking and change notifications
+
+---
+
 ## [5.20.7] - 2026-02-04
 
 ### Fixed - Memory Pattern Command Error

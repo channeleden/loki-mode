@@ -146,8 +146,10 @@ class EventBus:
         try:
             with open(self.processed_file, 'w') as f:
                 fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-                json.dump({'ids': list(self._processed_ids)}, f)
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                try:
+                    json.dump({'ids': list(self._processed_ids)}, f)
+                finally:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
         except IOError:
             pass
 
@@ -166,8 +168,10 @@ class EventBus:
         try:
             with open(event_file, 'w') as f:
                 fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-                json.dump(event.to_dict(), f, indent=2)
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                try:
+                    json.dump(event.to_dict(), f, indent=2)
+                finally:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
         except IOError as e:
             raise RuntimeError(f"Failed to emit event: {e}")
 

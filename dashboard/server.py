@@ -208,10 +208,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add CORS middleware
+# Add CORS middleware (configure CORS_ALLOWED_ORIGINS for production)
+_cors_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=[o.strip() for o in _cors_origins if o.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -256,9 +257,10 @@ async def get_status() -> StatusResponse:
     version_file = os.path.join(project_root, "VERSION")
     if os.path.isfile(version_file):
         try:
-            version = open(version_file).read().strip()
-        except Exception:
-            pass
+            with open(version_file) as vf:
+                version = vf.read().strip()
+        except (OSError, IOError) as e:
+            logger.warning(f"Failed to read VERSION file: {e}")
 
     # Read dashboard state
     if state_file.exists():

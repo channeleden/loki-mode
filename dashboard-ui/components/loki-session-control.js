@@ -45,6 +45,9 @@ export class LokiSessionControl extends LokiElement {
     };
     this._api = null;
     this._state = getState();
+    this._statusUpdateHandler = null;
+    this._connectedHandler = null;
+    this._disconnectedHandler = null;
   }
 
   connectedCallback() {
@@ -57,6 +60,11 @@ export class LokiSessionControl extends LokiElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     this._stopPolling();
+    if (this._api) {
+      if (this._statusUpdateHandler) this._api.removeEventListener(ApiEvents.STATUS_UPDATE, this._statusUpdateHandler);
+      if (this._connectedHandler) this._api.removeEventListener(ApiEvents.CONNECTED, this._connectedHandler);
+      if (this._disconnectedHandler) this._api.removeEventListener(ApiEvents.DISCONNECTED, this._disconnectedHandler);
+    }
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -78,20 +86,13 @@ export class LokiSessionControl extends LokiElement {
     const apiUrl = this.getAttribute('api-url') || window.location.origin;
     this._api = getApiClient({ baseUrl: apiUrl });
 
-    this._api.addEventListener(ApiEvents.STATUS_UPDATE, (e) => {
-      this._updateFromStatus(e.detail);
-    });
+    this._statusUpdateHandler = (e) => this._updateFromStatus(e.detail);
+    this._connectedHandler = () => { this._status.connected = true; this.render(); };
+    this._disconnectedHandler = () => { this._status.connected = false; this._status.mode = 'offline'; this.render(); };
 
-    this._api.addEventListener(ApiEvents.CONNECTED, () => {
-      this._status.connected = true;
-      this.render();
-    });
-
-    this._api.addEventListener(ApiEvents.DISCONNECTED, () => {
-      this._status.connected = false;
-      this._status.mode = 'offline';
-      this.render();
-    });
+    this._api.addEventListener(ApiEvents.STATUS_UPDATE, this._statusUpdateHandler);
+    this._api.addEventListener(ApiEvents.CONNECTED, this._connectedHandler);
+    this._api.addEventListener(ApiEvents.DISCONNECTED, this._disconnectedHandler);
   }
 
   async _loadStatus() {

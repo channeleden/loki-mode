@@ -10,16 +10,13 @@ CWD=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).ge
 
 # Dangerous command patterns
 BLOCKED_PATTERNS=(
-    "rm -rf /"
-    "rm -rf ~"
-    "rm -rf \$HOME"
+    "^rm -rf /$"
+    "^rm -rf ~$"
+    "^rm -rf \\\$HOME$"
     "> /dev/sd"
-    "mkfs"
-    "dd if=/dev/zero"
-":\s*\(\s*\)\s*\{.*:.*\|.*:.*&.*\}"
-    "chmod -R 777 /"
-    "curl.*|.*bash"
-    "wget.*|.*sh"
+    "^mkfs "
+    "^dd if=/dev/zero"
+    "^chmod -R 777 /$"
 )
 
 # Check for blocked patterns

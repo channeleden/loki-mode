@@ -41,25 +41,25 @@ export {
 export const THEME_VARIABLES = {
   light: {
     // Background colors
-    '--loki-bg-primary': '#faf9f0',
-    '--loki-bg-secondary': '#f5f4eb',
-    '--loki-bg-tertiary': '#eeeddf',
+    '--loki-bg-primary': '#fafafa',
+    '--loki-bg-secondary': '#f4f4f5',
+    '--loki-bg-tertiary': '#e4e4e7',
     '--loki-bg-card': '#ffffff',
-    '--loki-bg-hover': '#f0efe6',
+    '--loki-bg-hover': '#f0f0f3',
 
-    // Accent colors
-    '--loki-accent': '#d97757',
-    '--loki-accent-light': '#e8956f',
-    '--loki-accent-muted': 'rgba(217, 119, 87, 0.12)',
+    // Accent colors (purple/violet)
+    '--loki-accent': '#7c3aed',
+    '--loki-accent-light': '#8b5cf6',
+    '--loki-accent-muted': 'rgba(124, 58, 237, 0.12)',
 
     // Text colors
-    '--loki-text-primary': '#1a1a1a',
-    '--loki-text-secondary': '#5c5c5c',
-    '--loki-text-muted': '#8a8a8a',
+    '--loki-text-primary': '#18181b',
+    '--loki-text-secondary': '#52525b',
+    '--loki-text-muted': '#a1a1aa',
 
     // Border colors
-    '--loki-border': '#e5e3de',
-    '--loki-border-light': '#d4d2cb',
+    '--loki-border': '#e4e4e7',
+    '--loki-border-light': '#d4d4d8',
 
     // Status colors
     '--loki-green': '#16a34a',
@@ -82,26 +82,26 @@ export const THEME_VARIABLES = {
     '--loki-transition': '0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   },
   dark: {
-    // Background colors
-    '--loki-bg-primary': '#131314',
-    '--loki-bg-secondary': '#1a1a1b',
-    '--loki-bg-tertiary': '#232325',
-    '--loki-bg-card': '#1e1e20',
-    '--loki-bg-hover': '#2a2a2d',
+    // Background colors (deep dark, Vercel/Linear)
+    '--loki-bg-primary': '#09090b',
+    '--loki-bg-secondary': '#0c0c0f',
+    '--loki-bg-tertiary': '#111114',
+    '--loki-bg-card': '#18181b',
+    '--loki-bg-hover': '#1f1f23',
 
-    // Accent colors
-    '--loki-accent': '#d97757',
-    '--loki-accent-light': '#e8956f',
-    '--loki-accent-muted': 'rgba(217, 119, 87, 0.15)',
+    // Accent colors (purple/violet)
+    '--loki-accent': '#8b5cf6',
+    '--loki-accent-light': '#a78bfa',
+    '--loki-accent-muted': 'rgba(139, 92, 246, 0.15)',
 
     // Text colors
-    '--loki-text-primary': '#f5f5f5',
-    '--loki-text-secondary': '#a1a1a6',
-    '--loki-text-muted': '#6b6b70',
+    '--loki-text-primary': '#fafafa',
+    '--loki-text-secondary': '#a1a1aa',
+    '--loki-text-muted': '#52525b',
 
     // Border colors
-    '--loki-border': '#2d2d30',
-    '--loki-border-light': '#3d3d42',
+    '--loki-border': 'rgba(255, 255, 255, 0.06)',
+    '--loki-border-light': 'rgba(255, 255, 255, 0.1)',
 
     // Status colors
     '--loki-green': '#22c55e',
@@ -112,13 +112,13 @@ export const THEME_VARIABLES = {
     '--loki-red-muted': 'rgba(239, 68, 68, 0.15)',
     '--loki-blue': '#3b82f6',
     '--loki-blue-muted': 'rgba(59, 130, 246, 0.15)',
-    '--loki-purple': '#a855f7',
-    '--loki-purple-muted': 'rgba(168, 85, 247, 0.15)',
+    '--loki-purple': '#a78bfa',
+    '--loki-purple-muted': 'rgba(167, 139, 250, 0.15)',
 
     // Model colors
     '--loki-opus': '#f59e0b',
-    '--loki-sonnet': '#6366f1',
-    '--loki-haiku': '#10b981',
+    '--loki-sonnet': '#818cf8',
+    '--loki-haiku': '#34d399',
 
     // Transition
     '--loki-transition': '0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -406,15 +406,15 @@ export class LokiElement extends HTMLElement {
         ${tokens}
       }
 
-      /* Light theme (default) */
+      /* Dark theme (default) */
       :host {
-        ${generateThemeCSS('light')}
+        ${generateThemeCSS('dark')}
       }
 
-      /* Dark theme via system preference */
-      @media (prefers-color-scheme: dark) {
+      /* Light theme via system preference */
+      @media (prefers-color-scheme: light) {
         :host {
-          ${generateThemeCSS('dark')}
+          ${generateThemeCSS('light')}
         }
       }
 

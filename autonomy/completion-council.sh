@@ -101,6 +101,11 @@ council_track_iteration() {
         return 0
     fi
 
+    # Guard: ITERATION_COUNT must be set by caller (run.sh)
+    if [ -z "${ITERATION_COUNT:-}" ]; then
+        ITERATION_COUNT=0
+    fi
+
     # Track git diff (code changes between iterations)
     local current_diff_hash
     current_diff_hash=$(git diff --stat HEAD 2>/dev/null | md5sum 2>/dev/null | cut -d' ' -f1 || echo "unknown")
@@ -146,21 +151,26 @@ council_track_iteration() {
     echo "$timestamp|$ITERATION_COUNT|$files_changed|$COUNCIL_CONSECUTIVE_NO_CHANGE|$COUNCIL_DONE_SIGNALS" >> "$COUNCIL_STATE_DIR/convergence.log"
 
     # Update state
+    _COUNCIL_STATE_FILE="$COUNCIL_STATE_DIR/state.json" \
+    _COUNCIL_NO_CHANGE="$COUNCIL_CONSECUTIVE_NO_CHANGE" \
+    _COUNCIL_DONE_SIGNALS="$COUNCIL_DONE_SIGNALS" \
+    _COUNCIL_ITERATION="${ITERATION_COUNT:-0}" \
+    _COUNCIL_FILES_CHANGED="$files_changed" \
     python3 -c "
 import json, os
-state_file = '$COUNCIL_STATE_DIR/state.json'
+state_file = os.environ['_COUNCIL_STATE_FILE']
 try:
     with open(state_file) as f:
         state = json.load(f)
-except:
+except (json.JSONDecodeError, FileNotFoundError, OSError):
     state = {}
-state['consecutive_no_change'] = $COUNCIL_CONSECUTIVE_NO_CHANGE
-state['done_signals'] = $COUNCIL_DONE_SIGNALS
-state['last_track_iteration'] = $ITERATION_COUNT
-state['files_changed'] = $files_changed
+state['consecutive_no_change'] = int(os.environ['_COUNCIL_NO_CHANGE'])
+state['done_signals'] = int(os.environ['_COUNCIL_DONE_SIGNALS'])
+state['last_track_iteration'] = int(os.environ['_COUNCIL_ITERATION'])
+state['files_changed'] = int(os.environ['_COUNCIL_FILES_CHANGED'])
 with open(state_file, 'w') as f:
     json.dump(state, f, indent=2)
-" 2>/dev/null || true
+" || log_warn "Failed to update council tracking state"
 }
 
 #===============================================================================
@@ -224,14 +234,17 @@ council_vote() {
         verdict=$(council_member_review "$member" "$role" "$evidence_file" "$vote_dir")
 
         local vote_result
-        vote_result=$(echo "$verdict" | grep -oE "VOTE:(APPROVE|REJECT)" | head -1 | cut -d: -f2)
+        vote_result=$(echo "$verdict" | grep -oE "VOTE:\s*(APPROVE|REJECT)" | grep -oE "APPROVE|REJECT" | head -1)
 
         if [ "$vote_result" = "APPROVE" ]; then
             ((approve_count++))
             log_info "  Member $member ($role): APPROVE"
-        else
+        elif [ "$vote_result" = "REJECT" ]; then
             ((reject_count++))
             log_info "  Member $member ($role): REJECT"
+        else
+            log_warn "  Member $member ($role): Could not parse vote, defaulting to REJECT"
+            ((reject_count++))
         fi
 
         # Extract reasoning
@@ -243,29 +256,40 @@ council_vote() {
     done
 
     # Record vote results
-    local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    _COUNCIL_STATE_FILE="$COUNCIL_STATE_DIR/state.json" \
+    _COUNCIL_SIZE="$COUNCIL_SIZE" \
+    _COUNCIL_APPROVE="$approve_count" \
+    _COUNCIL_REJECT="$reject_count" \
+    _COUNCIL_ITERATION="${ITERATION_COUNT:-0}" \
+    _COUNCIL_THRESHOLD="$COUNCIL_THRESHOLD" \
     python3 -c "
-import json
-state_file = '$COUNCIL_STATE_DIR/state.json'
+import json, os
+from datetime import datetime, timezone
+state_file = os.environ['_COUNCIL_STATE_FILE']
 try:
     with open(state_file) as f:
         state = json.load(f)
-except:
+except (json.JSONDecodeError, FileNotFoundError, OSError):
     state = {'verdicts': []}
-state['total_votes'] = state.get('total_votes', 0) + $COUNCIL_SIZE
-state['approve_votes'] = state.get('approve_votes', 0) + $approve_count
-state['reject_votes'] = state.get('reject_votes', 0) + $reject_count
-state['last_check_iteration'] = $ITERATION_COUNT
+council_size = int(os.environ['_COUNCIL_SIZE'])
+approve = int(os.environ['_COUNCIL_APPROVE'])
+reject = int(os.environ['_COUNCIL_REJECT'])
+iteration = int(os.environ['_COUNCIL_ITERATION'])
+threshold = int(os.environ['_COUNCIL_THRESHOLD'])
+state['total_votes'] = state.get('total_votes', 0) + council_size
+state['approve_votes'] = state.get('approve_votes', 0) + approve
+state['reject_votes'] = state.get('reject_votes', 0) + reject
+state['last_check_iteration'] = iteration
 state.setdefault('verdicts', []).append({
-    'iteration': $ITERATION_COUNT,
-    'timestamp': '$timestamp',
-    'approve': $approve_count,
-    'reject': $reject_count,
-    'result': 'APPROVED' if $approve_count >= $COUNCIL_THRESHOLD else 'REJECTED'
+    'iteration': iteration,
+    'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+    'approve': approve,
+    'reject': reject,
+    'result': 'APPROVED' if approve >= threshold else 'REJECTED'
 })
 with open(state_file, 'w') as f:
     json.dump(state, f, indent=2)
-" 2>/dev/null || true
+" || log_warn "Failed to record council vote results"
 
     # Anti-sycophancy check: if unanimous APPROVE, run devil's advocate
     if [ $approve_count -eq $COUNCIL_SIZE ] && [ $COUNCIL_SIZE -ge 3 ]; then
@@ -375,7 +399,7 @@ EVIDENCE_SECTION
         local queue_file=".loki/queue/${queue}.json"
         if [ -f "$queue_file" ]; then
             local count
-            count=$(python3 -c "import json; print(len(json.load(open('$queue_file'))))" 2>/dev/null || echo "?")
+            count=$(_QUEUE_FILE="$queue_file" python3 -c "import json, os; print(len(json.load(open(os.environ['_QUEUE_FILE']))))" 2>/dev/null || echo "?")
             echo "- ${queue}: $count tasks" >> "$evidence_file"
         fi
     done
@@ -701,14 +725,14 @@ council_write_report() {
 REPORT_HEADER
 
     # Append vote history from state
-    python3 -c "
-import json
+    _COUNCIL_STATE_FILE="$COUNCIL_STATE_DIR/state.json" python3 -c "
+import json, os
 try:
-    with open('$COUNCIL_STATE_DIR/state.json') as f:
+    with open(os.environ['_COUNCIL_STATE_FILE']) as f:
         state = json.load(f)
     for v in state.get('verdicts', []):
         print(f\"- Iteration {v['iteration']}: {v['result']} ({v['approve']} approve / {v['reject']} reject)\")
-except:
+except (json.JSONDecodeError, FileNotFoundError, OSError):
     print('- No vote history available')
 " >> "$report_file" 2>/dev/null
 

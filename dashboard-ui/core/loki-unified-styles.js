@@ -18,35 +18,35 @@
  * Themes: light, dark, high-contrast, vscode-light, vscode-dark
  */
 export const THEMES = {
-  // Standard light theme (Anthropic design language)
+  // Standard light theme
   light: {
     // Background layers
-    '--loki-bg-primary': '#faf9f0',
-    '--loki-bg-secondary': '#f5f4eb',
-    '--loki-bg-tertiary': '#eeeddf',
+    '--loki-bg-primary': '#fafafa',
+    '--loki-bg-secondary': '#f4f4f5',
+    '--loki-bg-tertiary': '#e4e4e7',
     '--loki-bg-card': '#ffffff',
-    '--loki-bg-hover': '#f0efe6',
-    '--loki-bg-active': '#e8e7dc',
+    '--loki-bg-hover': '#f0f0f3',
+    '--loki-bg-active': '#e8e8ec',
     '--loki-bg-overlay': 'rgba(0, 0, 0, 0.5)',
 
-    // Accent colors
-    '--loki-accent': '#d97757',
-    '--loki-accent-hover': '#c56a4c',
-    '--loki-accent-active': '#b35d40',
-    '--loki-accent-light': '#e8956f',
-    '--loki-accent-muted': 'rgba(217, 119, 87, 0.12)',
+    // Accent colors (purple/violet)
+    '--loki-accent': '#7c3aed',
+    '--loki-accent-hover': '#6d28d9',
+    '--loki-accent-active': '#5b21b6',
+    '--loki-accent-light': '#8b5cf6',
+    '--loki-accent-muted': 'rgba(124, 58, 237, 0.12)',
 
     // Text hierarchy
-    '--loki-text-primary': '#1a1a1a',
-    '--loki-text-secondary': '#5c5c5c',
-    '--loki-text-muted': '#8a8a8a',
-    '--loki-text-disabled': '#b0b0b0',
+    '--loki-text-primary': '#18181b',
+    '--loki-text-secondary': '#52525b',
+    '--loki-text-muted': '#a1a1aa',
+    '--loki-text-disabled': '#d4d4d8',
     '--loki-text-inverse': '#ffffff',
 
     // Border colors
-    '--loki-border': '#e5e3de',
-    '--loki-border-light': '#d4d2cb',
-    '--loki-border-focus': '#d97757',
+    '--loki-border': '#e4e4e7',
+    '--loki-border-light': '#d4d4d8',
+    '--loki-border-focus': '#7c3aed',
 
     // Status colors - semantic
     '--loki-success': '#16a34a',
@@ -79,38 +79,38 @@ export const THEMES = {
     '--loki-shadow-sm': '0 1px 2px rgba(0, 0, 0, 0.05)',
     '--loki-shadow-md': '0 4px 6px rgba(0, 0, 0, 0.07)',
     '--loki-shadow-lg': '0 10px 15px rgba(0, 0, 0, 0.1)',
-    '--loki-shadow-focus': '0 0 0 3px rgba(217, 119, 87, 0.3)',
+    '--loki-shadow-focus': '0 0 0 3px rgba(124, 58, 237, 0.3)',
   },
 
-  // Standard dark theme
+  // Standard dark theme (Vercel/Linear inspired)
   dark: {
-    // Background layers
-    '--loki-bg-primary': '#131314',
-    '--loki-bg-secondary': '#1a1a1b',
-    '--loki-bg-tertiary': '#232325',
-    '--loki-bg-card': '#1e1e20',
-    '--loki-bg-hover': '#2a2a2d',
-    '--loki-bg-active': '#333336',
-    '--loki-bg-overlay': 'rgba(0, 0, 0, 0.7)',
+    // Background layers (deep dark)
+    '--loki-bg-primary': '#09090b',
+    '--loki-bg-secondary': '#0c0c0f',
+    '--loki-bg-tertiary': '#111114',
+    '--loki-bg-card': '#18181b',
+    '--loki-bg-hover': '#1f1f23',
+    '--loki-bg-active': '#27272a',
+    '--loki-bg-overlay': 'rgba(0, 0, 0, 0.8)',
 
-    // Accent colors
-    '--loki-accent': '#d97757',
-    '--loki-accent-hover': '#e08668',
-    '--loki-accent-active': '#e8956f',
-    '--loki-accent-light': '#e8956f',
-    '--loki-accent-muted': 'rgba(217, 119, 87, 0.15)',
+    // Accent colors (purple/violet)
+    '--loki-accent': '#8b5cf6',
+    '--loki-accent-hover': '#a78bfa',
+    '--loki-accent-active': '#7c3aed',
+    '--loki-accent-light': '#a78bfa',
+    '--loki-accent-muted': 'rgba(139, 92, 246, 0.15)',
 
     // Text hierarchy
-    '--loki-text-primary': '#f5f5f5',
-    '--loki-text-secondary': '#a1a1a6',
-    '--loki-text-muted': '#6b6b70',
-    '--loki-text-disabled': '#4a4a4f',
-    '--loki-text-inverse': '#1a1a1a',
+    '--loki-text-primary': '#fafafa',
+    '--loki-text-secondary': '#a1a1aa',
+    '--loki-text-muted': '#52525b',
+    '--loki-text-disabled': '#3f3f46',
+    '--loki-text-inverse': '#09090b',
 
-    // Border colors
-    '--loki-border': '#2d2d30',
-    '--loki-border-light': '#3d3d42',
-    '--loki-border-focus': '#d97757',
+    // Border colors (very subtle)
+    '--loki-border': 'rgba(255, 255, 255, 0.06)',
+    '--loki-border-light': 'rgba(255, 255, 255, 0.1)',
+    '--loki-border-focus': '#8b5cf6',
 
     // Status colors - semantic
     '--loki-success': '#22c55e',
@@ -131,19 +131,19 @@ export const THEMES = {
     '--loki-red-muted': 'rgba(239, 68, 68, 0.15)',
     '--loki-blue': '#3b82f6',
     '--loki-blue-muted': 'rgba(59, 130, 246, 0.15)',
-    '--loki-purple': '#a855f7',
-    '--loki-purple-muted': 'rgba(168, 85, 247, 0.15)',
+    '--loki-purple': '#a78bfa',
+    '--loki-purple-muted': 'rgba(167, 139, 250, 0.15)',
 
     // Model colors
     '--loki-opus': '#f59e0b',
-    '--loki-sonnet': '#6366f1',
-    '--loki-haiku': '#10b981',
+    '--loki-sonnet': '#818cf8',
+    '--loki-haiku': '#34d399',
 
-    // Shadows
-    '--loki-shadow-sm': '0 1px 2px rgba(0, 0, 0, 0.3)',
-    '--loki-shadow-md': '0 4px 6px rgba(0, 0, 0, 0.4)',
-    '--loki-shadow-lg': '0 10px 15px rgba(0, 0, 0, 0.5)',
-    '--loki-shadow-focus': '0 0 0 3px rgba(217, 119, 87, 0.4)',
+    // Shadows (subtle glows)
+    '--loki-shadow-sm': '0 1px 2px rgba(0, 0, 0, 0.4)',
+    '--loki-shadow-md': '0 4px 12px rgba(0, 0, 0, 0.5)',
+    '--loki-shadow-lg': '0 10px 25px rgba(0, 0, 0, 0.6)',
+    '--loki-shadow-focus': '0 0 0 3px rgba(139, 92, 246, 0.25)',
   },
 
   // High contrast theme (accessibility)
@@ -157,12 +157,12 @@ export const THEMES = {
     '--loki-bg-active': '#242424',
     '--loki-bg-overlay': 'rgba(0, 0, 0, 0.9)',
 
-    // High contrast accent
-    '--loki-accent': '#ff9d7a',
-    '--loki-accent-hover': '#ffb396',
-    '--loki-accent-active': '#ffc9b2',
-    '--loki-accent-light': '#ffb396',
-    '--loki-accent-muted': 'rgba(255, 157, 122, 0.25)',
+    // High contrast accent (purple)
+    '--loki-accent': '#c084fc',
+    '--loki-accent-hover': '#d8b4fe',
+    '--loki-accent-active': '#e9d5ff',
+    '--loki-accent-light': '#d8b4fe',
+    '--loki-accent-muted': 'rgba(192, 132, 252, 0.25)',
 
     // High contrast text
     '--loki-text-primary': '#ffffff',
@@ -174,7 +174,7 @@ export const THEMES = {
     // High contrast borders
     '--loki-border': '#ffffff',
     '--loki-border-light': '#cccccc',
-    '--loki-border-focus': '#ff9d7a',
+    '--loki-border-focus': '#c084fc',
 
     // High contrast status colors
     '--loki-success': '#4ade80',
@@ -207,7 +207,7 @@ export const THEMES = {
     '--loki-shadow-sm': 'none',
     '--loki-shadow-md': 'none',
     '--loki-shadow-lg': 'none',
-    '--loki-shadow-focus': '0 0 0 3px #ff9d7a',
+    '--loki-shadow-focus': '0 0 0 3px #c084fc',
   },
 
   // VS Code Light theme - maps VS Code variables
@@ -599,6 +599,11 @@ export function generateTokensCSS() {
     --loki-z-popover: ${Z_INDEX.popover};
     --loki-z-tooltip: ${Z_INDEX.tooltip};
     --loki-z-toast: ${Z_INDEX.toast};
+
+    /* Glass effect */
+    --loki-glass-bg: rgba(255, 255, 255, 0.03);
+    --loki-glass-border: rgba(255, 255, 255, 0.06);
+    --loki-glass-blur: blur(12px);
   `;
 }
 
@@ -969,7 +974,8 @@ export class UnifiedThemeManager {
     const saved = localStorage.getItem(UnifiedThemeManager.STORAGE_KEY);
     if (saved && THEMES[saved]) return saved;
 
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    // Dark-first: default to dark unless system explicitly prefers light
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   }
 
   /**

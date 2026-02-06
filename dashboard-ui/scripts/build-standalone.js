@@ -88,66 +88,66 @@ function generateStandaloneHTML(bundleCode) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Loki Mode Dashboard - Self-contained autonomous AI system monitor">
-  <meta name="theme-color" content="#d97757">
+  <meta name="theme-color" content="#8b5cf6">
   <title>Loki Mode Dashboard</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23d97757' rx='15' width='100' height='100'/><text x='50' y='72' font-size='60' font-weight='bold' text-anchor='middle' fill='white'>L</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%238b5cf6' rx='15' width='100' height='100'/><text x='50' y='72' font-size='60' font-weight='bold' text-anchor='middle' fill='white'>L</text></svg>">
   <style>
     /* CSS Reset and Base Styles */
     :root {
-      /* Light theme (default) */
-      --loki-bg-primary: #faf9f0;
-      --loki-bg-secondary: #f5f4eb;
-      --loki-bg-tertiary: #eeeddf;
-      --loki-bg-card: #ffffff;
-      --loki-bg-hover: #f0efe6;
-      --loki-text-primary: #1a1a1a;
-      --loki-text-secondary: #5c5c5c;
-      --loki-text-muted: #8a8a8a;
-      --loki-accent: #d97757;
-      --loki-accent-hover: #c56a4c;
-      --loki-border: #e5e3de;
-      --loki-border-light: #d4d2cb;
-      --loki-success: #16a34a;
-      --loki-warning: #ca8a04;
-      --loki-error: #dc2626;
-      --loki-info: #2563eb;
+      /* Dark theme (default) */
+      --loki-bg-primary: #09090b;
+      --loki-bg-secondary: #0c0c0f;
+      --loki-bg-tertiary: #111114;
+      --loki-bg-card: #18181b;
+      --loki-bg-hover: #1f1f23;
+      --loki-text-primary: #fafafa;
+      --loki-text-secondary: #a1a1aa;
+      --loki-text-muted: #52525b;
+      --loki-accent: #8b5cf6;
+      --loki-accent-hover: #a78bfa;
+      --loki-border: rgba(255, 255, 255, 0.06);
+      --loki-border-light: rgba(255, 255, 255, 0.1);
+      --loki-success: #22c55e;
+      --loki-warning: #eab308;
+      --loki-error: #ef4444;
+      --loki-info: #3b82f6;
       --loki-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    @media (prefers-color-scheme: dark) {
+    @media (prefers-color-scheme: light) {
       :root {
-        --loki-bg-primary: #131314;
-        --loki-bg-secondary: #1a1a1b;
-        --loki-bg-tertiary: #232325;
-        --loki-bg-card: #1e1e20;
-        --loki-bg-hover: #2a2a2d;
-        --loki-text-primary: #f5f5f5;
-        --loki-text-secondary: #a1a1a6;
-        --loki-text-muted: #6b6b70;
-        --loki-accent: #d97757;
-        --loki-accent-hover: #e08668;
-        --loki-border: #2d2d30;
-        --loki-border-light: #3d3d42;
-        --loki-success: #22c55e;
-        --loki-warning: #eab308;
-        --loki-error: #ef4444;
-        --loki-info: #3b82f6;
+        --loki-bg-primary: #fafafa;
+        --loki-bg-secondary: #f4f4f5;
+        --loki-bg-tertiary: #e4e4e7;
+        --loki-bg-card: #ffffff;
+        --loki-bg-hover: #f0f0f3;
+        --loki-text-primary: #18181b;
+        --loki-text-secondary: #52525b;
+        --loki-text-muted: #a1a1aa;
+        --loki-accent: #7c3aed;
+        --loki-accent-hover: #6d28d9;
+        --loki-border: #e4e4e7;
+        --loki-border-light: #d4d4d8;
+        --loki-success: #16a34a;
+        --loki-warning: #ca8a04;
+        --loki-error: #dc2626;
+        --loki-info: #2563eb;
       }
     }
 
     [data-loki-theme="dark"] {
-      --loki-bg-primary: #131314;
-      --loki-bg-secondary: #1a1a1b;
-      --loki-bg-tertiary: #232325;
-      --loki-bg-card: #1e1e20;
-      --loki-bg-hover: #2a2a2d;
-      --loki-text-primary: #f5f5f5;
-      --loki-text-secondary: #a1a1a6;
-      --loki-text-muted: #6b6b70;
-      --loki-accent: #d97757;
-      --loki-accent-hover: #e08668;
-      --loki-border: #2d2d30;
-      --loki-border-light: #3d3d42;
+      --loki-bg-primary: #09090b;
+      --loki-bg-secondary: #0c0c0f;
+      --loki-bg-tertiary: #111114;
+      --loki-bg-card: #18181b;
+      --loki-bg-hover: #1f1f23;
+      --loki-text-primary: #fafafa;
+      --loki-text-secondary: #a1a1aa;
+      --loki-text-muted: #52525b;
+      --loki-accent: #8b5cf6;
+      --loki-accent-hover: #a78bfa;
+      --loki-border: rgba(255, 255, 255, 0.06);
+      --loki-border-light: rgba(255, 255, 255, 0.1);
       --loki-success: #22c55e;
       --loki-warning: #eab308;
       --loki-error: #ef4444;
@@ -155,18 +155,18 @@ function generateStandaloneHTML(bundleCode) {
     }
 
     [data-loki-theme="light"] {
-      --loki-bg-primary: #faf9f0;
-      --loki-bg-secondary: #f5f4eb;
-      --loki-bg-tertiary: #eeeddf;
+      --loki-bg-primary: #fafafa;
+      --loki-bg-secondary: #f4f4f5;
+      --loki-bg-tertiary: #e4e4e7;
       --loki-bg-card: #ffffff;
-      --loki-bg-hover: #f0efe6;
-      --loki-text-primary: #1a1a1a;
-      --loki-text-secondary: #5c5c5c;
-      --loki-text-muted: #8a8a8a;
-      --loki-accent: #d97757;
-      --loki-accent-hover: #c56a4c;
-      --loki-border: #e5e3de;
-      --loki-border-light: #d4d2cb;
+      --loki-bg-hover: #f0f0f3;
+      --loki-text-primary: #18181b;
+      --loki-text-secondary: #52525b;
+      --loki-text-muted: #a1a1aa;
+      --loki-accent: #7c3aed;
+      --loki-accent-hover: #6d28d9;
+      --loki-border: #e4e4e7;
+      --loki-border-light: #d4d4d8;
       --loki-success: #16a34a;
       --loki-warning: #ca8a04;
       --loki-error: #dc2626;
@@ -193,8 +193,8 @@ function generateStandaloneHTML(bundleCode) {
     /* Dashboard Layout */
     .dashboard-layout {
       display: grid;
-      grid-template-columns: 280px 1fr;
-      grid-template-rows: auto 1fr;
+      grid-template-columns: 240px 1fr;
+      grid-template-rows: 1fr;
       min-height: 100vh;
     }
 
@@ -202,71 +202,123 @@ function generateStandaloneHTML(bundleCode) {
       .dashboard-layout {
         grid-template-columns: 1fr;
       }
-      .sidebar {
-        display: none;
-      }
+      .sidebar { display: none; }
       .sidebar.mobile-open {
-        display: block;
+        display: flex;
         position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 280px;
+        left: 0; top: 0; bottom: 0;
+        width: 240px;
         z-index: 100;
-        background: var(--loki-bg-secondary);
       }
     }
 
-    /* Header */
-    .header {
-      grid-column: 1 / -1;
+    /* Sidebar */
+    .sidebar {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 20px;
-      background: var(--loki-bg-secondary);
-      border-bottom: 1px solid var(--loki-border);
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-right: 1px solid var(--loki-border);
+      overflow-y: auto;
     }
 
-    .logo {
+    .sidebar-logo {
       display: flex;
       align-items: center;
       gap: 10px;
+      padding: 20px 16px 16px;
     }
 
     .logo-icon {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, var(--loki-accent), var(--loki-accent-hover));
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 12px;
       color: white;
     }
 
     .logo-text {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 600;
+      color: var(--loki-text-primary);
     }
 
-    .header-actions {
+    /* Navigation */
+    .nav-links {
       display: flex;
-      gap: 8px;
+      flex-direction: column;
+      padding: 8px;
+      gap: 2px;
+      flex: 1;
+    }
+
+    .nav-link {
+      display: flex;
       align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--loki-text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+      background: none;
+      text-align: left;
+      width: 100%;
+      font-family: inherit;
+    }
+
+    .nav-link:hover {
+      color: var(--loki-text-primary);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .nav-link.active {
+      color: #fafafa;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.08));
+      border-color: rgba(139, 92, 246, 0.15);
+    }
+
+    .nav-link svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      flex-shrink: 0;
+    }
+
+    /* Sidebar footer */
+    .sidebar-footer {
+      padding: 12px;
+      border-top: 1px solid var(--loki-border);
+    }
+
+    .sidebar-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      padding: 8px 4px 0;
     }
 
     .theme-toggle, .api-btn {
-      padding: 6px 12px;
+      padding: 5px 10px;
       background: var(--loki-bg-tertiary);
       border: 1px solid var(--loki-border);
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
       color: var(--loki-text-secondary);
       cursor: pointer;
       transition: all var(--loki-transition);
+      font-family: inherit;
     }
 
     .theme-toggle:hover, .api-btn:hover {
@@ -275,14 +327,15 @@ function generateStandaloneHTML(bundleCode) {
     }
 
     .api-url-input {
-      padding: 6px 10px;
+      padding: 5px 8px;
       background: var(--loki-bg-card);
       border: 1px solid var(--loki-border);
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
       font-family: 'JetBrains Mono', monospace;
       color: var(--loki-text-primary);
-      width: 200px;
+      flex: 1;
+      min-width: 0;
     }
 
     .api-url-input:focus {
@@ -290,71 +343,88 @@ function generateStandaloneHTML(bundleCode) {
       border-color: var(--loki-accent);
     }
 
-    /* Sidebar */
-    .sidebar {
-      padding: 16px;
-      background: var(--loki-bg-secondary);
-      border-right: 1px solid var(--loki-border);
-      overflow-y: auto;
-    }
-
     /* Main Content */
     .main-content {
-      padding: 20px;
+      padding: 24px 28px;
       overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+      height: 100vh;
+      scroll-behavior: smooth;
     }
 
-    /* Section */
-    .section {
-      background: var(--loki-bg-card);
-      border: 1px solid var(--loki-border);
-      border-radius: 10px;
-      padding: 16px;
+    /* Section pages */
+    .section-page {
+      min-height: calc(100vh - 48px);
+      scroll-snap-align: start;
+      padding-bottom: 32px;
     }
 
-    .section-header {
+    .section-page-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 20px;
+      padding-top: 4px;
     }
 
-    .section-title {
-      font-size: 14px;
+    .section-page-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--loki-text-primary);
+    }
+
+    /* Overview grid */
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .overview-card {
+      background: var(--loki-bg-card);
+      border: 1px solid var(--loki-border);
+      border-radius: 10px;
+      padding: 20px;
+      transition: border-color 0.2s;
+    }
+
+    .overview-card:hover {
+      border-color: var(--loki-border-light);
+    }
+
+    .overview-card-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--loki-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .overview-card-value {
+      font-size: 24px;
       font-weight: 600;
       color: var(--loki-text-primary);
     }
 
     /* Offline Banner */
     .offline-banner {
-      grid-column: 1 / -1;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
       background: var(--loki-warning);
-      color: #1a1a1a;
+      color: #18181b;
       padding: 8px 16px;
       text-align: center;
       font-size: 13px;
       font-weight: 500;
       display: none;
+      z-index: 999;
     }
 
     .offline-banner.show {
       display: block;
-    }
-
-    /* Grid layouts */
-    .two-column {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    @media (max-width: 1024px) {
-      .two-column {
-        grid-template-columns: 1fr;
-      }
     }
 
     /* Loading state */
@@ -396,6 +466,12 @@ function generateStandaloneHTML(bundleCode) {
         display: block;
       }
     }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
   </style>
 </head>
 <body>
@@ -406,11 +482,11 @@ function generateStandaloneHTML(bundleCode) {
 
   <!-- Dashboard Layout -->
   <div class="dashboard-layout">
-    <!-- Header -->
-    <header class="header">
-      <div class="logo">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
         <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle menu">
-          <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none">
+          <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none">
             <line x1="3" y1="12" x2="21" y2="12"/>
             <line x1="3" y1="6" x2="21" y2="6"/>
             <line x1="3" y1="18" x2="21" y2="18"/>
@@ -419,64 +495,112 @@ function generateStandaloneHTML(bundleCode) {
         <div class="logo-icon">L</div>
         <span class="logo-text">Loki Mode</span>
       </div>
-      <div class="header-actions">
-        <input type="text" class="api-url-input" id="api-url" placeholder="API URL">
-        <button class="api-btn" id="connect-btn">Connect</button>
-        <button class="theme-toggle" id="theme-toggle">
-          <span id="theme-label">Theme</span>
-        </button>
-      </div>
-    </header>
 
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <loki-session-control id="session-control"></loki-session-control>
+      <nav class="nav-links">
+        <button class="nav-link active" data-section="overview" id="nav-overview">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Overview
+        </button>
+        <button class="nav-link" data-section="tasks" id="nav-tasks">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Tasks
+        </button>
+        <button class="nav-link" data-section="logs" id="nav-logs">
+          <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          Logs
+        </button>
+        <button class="nav-link" data-section="memory" id="nav-memory">
+          <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+          Memory
+        </button>
+        <button class="nav-link" data-section="learning" id="nav-learning">
+          <svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+          Learning
+        </button>
+        <button class="nav-link" data-section="council" id="nav-council">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          Council
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <loki-session-control id="session-control"></loki-session-control>
+        <div class="sidebar-controls">
+          <input type="text" class="api-url-input" id="api-url" placeholder="API URL">
+          <button class="api-btn" id="connect-btn">Go</button>
+          <button class="theme-toggle" id="theme-toggle">
+            <span id="theme-label">Light</span>
+          </button>
+        </div>
+      </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="main-content" id="main-content">
+      <!-- Overview (default) -->
+      <div class="section-page" id="page-overview">
+        <div class="section-page-header">
+          <h2 class="section-page-title">Overview</h2>
+        </div>
+        <div class="overview-grid">
+          <div class="overview-card">
+            <div class="overview-card-label">Session</div>
+            <div class="overview-card-value" id="overview-status">--</div>
+          </div>
+          <div class="overview-card">
+            <div class="overview-card-label">Iteration</div>
+            <div class="overview-card-value" id="overview-iteration">--</div>
+          </div>
+          <div class="overview-card">
+            <div class="overview-card-label">Tasks</div>
+            <div class="overview-card-value" id="overview-tasks">--</div>
+          </div>
+          <div class="overview-card">
+            <div class="overview-card-label">Model</div>
+            <div class="overview-card-value" id="overview-model">--</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Task Board -->
-      <section class="section">
-        <div class="section-header">
-          <h2 class="section-title">Tasks</h2>
+      <div class="section-page" id="page-tasks">
+        <div class="section-page-header">
+          <h2 class="section-page-title">Tasks</h2>
         </div>
         <loki-task-board id="task-board"></loki-task-board>
-      </section>
+      </div>
 
-      <!-- Two Column: Logs + Memory -->
-      <div class="two-column">
-        <!-- Log Stream -->
-        <section class="section">
-          <div class="section-header">
-            <h2 class="section-title">Logs</h2>
-          </div>
-          <loki-log-stream id="log-stream" auto-scroll max-lines="100"></loki-log-stream>
-        </section>
+      <!-- Log Stream -->
+      <div class="section-page" id="page-logs">
+        <div class="section-page-header">
+          <h2 class="section-page-title">Logs</h2>
+        </div>
+        <loki-log-stream id="log-stream" auto-scroll max-lines="500"></loki-log-stream>
+      </div>
 
-        <!-- Memory Browser -->
-        <section class="section">
-          <div class="section-header">
-            <h2 class="section-title">Memory</h2>
-          </div>
-          <loki-memory-browser id="memory-browser" tab="summary"></loki-memory-browser>
-        </section>
+      <!-- Memory Browser -->
+      <div class="section-page" id="page-memory">
+        <div class="section-page-header">
+          <h2 class="section-page-title">Memory</h2>
+        </div>
+        <loki-memory-browser id="memory-browser" tab="summary"></loki-memory-browser>
       </div>
 
       <!-- Learning Dashboard -->
-      <section class="section">
-        <div class="section-header">
-          <h2 class="section-title">Learning Metrics</h2>
+      <div class="section-page" id="page-learning">
+        <div class="section-page-header">
+          <h2 class="section-page-title">Learning Metrics</h2>
         </div>
         <loki-learning-dashboard id="learning-dashboard" time-range="7d"></loki-learning-dashboard>
-      </section>
+      </div>
 
       <!-- Completion Council -->
-      <section class="section">
-        <div class="section-header">
-          <h2 class="section-title">Completion Council</h2>
+      <div class="section-page" id="page-council">
+        <div class="section-page-header">
+          <h2 class="section-page-title">Completion Council</h2>
         </div>
         <loki-council-dashboard id="council-dashboard"></loki-council-dashboard>
-      </section>
+      </div>
     </main>
   </div>
 
@@ -487,15 +611,15 @@ ${bundleCode}
 // Initialize dashboard when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize the dashboard with auto-detect
-  const initResult = LokiDashboard.init({ autoDetectContext: true });
+  var initResult = LokiDashboard.init({ autoDetectContext: true });
   console.log('Loki Dashboard initialized:', initResult);
 
   // Theme toggle functionality
-  const themeToggle = document.getElementById('theme-toggle');
-  const themeLabel = document.getElementById('theme-label');
+  var themeToggle = document.getElementById('theme-toggle');
+  var themeLabel = document.getElementById('theme-label');
 
   function updateThemeLabel() {
-    const theme = LokiDashboard.UnifiedThemeManager.getTheme();
+    var theme = LokiDashboard.UnifiedThemeManager.getTheme();
     themeLabel.textContent = theme.includes('dark') ? 'Light' : 'Dark';
   }
 
@@ -508,13 +632,13 @@ document.addEventListener('DOMContentLoaded', function() {
   updateThemeLabel();
 
   // API URL configuration - auto-detect from current server
-  const apiUrlInput = document.getElementById('api-url');
-  const connectBtn = document.getElementById('connect-btn');
-  const detectedUrl = window.location.origin;
+  var apiUrlInput = document.getElementById('api-url');
+  var connectBtn = document.getElementById('connect-btn');
+  var detectedUrl = window.location.origin;
   apiUrlInput.value = detectedUrl;
 
   function updateComponentsApiUrl(apiUrl) {
-    const components = [
+    var components = [
       'task-board',
       'session-control',
       'log-stream',
@@ -523,7 +647,7 @@ document.addEventListener('DOMContentLoaded', function() {
       'council-dashboard'
     ];
     components.forEach(function(id) {
-      const el = document.getElementById(id);
+      var el = document.getElementById(id);
       if (el) el.setAttribute('api-url', apiUrl);
     });
     console.log('API URL updated:', apiUrl);
@@ -545,20 +669,18 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('offline-banner').classList.add('show');
   });
 
-  // Check initial online status
   if (!navigator.onLine) {
     document.getElementById('offline-banner').classList.add('show');
   }
 
   // Mobile menu toggle
-  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-  const sidebar = document.getElementById('sidebar');
+  var mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  var sidebar = document.getElementById('sidebar');
 
   mobileMenuBtn.addEventListener('click', function() {
     sidebar.classList.toggle('mobile-open');
   });
 
-  // Close sidebar when clicking outside on mobile
   document.addEventListener('click', function(e) {
     if (window.innerWidth <= 768 &&
         sidebar.classList.contains('mobile-open') &&
@@ -568,13 +690,67 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // --- Section Navigation ---
+  var navLinks = document.querySelectorAll('.nav-link');
+  var mainContent = document.getElementById('main-content');
+
+  function switchSection(sectionId) {
+    var pageEl = document.getElementById('page-' + sectionId);
+    if (pageEl) {
+      pageEl.scrollIntoView({ behavior: 'smooth' });
+    }
+    navLinks.forEach(function(link) { link.classList.remove('active'); });
+    var navEl = document.querySelector('.nav-link[data-section="' + sectionId + '"]');
+    if (navEl) navEl.classList.add('active');
+    localStorage.setItem('loki-active-section', sectionId);
+  }
+
+  navLinks.forEach(function(link) {
+    link.addEventListener('click', function() {
+      switchSection(link.dataset.section);
+      // Close mobile sidebar
+      if (window.innerWidth <= 768) {
+        sidebar.classList.remove('mobile-open');
+      }
+    });
+  });
+
+  // IntersectionObserver to track active section on scroll
+  var sectionPages = document.querySelectorAll('.section-page');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
+        var sectionId = entry.target.id.replace('page-', '');
+        navLinks.forEach(function(link) { link.classList.remove('active'); });
+        var navEl = document.querySelector('.nav-link[data-section="' + sectionId + '"]');
+        if (navEl) navEl.classList.add('active');
+      }
+    });
+  }, { root: mainContent, threshold: 0.3 });
+
+  sectionPages.forEach(function(page) { observer.observe(page); });
+
+  // Keyboard shortcuts: Cmd/Ctrl + 1-6
+  document.addEventListener('keydown', function(e) {
+    if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '6') {
+      e.preventDefault();
+      var sections = ['overview', 'tasks', 'logs', 'memory', 'learning', 'council'];
+      switchSection(sections[parseInt(e.key) - 1]);
+    }
+  });
+
+  // Restore last section from localStorage
+  var savedSection = localStorage.getItem('loki-active-section');
+  if (savedSection) {
+    setTimeout(function() { switchSection(savedSection); }, 100);
+  }
+
   // Add initial log entry and verify connection
   setTimeout(function() {
-    const logStream = document.getElementById('log-stream');
+    var logStream = document.getElementById('log-stream');
     if (logStream && logStream.addLog) {
       logStream.addLog('Dashboard initialized', 'success');
       logStream.addLog('Connecting to ' + detectedUrl + '...', 'info');
-      // Verify API is reachable
       fetch(detectedUrl + '/health').then(function(r) {
         return r.json();
       }).then(function(data) {
@@ -586,6 +762,27 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
   }, 500);
+
+  // Overview cards polling
+  function updateOverviewCards() {
+    fetch(detectedUrl + '/api/status').then(function(r) {
+      return r.json();
+    }).then(function(data) {
+      var statusEl = document.getElementById('overview-status');
+      var iterEl = document.getElementById('overview-iteration');
+      var tasksEl = document.getElementById('overview-tasks');
+      var modelEl = document.getElementById('overview-model');
+      if (statusEl) statusEl.textContent = (data.status || data.state || 'idle').toUpperCase();
+      if (iterEl) iterEl.textContent = data.iteration || data.current_iteration || '0';
+      if (modelEl) modelEl.textContent = data.model || data.current_model || '--';
+      if (tasksEl) {
+        var total = (data.tasks_completed || 0) + (data.tasks_remaining || 0);
+        tasksEl.textContent = total > 0 ? (data.tasks_completed || 0) + '/' + total : '--';
+      }
+    }).catch(function() {});
+  }
+  updateOverviewCards();
+  setInterval(updateOverviewCards, 5000);
 });
   </script>
 </body>

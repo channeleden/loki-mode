@@ -432,8 +432,16 @@ class MemoryStorage:
                     "patterns": []
                 }
 
-            # Add new pattern
-            patterns_file["patterns"].append(pattern_data)
+            # Upsert: update existing pattern or append new
+            existing_idx = None
+            for i, p in enumerate(patterns_file["patterns"]):
+                if p.get("id") == pattern_id:
+                    existing_idx = i
+                    break
+            if existing_idx is not None:
+                patterns_file["patterns"][existing_idx] = pattern_data
+            else:
+                patterns_file["patterns"].append(pattern_data)
             patterns_file["last_updated"] = datetime.now(timezone.utc).isoformat()
 
             # Write atomically
@@ -853,14 +861,27 @@ class MemoryStorage:
         path = os.path.join(self.base_path, subpath)
         os.makedirs(path, exist_ok=True)
 
+    def _resolve_path(self, filepath: str) -> str:
+        """Resolve filepath within base_path, preventing path traversal."""
+        if os.path.isabs(filepath):
+            raise ValueError(f"Absolute paths not allowed: {filepath}")
+        if ".." in filepath.split(os.sep):
+            raise ValueError(f"Path traversal not allowed: {filepath}")
+        full_path = os.path.join(self.base_path, filepath)
+        real_base = os.path.realpath(self.base_path)
+        real_full = os.path.realpath(full_path)
+        if not real_full.startswith(real_base + os.sep) and real_full != real_base:
+            raise ValueError(f"Path escapes base directory: {filepath}")
+        return full_path
+
     def read_json(self, filepath: str) -> Optional[dict]:
         """Read JSON file, return None if not found."""
-        full_path = os.path.join(self.base_path, filepath) if not os.path.isabs(filepath) else filepath
+        full_path = self._resolve_path(filepath)
         return self._load_json(full_path)
 
     def write_json(self, filepath: str, data: dict) -> None:
         """Write JSON file atomically."""
-        full_path = os.path.join(self.base_path, filepath) if not os.path.isabs(filepath) else filepath
+        full_path = self._resolve_path(filepath)
         self._atomic_write(full_path, data)
 
     def list_files(self, subpath: str, pattern: str = "*.json") -> List[Path]:
@@ -872,7 +893,7 @@ class MemoryStorage:
 
     def delete_file(self, filepath: str) -> bool:
         """Delete file, return True if deleted."""
-        full_path = os.path.join(self.base_path, filepath) if not os.path.isabs(filepath) else filepath
+        full_path = self._resolve_path(filepath)
         try:
             os.remove(full_path)
             return True

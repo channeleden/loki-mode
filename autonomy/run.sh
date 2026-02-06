@@ -3546,6 +3546,10 @@ start_dashboard() {
             break
         fi
         ((DASHBOARD_PORT++))
+        if [ "$DASHBOARD_PORT" -gt 65535 ]; then
+            log_error "Exhausted valid port range"
+            return 1
+        fi
         ((attempt++))
         log_info "Port $((DASHBOARD_PORT-1)) in use, trying $DASHBOARD_PORT..."
     done
@@ -3572,11 +3576,16 @@ start_dashboard() {
     DASHBOARD_PID=$!
 
     # Save PID for later cleanup
-    echo "$DASHBOARD_PID" > .loki/dashboard/dashboard.pid
+    mkdir -p .loki/dashboard
+    if ! echo "$DASHBOARD_PID" > .loki/dashboard/dashboard.pid; then
+        log_error "Failed to write dashboard PID file"
+        kill "$DASHBOARD_PID" 2>/dev/null || true
+        return 1
+    fi
 
     sleep 2
 
-    if kill -0 $DASHBOARD_PID 2>/dev/null; then
+    if kill -0 "$DASHBOARD_PID" 2>/dev/null; then
         log_info "Dashboard started (PID: $DASHBOARD_PID)"
         log_info "Dashboard: ${CYAN}http://127.0.0.1:$DASHBOARD_PORT/${NC}"
 
@@ -5005,6 +5014,9 @@ EOF
 #===============================================================================
 
 cleanup() {
+    # Block further signals during critical cleanup operations
+    trap '' INT TERM
+
     local current_time=$(date +%s)
     local time_diff=$((current_time - INTERRUPT_LAST_TIME))
     local loki_dir="${TARGET_DIR:-.}/.loki"
@@ -5019,13 +5031,14 @@ cleanup() {
         stop_status_monitor
         rm -f "$loki_dir/loki.pid" 2>/dev/null
         if [ -f "$loki_dir/session.json" ]; then
-            python3 -c "
-import json
+            _LOKI_SESSION_FILE="$loki_dir/session.json" python3 -c "
+import json, os
+sf = os.environ['_LOKI_SESSION_FILE']
 try:
-    with open('$loki_dir/session.json', 'r+') as f:
+    with open(sf, 'r+') as f:
         d = json.load(f); d['status'] = 'stopped'
         f.seek(0); f.truncate(); json.dump(d, f)
-except: pass
+except (json.JSONDecodeError, OSError): pass
 " 2>/dev/null || true
         fi
         save_state ${RETRY_COUNT:-0} "stopped" 0
@@ -5049,7 +5062,7 @@ try:
     with open('.loki/session.json', 'r+') as f:
         d = json.load(f); d['status'] = 'stopped'
         f.seek(0); f.truncate(); json.dump(d, f)
-except: pass
+except (json.JSONDecodeError, OSError): pass
 " 2>/dev/null || true
         fi
         save_state ${RETRY_COUNT:-0} "interrupted" 130
@@ -5057,6 +5070,9 @@ except: pass
         log_info "State saved. Run again to resume."
         exit 130
     fi
+
+    # Re-enable signals for pause mode
+    trap cleanup INT TERM
 
     # First Ctrl+C - pause and show options
     INTERRUPT_COUNT=$((INTERRUPT_COUNT + 1))
@@ -5432,7 +5448,7 @@ try:
     with open('.loki/session.json', 'r+') as f:
         d = json.load(f); d['status'] = 'stopped'
         f.seek(0); f.truncate(); json.dump(d, f)
-except: pass
+except (json.JSONDecodeError, OSError): pass
 " 2>/dev/null || true
     fi
 

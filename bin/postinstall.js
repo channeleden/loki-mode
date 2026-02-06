@@ -12,8 +12,13 @@ const homeDir = os.homedir();
 const skillDir = path.join(homeDir, '.claude', 'skills', 'loki-mode');
 const packageDir = path.join(__dirname, '..');
 
+const version = (() => {
+  try { return fs.readFileSync(path.join(packageDir, 'VERSION'), 'utf8').trim(); }
+  catch { return require(path.join(packageDir, 'package.json')).version; }
+})();
+
 console.log('');
-console.log('Loki Mode v5.2.4 installed!');
+console.log(`Loki Mode v${version} installed!`);
 console.log('');
 
 // Try to create skill symlink
