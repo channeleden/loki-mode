@@ -489,6 +489,53 @@ loki enterprise audit summary
 
 ---
 
+## Knowledge Compounding Commands
+
+### `loki compound`
+
+Manage knowledge compounding -- structured solutions extracted from session learnings (v5.30.0).
+
+```bash
+loki compound [SUBCOMMAND]
+```
+
+**Subcommands:**
+
+| Command | Description |
+|---------|-------------|
+| `list` | List solutions by category with counts |
+| `show CATEGORY` | Show solutions in a category |
+| `search QUERY` | Search across all solutions |
+| `run` | Manually trigger compounding from current session learnings |
+| `stats` | Show solution statistics (count, newest, oldest) |
+| `help` | Show compound help |
+
+**Examples:**
+```bash
+# List all solutions by category
+loki compound list
+
+# Show solutions in a specific category
+loki compound show security
+loki compound show performance
+
+# Search for solutions
+loki compound search "docker"
+loki compound search "authentication"
+
+# Manually trigger compounding
+loki compound run
+
+# View statistics
+loki compound stats
+```
+
+**Categories:** security, performance, architecture, testing, debugging, deployment, general
+
+**Solution Storage:** `~/.loki/solutions/{category}/*.md` (YAML frontmatter + markdown body)
+
+---
+
 ## Completion Council Commands
 
 ### `loki council`

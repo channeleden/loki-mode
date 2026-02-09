@@ -257,6 +257,82 @@ Loki Mode extracts learnings from `CONTINUITY.md`:
 
 ---
 
+## Knowledge Compounding (v5.30.0)
+
+In addition to raw JSONL learnings, Loki Mode can extract **structured solutions** -- curated, categorized knowledge with YAML frontmatter that feeds back into future planning.
+
+### How It Differs from Raw Learnings
+
+| Aspect | Raw Learnings (JSONL) | Structured Solutions (MD) |
+|--------|----------------------|--------------------------|
+| Format | JSON lines, append-only | Markdown with YAML frontmatter |
+| Structure | Flat description field | title, tags, symptoms, root_cause, prevention |
+| Storage | `~/.loki/learnings/*.jsonl` | `~/.loki/solutions/{category}/*.md` |
+| Retrieval | Keyword grep | Tag + symptom matching, relevance scoring |
+| Categories | patterns/mistakes/successes | security/performance/architecture/testing/debugging/deployment/general |
+
+### Solution File Format
+
+```yaml
+---
+title: "Connection pool exhaustion under load"
+category: performance
+tags: [database, pool, timeout, postgres]
+symptoms:
+  - "ECONNREFUSED on database queries under load"
+root_cause: "Default pool size of 10 insufficient"
+prevention: "Set pool size to 2x concurrent connections"
+confidence: 0.85
+source_project: "auth-service"
+created: "2026-02-09T12:00:00Z"
+applied_count: 0
+---
+
+## Solution
+[Detailed explanation of fix]
+
+## Context
+[How this was discovered]
+```
+
+### When Solutions Are Created
+
+- After VERIFY passes with novel insight (automatic via COMPOUND phase)
+- When fixing a non-obvious bug (root cause analysis)
+- When discovering a reusable pattern
+- When hitting a pitfall worth documenting
+- Manually via `loki compound run`
+
+### CLI Commands
+
+```bash
+# List solutions by category
+loki compound list
+
+# Show solutions in a category
+loki compound show security
+
+# Search across all solutions
+loki compound search "authentication"
+
+# Manually trigger compounding from session learnings
+loki compound run
+
+# View statistics
+loki compound stats
+```
+
+### Solution Loading
+
+At the start of each session, Loki Mode:
+
+1. Scans `~/.loki/solutions/` subdirectories
+2. Reads YAML frontmatter from each solution file
+3. Matches tags and symptoms against current task context
+4. Injects top 3 relevant solutions into the REASON phase context
+
+---
+
 ## See Also
 
 - [[API Reference]] - Memory API endpoints

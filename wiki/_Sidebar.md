@@ -19,6 +19,7 @@
 - [[Dashboard]]
 - [[Completion Council]]
 - [[Cross-Project Learning]]
+- [[Knowledge Compounding]]
 - [[GitHub Integration]]
 
 ### Enterprise

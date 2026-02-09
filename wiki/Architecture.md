@@ -50,6 +50,116 @@ Error states:
 
 ---
 
+## RARV+C Cycle (v5.30.0)
+
+```
+Every iteration follows: Reason -> Act -> Reflect -> Verify -> Compound
+
++----------+     +----------+     +----------+     +----------+
+|  REASON  | --> |   ACT    | --> | REFLECT  | --> |  VERIFY  |
+| Load     |     | Execute  |     | Analyze  |     | Test &   |
+| context  |     | plan     |     | results  |     | validate |
++----------+     +----------+     +----------+     +----+-----+
+     ^                                                   |
+     |                                              PASS | FAIL
+     |           +----------+                       |    |
+     +-----------+ COMPOUND |<----------------------+    |
+                 | Extract  |                            |
+                 | solution |                            v
+                 +----------+                     [Fix & retry]
+
+COMPOUND phase (new in v5.30.0):
+  - Triggered after VERIFY passes
+  - Extracts structured solution if task had novel insight
+  - Writes to ~/.loki/solutions/{category}/{slug}.md
+  - YAML frontmatter: title, category, tags, symptoms, root_cause, prevention
+  - Skips trivial changes (typos, formatting, standard CRUD)
+```
+
+---
+
+## DEEPEN_PLAN Phase (v5.30.0)
+
+```
+                    +------------------+
+                    |   ARCHITECTURE   |
+                    | - System design  |
+                    | - API contracts  |
+                    +--------+---------+
+                             |
+                             | Design approved (standard/complex only)
+                             v
+                    +--------+---------+
+                    |   DEEPEN_PLAN    |
+                    | 4 parallel agents|
+                    +--------+---------+
+                             |
+         +-------------------+-------------------+-------------------+
+         |                   |                   |                   |
+         v                   v                   v                   v
++--------+------+   +--------+-------+   +-------+--------+   +-----+----------+
+| Repo Analyzer |   | Dependency     |   | Edge Case      |   | Security Threat|
+| - Patterns    |   | Researcher     |   | Finder         |   | Modeler        |
+| - Conventions |   | - Best practice|   | - Concurrency  |   | - Auth flows   |
+| - Reuse       |   | - Known issues |   | - Failures     |   | - Data exposure|
++--------+------+   +--------+-------+   +-------+--------+   +-----+----------+
+         |                   |                   |                   |
+         +-------------------+-------------------+-------------------+
+                             |
+                             v
+                    +--------+---------+
+                    |  INFRASTRUCTURE  |
+                    | - Enhanced plan  |
+                    | - Edge cases     |
+                    | - Threat model   |
+                    +------------------+
+
+Only runs for standard/complex tiers. Skipped for simple tier.
+Requires Claude provider (needs Task tool for parallel agents).
+```
+
+---
+
+## Specialist Review Agents (v5.30.0)
+
+```
+                         +----------------+
+                         |   CODE DIFF    |
+                         +-------+--------+
+                                 |
+                                 | Keyword analysis
+                                 v
+                    +------------+-------------+
+                    |  SPECIALIST SELECTION     |
+                    |  (3 of 5 pool)           |
+                    +------------+-------------+
+                                 |
+         +-----------------------+-----------------------+
+         |                       |                       |
+         v                       v                       v
++--------+--------+    +--------+--------+    +--------+--------+
+| ARCHITECTURE    |    | [SELECTED #2]   |    | [SELECTED #3]   |
+| STRATEGIST      |    | By keyword match|    | By keyword match|
+| (always slot 1) |    |                 |    |                 |
++-----------------+    +-----------------+    +-----------------+
+
+Specialist Pool:
+  1. architecture-strategist  (ALWAYS included - SOLID, coupling, patterns)
+  2. security-sentinel        (OWASP, injection, auth, secrets)
+  3. performance-oracle       (N+1, memory leaks, caching, bundle size)
+  4. test-coverage-auditor    (missing tests, edge cases, error paths)
+  5. dependency-analyst       (outdated packages, CVEs, bloat, licenses)
+
+Selection rules:
+  - Slot 1: architecture-strategist (always)
+  - Slot 2-3: Top 2 by trigger keyword matches against diff
+  - Tie-breaker: security > test-coverage > performance > dependency
+  - All 3 run in parallel (blind, no cross-visibility)
+  - Unanimous PASS triggers devil's advocate (anti-sycophancy)
+```
+
+---
+
 ## Task Queue State Machine
 
 ```
@@ -116,7 +226,7 @@ Queue files:
          v
 +--------+---------+
 |   CODE REVIEW    |
-| - 3 reviewers    |
+| - 3 specialists  |
 | - Devil's adv.   |
 +--------+---------+
          |
@@ -136,8 +246,8 @@ Queue files:
 
 Complexity tiers:
   Simple:   3 phases (Requirements -> Development -> Testing)
-  Standard: 6 phases (+ Planning, Review, Deployment)
-  Complex:  8 phases (+ Security, Performance, Accessibility)
+  Standard: 7 phases (+ Planning, Deepen-Plan, Review, Deployment)
+  Complex:  9 phases (+ Security, Performance, Accessibility)
 ```
 
 ---
@@ -437,6 +547,52 @@ State: .loki/council/state.json
 Votes: .loki/council/votes/
 Report: .loki/council/report.md
 Convergence: .loki/council/convergence.log
+```
+
+---
+
+## Knowledge Compounding Architecture (v5.30.0)
+
+```
++------------------+
+|    SESSION END   |
++--------+---------+
+         |
+         | Extract learnings (existing)
+         v
++--------+---------+          +------------------+
+| JSONL LEARNINGS  |          | ~/.loki/solutions/|
+| - patterns.jsonl |          |   security/      |
+| - mistakes.jsonl |--------->|   performance/   |
+| - successes.jsonl|  compound|   architecture/  |
++------------------+          |   testing/       |
+                              |   debugging/     |
+                              |   deployment/    |
+                              |   general/       |
+                              +--------+---------+
+                                       |
+                                       | On next session start
+                                       v
+                              +--------+---------+
+                              | SOLUTION LOADING |
+                              | - Match tags     |
+                              | - Score relevance|
+                              | - Top 3 injected |
+                              +------------------+
+
+Solution file format:
+  ~/.loki/solutions/{category}/{slug}.md
+  ---
+  title: "Connection pool exhaustion"
+  category: performance
+  tags: [database, pool, timeout]
+  symptoms: ["ECONNREFUSED under load"]
+  root_cause: "Default pool size insufficient"
+  prevention: "Set pool size to 2x connections"
+  confidence: 0.85
+  ---
+  ## Solution
+  [Detailed explanation]
 ```
 
 ---
