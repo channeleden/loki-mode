@@ -5,6 +5,23 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.30.0] - 2026-02-09
+
+### Added
+- Knowledge Compounding system (COMPOUND phase) - structured solution files with YAML frontmatter at `~/.loki/solutions/{category}/`
+- Deepen-Plan phase - 4 parallel research agents (repo-analyzer, dependency-researcher, edge-case-finder, security-threat-modeler) enhance architecture plans before coding
+- CLI: `loki compound` with 6 subcommands (list, show, search, run, stats, help)
+- Skill module: `skills/compound-learning.md` for knowledge compounding and deep planning
+- `compound_session_to_solutions()` function in run.sh for automated learning extraction
+- `load_solutions_context()` function in run.sh for solution retrieval during REASON phase
+
+### Changed
+- RARV cycle extended to RARV+C (Compound) - extract structured solutions after VERIFY passes
+- Phase transitions: ARCHITECTURE -> DEEPEN_PLAN -> INFRASTRUCTURE for standard/complex tiers
+- Blind review system enhanced with 5 Specialist Review Agents (security-sentinel, performance-oracle, architecture-strategist, test-coverage-auditor, dependency-analyst) - 3-slot selection from specialist pool
+- Review agent selection: architecture-strategist always included + top 2 by trigger keyword match
+- Agent dispatch patterns updated to use sonnet for all review specialists
+
 ## [5.29.0] - 2026-02-08
 
 ### Added
