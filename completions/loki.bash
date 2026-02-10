@@ -1,0 +1,119 @@
+#!/bin/bash
+
+_loki_completion() {
+    local cur prev words cword
+    _init_completion || return
+
+    # Main subcommands (must match autonomy/loki main case statement)
+    local main_commands="start quick demo init stop pause resume status dashboard logs serve api sandbox notify import issue config provider reset memory compound council dogfood projects enterprise voice version completions help"
+
+    # 1. If we are on the first argument (subcommand)
+    if [[ $cword -eq 1 ]]; then
+        COMPREPLY=( $(compgen -W "${main_commands}" -- "$cur") )
+        return 0
+    fi
+
+    # 2. Handle subcommands and their specific flags/args
+    case "${words[1]}" in
+        start)
+            # If the previous word was --provider, show provider names
+            if [[ "$prev" == "--provider" ]]; then
+                COMPREPLY=( $(compgen -W "claude codex gemini" -- "$cur") )
+                return 0
+            fi
+
+            # If the word starts with a dash, show flags
+            if [[ "$cur" == -* ]]; then
+                local flags="--provider --max-iterations --parallel --background --bg --simple --complex --github --no-dashboard --sandbox --skip-memory --yes --budget --help"
+                COMPREPLY=( $(compgen -W "${flags}" -- "$cur") )
+                return 0
+            fi
+
+            # Otherwise, default to file completion (for PRD files)
+            COMPREPLY=( $(compgen -f -- "$cur") )
+            ;;
+
+        council)
+            local council_cmds="status verdicts convergence force-review report config help"
+            COMPREPLY=( $(compgen -W "${council_cmds}" -- "$cur") )
+            ;;
+
+        memory)
+            local memory_cmds="list show search stats export clear dedupe index timeline consolidate economics retrieve episode pattern skill vectors help"
+            COMPREPLY=( $(compgen -W "${memory_cmds}" -- "$cur") )
+            ;;
+
+        compound)
+            local compound_cmds="list show search run stats help"
+            COMPREPLY=( $(compgen -W "${compound_cmds}" -- "$cur") )
+            ;;
+
+        provider)
+            local provider_cmds="show set list info help"
+            COMPREPLY=( $(compgen -W "${provider_cmds}" -- "$cur") )
+            ;;
+
+        config)
+            local config_cmds="show init edit path help"
+            COMPREPLY=( $(compgen -W "${config_cmds}" -- "$cur") )
+            ;;
+
+        dashboard)
+            local dashboard_cmds="start stop status url open help"
+            COMPREPLY=( $(compgen -W "${dashboard_cmds}" -- "$cur") )
+            ;;
+
+        sandbox)
+            local sandbox_cmds="start stop status logs shell build help"
+            COMPREPLY=( $(compgen -W "${sandbox_cmds}" -- "$cur") )
+            ;;
+
+        notify)
+            local notify_cmds="test slack discord webhook status help"
+            COMPREPLY=( $(compgen -W "${notify_cmds}" -- "$cur") )
+            ;;
+
+        enterprise)
+            local enterprise_cmds="status token audit help"
+            COMPREPLY=( $(compgen -W "${enterprise_cmds}" -- "$cur") )
+            ;;
+
+        projects)
+            local projects_cmds="list show register add remove discover sync health help"
+            COMPREPLY=( $(compgen -W "${projects_cmds}" -- "$cur") )
+            ;;
+
+        voice)
+            local voice_cmds="status listen dictate speak start help"
+            COMPREPLY=( $(compgen -W "${voice_cmds}" -- "$cur") )
+            ;;
+
+        reset)
+            local reset_cmds="all retries failed help"
+            COMPREPLY=( $(compgen -W "${reset_cmds}" -- "$cur") )
+            ;;
+
+        logs)
+            if [[ "$cur" == -* ]]; then
+                COMPREPLY=( $(compgen -W "--follow -f --lines -n --help" -- "$cur") )
+                return 0
+            fi
+            ;;
+
+        issue)
+            if [[ "$cur" == -* ]]; then
+                COMPREPLY=( $(compgen -W "--repo --start --dry-run --output --help" -- "$cur") )
+                return 0
+            fi
+            local issue_cmds="parse view"
+            COMPREPLY=( $(compgen -W "${issue_cmds}" -- "$cur") )
+            ;;
+
+        completions)
+            COMPREPLY=( $(compgen -W "bash zsh" -- "$cur") )
+            ;;
+    esac
+}
+
+# NOTE: Removed '-o nospace'. Added '-o filenames' to handle paths correctly.
+complete -o bashdefault -o default -o filenames -F _loki_completion loki
