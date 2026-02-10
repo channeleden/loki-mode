@@ -1,28 +1,17 @@
 /**
- * Loki Memory Browser Component
+ * @fileoverview Loki Memory Browser Component - tabbed browser for the
+ * Loki Mode memory system covering episodic, semantic, and procedural
+ * memory layers. Includes summary view, detail panels, token economics,
+ * and memory consolidation controls.
  *
- * Browser for the Loki Mode memory system with episodic, semantic, and procedural memory.
- *
- * Usage:
- *   <loki-memory-browser
- *     api-url="http://localhost:8420"
- *     theme="dark"
- *   ></loki-memory-browser>
- *
- * Attributes:
- *   - api-url: API base URL (default: auto-detected from window.location.origin)
- *   - theme: 'light' or 'dark' (default: auto-detect)
- *   - tab: Initial tab ('summary' | 'episodes' | 'patterns' | 'skills')
- *
- * Events:
- *   - episode-select: Fired when an episode is selected
- *   - pattern-select: Fired when a pattern is selected
- *   - skill-select: Fired when a skill is selected
+ * @example
+ * <loki-memory-browser api-url="http://localhost:57374" theme="dark" tab="summary"></loki-memory-browser>
  */
 
 import { LokiElement } from '../core/loki-theme.js';
 import { getApiClient } from '../core/loki-api-client.js';
 
+/** @type {Array<{id: string, label: string, icon: string}>} Tab definitions with SVG path data */
 const TABS = [
   { id: 'summary', label: 'Summary', icon: 'M4 6h16M4 12h16M4 18h16' },
   { id: 'episodes', label: 'Episodes', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
@@ -30,6 +19,16 @@ const TABS = [
   { id: 'skills', label: 'Skills', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
 ];
 
+/**
+ * @class LokiMemoryBrowser
+ * @extends LokiElement
+ * @fires episode-select - When an episode item is clicked
+ * @fires pattern-select - When a pattern item is clicked
+ * @fires skill-select - When a skill item is clicked
+ * @property {string} api-url - API base URL (default: window.location.origin)
+ * @property {string} theme - 'light' or 'dark' (default: auto-detect)
+ * @property {string} tab - Initial active tab ('summary'|'episodes'|'patterns'|'skills')
+ */
 export class LokiMemoryBrowser extends LokiElement {
   static get observedAttributes() {
     return ['api-url', 'theme', 'tab'];

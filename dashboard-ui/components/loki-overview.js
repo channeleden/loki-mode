@@ -1,28 +1,24 @@
 /**
- * Loki Overview Component
+ * @fileoverview Loki Overview Component - displays system overview cards
+ * in a responsive grid showing session status, phase, iteration, provider,
+ * agents, tasks, uptime, and complexity.
  *
- * Displays system overview cards in a responsive grid showing
- * session status, phase, iteration, provider, agents, tasks,
- * uptime, and complexity.
+ * Polls /api/status every 5 seconds and listens to ApiEvents.STATUS_UPDATE
+ * for immediate updates.
  *
- * Usage:
- *   <loki-overview
- *     api-url="http://localhost:57374"
- *     theme="dark"
- *   ></loki-overview>
- *
- * Attributes:
- *   - api-url: API base URL (default: auto-detected from window.location.origin)
- *   - theme: 'light' or 'dark' (default: auto-detect)
- *
- * Data source:
- *   Polls /api/status every 5 seconds and listens to ApiEvents.STATUS_UPDATE
- *   for immediate updates.
+ * @example
+ * <loki-overview api-url="http://localhost:57374" theme="dark"></loki-overview>
  */
 
 import { LokiElement } from '../core/loki-theme.js';
 import { getApiClient, ApiEvents } from '../core/loki-api-client.js';
 
+/**
+ * @class LokiOverview
+ * @extends LokiElement
+ * @property {string} api-url - API base URL (default: window.location.origin)
+ * @property {string} theme - 'light' or 'dark' (default: auto-detect)
+ */
 export class LokiOverview extends LokiElement {
   static get observedAttributes() {
     return ['api-url', 'theme'];

@@ -1,26 +1,18 @@
 /**
- * Loki Task Board Component
+ * @fileoverview Loki Task Board Component - a Kanban-style task board for
+ * displaying and managing tasks across four columns: Pending, In Progress,
+ * In Review, and Completed. Supports drag-and-drop reordering and
+ * keyboard navigation.
  *
- * A Kanban-style task board web component for displaying and managing tasks.
- *
- * Usage:
- *   <loki-task-board
- *     api-url="http://localhost:8420"
- *     project-id="1"
- *     theme="dark"
- *   ></loki-task-board>
- *
- * Attributes:
- *   - api-url: API base URL (default: auto-detected from window.location.origin)
- *   - project-id: Filter tasks by project ID
- *   - theme: 'light' or 'dark' (default: auto-detect)
- *   - readonly: Disable drag-drop and editing
+ * @example
+ * <loki-task-board api-url="http://localhost:57374" project-id="1" theme="dark"></loki-task-board>
  */
 
 import { LokiElement } from '../core/loki-theme.js';
 import { getApiClient, ApiEvents } from '../core/loki-api-client.js';
 import { getState } from '../core/loki-state.js';
 
+/** @type {Array<{id: string, label: string, status: string, color: string}>} */
 const COLUMNS = [
   { id: 'pending', label: 'Pending', status: 'pending', color: 'var(--loki-text-muted)' },
   { id: 'in_progress', label: 'In Progress', status: 'in_progress', color: 'var(--loki-blue)' },
@@ -28,6 +20,7 @@ const COLUMNS = [
   { id: 'done', label: 'Completed', status: 'done', color: 'var(--loki-green)' },
 ];
 
+/** @type {Object<string, string>} Maps priority level to CSS color variable */
 const PRIORITY_COLORS = {
   critical: 'var(--loki-red)',
   high: 'var(--loki-red)',
@@ -35,6 +28,17 @@ const PRIORITY_COLORS = {
   low: 'var(--loki-green)',
 };
 
+/**
+ * @class LokiTaskBoard
+ * @extends LokiElement
+ * @fires task-moved - When a task is dragged to a new column
+ * @fires add-task - When the add task button is clicked
+ * @fires task-click - When a task card is clicked
+ * @property {string} api-url - API base URL (default: window.location.origin)
+ * @property {string} project-id - Filter tasks by project ID
+ * @property {string} theme - 'light' or 'dark' (default: auto-detect)
+ * @property {boolean} readonly - Disables drag-drop and editing when present
+ */
 export class LokiTaskBoard extends LokiElement {
   static get observedAttributes() {
     return ['api-url', 'project-id', 'theme', 'readonly'];

@@ -1,28 +1,18 @@
 /**
- * Loki Completion Council Dashboard Component
+ * @fileoverview Loki Completion Council Dashboard Component - displays
+ * council state, vote history, convergence tracking, and agent management
+ * across four tabs: Overview, Decision Log, Convergence, and Agents.
+ * Polls council and agent APIs every 3 seconds with visibility-aware
+ * pause/resume to avoid unnecessary requests when hidden.
  *
- * Displays council state, vote history, convergence tracking, agent management,
- * and decision logs for the Completion Council system.
- *
- * Usage:
- *   <loki-council-dashboard
- *     api-url="http://localhost:57374"
- *     theme="dark"
- *   ></loki-council-dashboard>
- *
- * Attributes:
- *   - api-url: API base URL (default: auto-detected from window.location.origin)
- *   - theme: 'light' or 'dark' (default: auto-detect)
- *
- * Events:
- *   - council-action: Fired when a council action is taken (force-review, kill agent, etc.)
- *
- * @version 1.0.0
+ * @example
+ * <loki-council-dashboard api-url="http://localhost:57374" theme="dark"></loki-council-dashboard>
  */
 
 import { LokiElement } from '../core/loki-theme.js';
 import { getApiClient } from '../core/loki-api-client.js';
 
+/** @type {Array<{id: string, label: string}>} Council dashboard tab definitions */
 const COUNCIL_TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'decisions', label: 'Decision Log' },
@@ -30,6 +20,13 @@ const COUNCIL_TABS = [
   { id: 'agents', label: 'Agents' },
 ];
 
+/**
+ * @class LokiCouncilDashboard
+ * @extends LokiElement
+ * @fires council-action - When a council action is taken (force-review, kill/pause/resume agent)
+ * @property {string} api-url - API base URL (default: window.location.origin)
+ * @property {string} theme - 'light' or 'dark' (default: auto-detect)
+ */
 export class LokiCouncilDashboard extends LokiElement {
   static get observedAttributes() {
     return ['api-url', 'theme'];

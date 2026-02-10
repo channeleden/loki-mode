@@ -1,21 +1,11 @@
 /**
- * Loki Cost Dashboard Component
+ * @fileoverview Loki Cost Dashboard Component - displays token usage,
+ * estimated USD cost by model/phase, budget tracking with progress bars,
+ * and a live-updated API pricing reference grid. Polls /api/cost every
+ * 5 seconds and loads pricing from /api/pricing on mount.
  *
- * Displays cost visibility metrics including token usage,
- * estimated USD cost by model, cost per phase, and budget tracking.
- *
- * Usage:
- *   <loki-cost-dashboard
- *     api-url="(auto-detected from window.location.origin)"
- *     theme="dark"
- *   ></loki-cost-dashboard>
- *
- * Attributes:
- *   - api-url: API base URL (default: auto-detected from window.location.origin)
- *   - theme: 'light' or 'dark' (default: auto-detect)
- *
- * Data source:
- *   Polls /api/cost every 5 seconds for token usage and cost data.
+ * @example
+ * <loki-cost-dashboard api-url="http://localhost:57374" theme="dark"></loki-cost-dashboard>
  */
 
 import { LokiElement } from '../core/loki-theme.js';
@@ -23,6 +13,7 @@ import { getApiClient, ApiEvents } from '../core/loki-api-client.js';
 
 // Static fallback pricing per million tokens (USD) - updated 2026-02-07
 // At runtime, these are overridden by /api/pricing (which reads .loki/pricing.json)
+/** @type {Object<string, {input: number, output: number, label: string, provider: string}>} Fallback pricing per million tokens (USD) */
 const DEFAULT_PRICING = {
   // Claude (Anthropic)
   opus:   { input: 5.00,   output: 25.00,  label: 'Opus 4.6',       provider: 'claude' },
@@ -38,6 +29,12 @@ const DEFAULT_PRICING = {
 // Active pricing - starts with defaults, updated from API
 let MODEL_PRICING = { ...DEFAULT_PRICING };
 
+/**
+ * @class LokiCostDashboard
+ * @extends LokiElement
+ * @property {string} api-url - API base URL (default: window.location.origin)
+ * @property {string} theme - 'light' or 'dark' (default: auto-detect)
+ */
 export class LokiCostDashboard extends LokiElement {
   static get observedAttributes() {
     return ['api-url', 'theme'];

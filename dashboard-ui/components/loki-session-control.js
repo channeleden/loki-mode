@@ -1,30 +1,28 @@
 /**
- * Loki Session Control Component
+ * @fileoverview Loki Session Control Component - control panel for managing
+ * the Loki Mode session lifecycle. Provides start, pause, resume, and stop
+ * controls with both compact and full layout modes. Displays connection
+ * status, version info, agent/task counts, and session metadata.
  *
- * Control panel for Loki Mode session with start/stop/pause buttons.
- *
- * Usage:
- *   <loki-session-control
- *     api-url="http://localhost:8420"
- *     theme="dark"
- *   ></loki-session-control>
- *
- * Attributes:
- *   - api-url: API base URL (default: auto-detected from window.location.origin)
- *   - theme: 'light' or 'dark' (default: auto-detect)
- *   - compact: Show compact version
- *
- * Events:
- *   - session-start: Fired when start is clicked
- *   - session-pause: Fired when pause is clicked
- *   - session-resume: Fired when resume is clicked
- *   - session-stop: Fired when stop is clicked
+ * @example
+ * <loki-session-control api-url="http://localhost:57374" theme="dark" compact></loki-session-control>
  */
 
 import { LokiElement } from '../core/loki-theme.js';
 import { getApiClient, ApiEvents } from '../core/loki-api-client.js';
 import { getState } from '../core/loki-state.js';
 
+/**
+ * @class LokiSessionControl
+ * @extends LokiElement
+ * @fires session-start - When the start button is clicked
+ * @fires session-pause - When the pause button is clicked
+ * @fires session-resume - When the resume button is clicked
+ * @fires session-stop - When the stop button is clicked
+ * @property {string} api-url - API base URL (default: window.location.origin)
+ * @property {string} theme - 'light' or 'dark' (default: auto-detect)
+ * @property {boolean} compact - Show compact layout when present
+ */
 export class LokiSessionControl extends LokiElement {
   static get observedAttributes() {
     return ['api-url', 'theme', 'compact'];

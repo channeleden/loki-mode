@@ -1,30 +1,17 @@
 /**
- * Loki Learning Dashboard Component
+ * @fileoverview Loki Learning Dashboard Component - visualizes learning
+ * metrics from the cross-tool learning system. Displays signal summaries,
+ * trend charts, pattern/preference/tool-efficiency lists, and recent signal
+ * activity. Supports time-range, signal-type, and source filtering.
  *
- * Dashboard for visualizing learning metrics from the cross-tool learning system.
- *
- * Usage:
- *   <loki-learning-dashboard
- *     api-url="http://localhost:8420"
- *     theme="dark"
- *   ></loki-learning-dashboard>
- *
- * Attributes:
- *   - api-url: API base URL (default: auto-detected from window.location.origin)
- *   - theme: 'light' or 'dark' (default: auto-detect)
- *   - time-range: Filter by time range ('1h', '24h', '7d', '30d') (default: '7d')
- *   - signal-type: Filter by signal type (default: 'all')
- *
- * Events:
- *   - metric-select: Fired when a metric item is selected
- *   - filter-change: Fired when filters are changed
- *
- * @version 1.0.0
+ * @example
+ * <loki-learning-dashboard api-url="http://localhost:57374" theme="dark" time-range="7d"></loki-learning-dashboard>
  */
 
 import { LokiElement } from '../core/loki-theme.js';
 import { getApiClient } from '../core/loki-api-client.js';
 
+/** @type {Array<{id: string, label: string, hours: number}>} Available time range filter options */
 const TIME_RANGES = [
   { id: '1h', label: '1 Hour', hours: 1 },
   { id: '24h', label: '24 Hours', hours: 24 },
@@ -50,6 +37,17 @@ const SIGNAL_SOURCES = [
   { id: 'dashboard', label: 'Dashboard' },
 ];
 
+/**
+ * @class LokiLearningDashboard
+ * @extends LokiElement
+ * @fires metric-select - When a metric list item is clicked
+ * @fires filter-change - When any filter dropdown value changes
+ * @property {string} api-url - API base URL (default: window.location.origin)
+ * @property {string} theme - 'light' or 'dark' (default: auto-detect)
+ * @property {string} time-range - Time range filter ('1h'|'24h'|'7d'|'30d', default: '7d')
+ * @property {string} signal-type - Signal type filter (default: 'all')
+ * @property {string} source - Signal source filter (default: 'all')
+ */
 export class LokiLearningDashboard extends LokiElement {
   static get observedAttributes() {
     return ['api-url', 'theme', 'time-range', 'signal-type', 'source'];
