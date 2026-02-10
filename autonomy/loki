@@ -306,7 +306,7 @@ show_help() {
     echo "  stop             Stop execution immediately"
     echo "  pause            Pause after current session"
     echo "  resume           Resume paused execution"
-    echo "  status           Show current status"
+    echo "  status [--json]  Show current status (--json for machine-readable)"
     echo "  logs             Show recent log output"
     echo "  dashboard [cmd]  Dashboard server (start|stop|status|url|open)"
     echo "  provider [cmd]   Manage AI provider (show|set|list|info)"
@@ -886,6 +886,167 @@ cmd_status() {
             local port=${LOKI_DASHBOARD_PORT:-57374}
             echo -e "${CYAN}Dashboard:${NC} http://127.0.0.1:$port/"
         fi
+    fi
+}
+
+# JSON output for loki status --json
+cmd_status_json() {
+    local skill_dir="$SKILL_DIR"
+    local loki_dir="$LOKI_DIR"
+    local dashboard_port="${LOKI_DASHBOARD_PORT:-57374}"
+    local env_provider="${LOKI_PROVIDER:-claude}"
+
+    python3 -c "
+import json, os, sys, time
+
+skill_dir = sys.argv[1]
+loki_dir = sys.argv[2]
+dashboard_port = sys.argv[3]
+env_provider = sys.argv[4]
+result = {}
+
+# Version
+version_file = os.path.join(skill_dir, 'VERSION')
+if os.path.isfile(version_file):
+    with open(version_file) as f:
+        result['version'] = f.read().strip()
+else:
+    result['version'] = 'unknown'
+
+# Check if session exists
+if not os.path.isdir(loki_dir):
+    result['status'] = 'inactive'
+    result['phase'] = None
+    result['iteration'] = 0
+    result['provider'] = env_provider
+    result['dashboard_url'] = None
+    result['pid'] = None
+    result['elapsed_time'] = 0
+    result['task_counts'] = {'total': 0, 'completed': 0, 'failed': 0, 'pending': 0}
+    print(json.dumps(result, indent=2))
+    sys.exit(0)
+
+# Status from signals and session.json
+if os.path.isfile(os.path.join(loki_dir, 'PAUSE')):
+    result['status'] = 'paused'
+elif os.path.isfile(os.path.join(loki_dir, 'STOP')):
+    result['status'] = 'stopped'
+else:
+    session_file = os.path.join(loki_dir, 'session.json')
+    if os.path.isfile(session_file):
+        try:
+            with open(session_file) as f:
+                session = json.load(f)
+            result['status'] = session.get('status', 'unknown')
+        except Exception:
+            result['status'] = 'unknown'
+    else:
+        result['status'] = 'unknown'
+
+# Phase and iteration from dashboard-state.json
+ds_file = os.path.join(loki_dir, 'dashboard-state.json')
+if os.path.isfile(ds_file):
+    try:
+        with open(ds_file) as f:
+            ds = json.load(f)
+        result['phase'] = ds.get('phase', ds.get('currentPhase'))
+        result['iteration'] = ds.get('iteration', ds.get('currentIteration', 0))
+    except Exception:
+        result['phase'] = None
+        result['iteration'] = 0
+else:
+    orch_file = os.path.join(loki_dir, 'state', 'orchestrator.json')
+    if os.path.isfile(orch_file):
+        try:
+            with open(orch_file) as f:
+                orch = json.load(f)
+            result['phase'] = orch.get('currentPhase')
+            result['iteration'] = orch.get('currentIteration', 0)
+        except Exception:
+            result['phase'] = None
+            result['iteration'] = 0
+    else:
+        result['phase'] = None
+        result['iteration'] = 0
+
+# Provider
+provider_file = os.path.join(loki_dir, 'state', 'provider')
+if os.path.isfile(provider_file):
+    with open(provider_file) as f:
+        result['provider'] = f.read().strip()
+else:
+    result['provider'] = env_provider
+
+# PID
+pid_file = os.path.join(loki_dir, 'loki.pid')
+if os.path.isfile(pid_file):
+    try:
+        with open(pid_file) as f:
+            result['pid'] = int(f.read().strip())
+    except (ValueError, Exception):
+        result['pid'] = None
+else:
+    result['pid'] = None
+
+# Elapsed time from session.json
+session_file = os.path.join(loki_dir, 'session.json')
+if os.path.isfile(session_file):
+    try:
+        with open(session_file) as f:
+            session = json.load(f)
+        start_time = session.get('start_time', session.get('startTime'))
+        if start_time:
+            if isinstance(start_time, (int, float)):
+                result['elapsed_time'] = int(time.time() - start_time)
+            else:
+                from datetime import datetime
+                dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                result['elapsed_time'] = int(time.time() - dt.timestamp())
+        else:
+            result['elapsed_time'] = 0
+    except Exception:
+        result['elapsed_time'] = 0
+else:
+    result['elapsed_time'] = 0
+
+# Dashboard URL
+dashboard_pid_file = os.path.join(loki_dir, 'dashboard', 'dashboard.pid')
+dashboard_url = None
+if os.path.isfile(dashboard_pid_file):
+    try:
+        with open(dashboard_pid_file) as f:
+            dpid = int(f.read().strip())
+        os.kill(dpid, 0)
+        dashboard_url = 'http://127.0.0.1:' + dashboard_port + '/'
+    except (ProcessLookupError, PermissionError, ValueError, Exception):
+        pass
+result['dashboard_url'] = dashboard_url
+
+# Task counts from queue files
+task_counts = {'total': 0, 'completed': 0, 'failed': 0, 'pending': 0}
+queue_dir = os.path.join(loki_dir, 'queue')
+if os.path.isdir(queue_dir):
+    for name, key in [('pending.json', 'pending'), ('completed.json', 'completed'), ('failed.json', 'failed')]:
+        fpath = os.path.join(queue_dir, name)
+        if os.path.isfile(fpath):
+            try:
+                with open(fpath) as f:
+                    data = json.load(f)
+                if isinstance(data, list):
+                    task_counts[key] = len(data)
+                elif isinstance(data, dict) and 'tasks' in data:
+                    task_counts[key] = len(data['tasks'])
+            except Exception:
+                pass
+    task_counts['total'] = task_counts['pending'] + task_counts['completed'] + task_counts['failed']
+result['task_counts'] = task_counts
+
+print(json.dumps(result, indent=2))
+" "$skill_dir" "$loki_dir" "$dashboard_port" "$env_provider"
+
+    if [ $? -ne 0 ]; then
+        echo '{"error": "Failed to generate JSON status. Ensure python3 is available."}' >&2
+        return 1
     fi
 }
 
@@ -3537,7 +3698,7 @@ main() {
             cmd_resume
             ;;
         status)
-            cmd_status
+            cmd_status "$@"
             ;;
         dashboard)
             cmd_dashboard "$@"
