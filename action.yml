@@ -173,22 +173,22 @@ runs:
         LOKI_COUNCIL_ENABLED: 'false'
         LOKI_SKIP_PREREQS: 'true'
         LOKI_AUTO_CONFIRM: ${{ inputs.auto_confirm }}
-        CI: 'true'
       run: |
         PRD_FILE="${{ steps.review-prd.outputs.prd_file }}"
         OUTPUT_FILE="${RUNNER_TEMP}/loki-review-output.txt"
 
         echo "--- Running loki review (provider: $LOKI_PROVIDER, max_iterations: $LOKI_MAX_ITERATIONS) ---"
 
-        # Build budget flag
-        BUDGET_FLAG=""
-        if [ -n "$LOKI_BUDGET_LIMIT" ] && [ "$LOKI_BUDGET_LIMIT" != "" ]; then
-          BUDGET_FLAG="--budget $LOKI_BUDGET_LIMIT"
+        # Build args array to handle paths with spaces safely
+        ARGS=(--simple --no-dashboard --provider "$LOKI_PROVIDER")
+        if [ -n "$LOKI_BUDGET_LIMIT" ]; then
+          ARGS+=(--budget "$LOKI_BUDGET_LIMIT")
         fi
+        ARGS+=("$PRD_FILE")
 
         # Run loki and capture output; do not fail the action on non-zero exit
         # (loki may exit non-zero on timeout, which is acceptable)
-        loki start --simple --no-dashboard --provider "$LOKI_PROVIDER" $BUDGET_FLAG "$PRD_FILE" \
+        loki start "${ARGS[@]}" \
           2>&1 | tee "$OUTPUT_FILE" || true
 
         echo "--- Loki review completed ---"
@@ -207,26 +207,22 @@ runs:
         LOKI_COUNCIL_ENABLED: 'false'
         LOKI_SKIP_PREREQS: 'true'
         LOKI_AUTO_CONFIRM: ${{ inputs.auto_confirm }}
-        CI: 'true'
       run: |
         OUTPUT_FILE="${RUNNER_TEMP}/loki-fix-output.txt"
         PRD_FILE="${{ inputs.prd_file }}"
 
         echo "--- Running loki in fix mode (provider: $LOKI_PROVIDER) ---"
 
-        # Build budget flag
-        BUDGET_FLAG=""
-        if [ -n "$LOKI_BUDGET_LIMIT" ] && [ "$LOKI_BUDGET_LIMIT" != "" ]; then
-          BUDGET_FLAG="--budget $LOKI_BUDGET_LIMIT"
+        # Build args array to handle paths with spaces safely
+        ARGS=(--simple --no-dashboard --provider "$LOKI_PROVIDER")
+        if [ -n "$LOKI_BUDGET_LIMIT" ]; then
+          ARGS+=(--budget "$LOKI_BUDGET_LIMIT")
         fi
-
-        # Build PRD argument if provided
-        PRD_ARG=""
         if [ -n "$PRD_FILE" ]; then
-          PRD_ARG="$PRD_FILE"
+          ARGS+=("$PRD_FILE")
         fi
 
-        loki start --simple --no-dashboard --provider "$LOKI_PROVIDER" $BUDGET_FLAG $PRD_ARG \
+        loki start "${ARGS[@]}" \
           2>&1 | tee "$OUTPUT_FILE" || true
 
         echo "output_file=${OUTPUT_FILE}" >> "$GITHUB_OUTPUT"
@@ -244,26 +240,22 @@ runs:
         LOKI_COUNCIL_ENABLED: 'false'
         LOKI_SKIP_PREREQS: 'true'
         LOKI_AUTO_CONFIRM: ${{ inputs.auto_confirm }}
-        CI: 'true'
       run: |
         OUTPUT_FILE="${RUNNER_TEMP}/loki-test-output.txt"
         PRD_FILE="${{ inputs.prd_file }}"
 
         echo "--- Running loki in test mode (provider: $LOKI_PROVIDER) ---"
 
-        # Build budget flag
-        BUDGET_FLAG=""
-        if [ -n "$LOKI_BUDGET_LIMIT" ] && [ "$LOKI_BUDGET_LIMIT" != "" ]; then
-          BUDGET_FLAG="--budget $LOKI_BUDGET_LIMIT"
+        # Build args array to handle paths with spaces safely
+        ARGS=(--simple --no-dashboard --provider "$LOKI_PROVIDER")
+        if [ -n "$LOKI_BUDGET_LIMIT" ]; then
+          ARGS+=(--budget "$LOKI_BUDGET_LIMIT")
         fi
-
-        # Build PRD argument if provided
-        PRD_ARG=""
         if [ -n "$PRD_FILE" ]; then
-          PRD_ARG="$PRD_FILE"
+          ARGS+=("$PRD_FILE")
         fi
 
-        loki start --simple --no-dashboard --provider "$LOKI_PROVIDER" $BUDGET_FLAG $PRD_ARG \
+        loki start "${ARGS[@]}" \
           2>&1 | tee "$OUTPUT_FILE" || true
 
         echo "output_file=${OUTPUT_FILE}" >> "$GITHUB_OUTPUT"

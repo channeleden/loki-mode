@@ -394,8 +394,8 @@ cmd_start() {
                 echo ""
                 echo "Environment Variables:"
                 echo "  LOKI_PRD_FILE         Path to PRD file (alternative to positional arg)"
-                echo "  LOKI_AUTO_CONFIRM     Set to 'true' to skip confirmation prompts"
-                echo "  CI                    When 'true', auto-confirms prompts"
+                echo "  LOKI_AUTO_CONFIRM     Set to 'true'/'false' to control prompts (takes precedence over CI)"
+                echo "  CI                    Fallback: auto-confirms when 'true' and LOKI_AUTO_CONFIRM is unset"
                 echo "  LOKI_MAX_ITERATIONS   Max iteration count"
                 echo "  LOKI_BUDGET_LIMIT     Cost budget limit in USD"
                 echo ""
@@ -502,7 +502,10 @@ cmd_start() {
     else
         # No PRD file specified -- warn and confirm before consuming API credits
         # Auto-confirm in CI environments or when LOKI_AUTO_CONFIRM is set
-        if [[ "${LOKI_AUTO_CONFIRM:-}" == "true" ]] || [[ "${CI:-}" == "true" ]]; then
+        # LOKI_AUTO_CONFIRM takes precedence when explicitly set;
+        # fall back to CI env var only when LOKI_AUTO_CONFIRM is unset
+        local _auto_confirm="${LOKI_AUTO_CONFIRM:-${CI:-false}}"
+        if [[ "$_auto_confirm" == "true" ]]; then
             echo -e "${YELLOW}Warning: No PRD file specified. Auto-confirming (CI mode).${NC}"
         else
             echo -e "${YELLOW}Warning: No PRD file specified.${NC}"
@@ -3871,9 +3874,13 @@ for filename in ['patterns.jsonl', 'mistakes.jsonl', 'successes.jsonl']:
 
         clear)
             local type="${2:-}"
+            local confirm=""
 
             if [ -z "$type" ]; then
-                if [[ "${LOKI_AUTO_CONFIRM:-}" == "true" ]] || [[ "${CI:-}" == "true" ]]; then
+                # LOKI_AUTO_CONFIRM takes precedence when explicitly set;
+                # fall back to CI env var only when LOKI_AUTO_CONFIRM is unset
+                local _auto_confirm="${LOKI_AUTO_CONFIRM:-${CI:-false}}"
+                if [[ "$_auto_confirm" == "true" ]]; then
                     confirm="yes"
                 else
                     echo -e "${YELLOW}This will delete ALL cross-project learnings.${NC}"
