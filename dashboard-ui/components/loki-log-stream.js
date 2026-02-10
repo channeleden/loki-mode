@@ -1,31 +1,17 @@
 /**
- * Loki Log Stream Component
+ * @fileoverview Loki Log Stream Component - real-time log viewer with level
+ * filtering, text search, auto-scroll, and download capabilities. Supports
+ * both API polling and file-based log sources. Styled as a terminal emulator
+ * with monospace font and colored log levels.
  *
- * Real-time log display with filtering and auto-scroll.
- *
- * Usage:
- *   <loki-log-stream
- *     api-url="http://localhost:8420"
- *     max-lines="500"
- *     auto-scroll
- *     theme="dark"
- *   ></loki-log-stream>
- *
- * Attributes:
- *   - api-url: API base URL (default: auto-detected from window.location.origin)
- *   - max-lines: Maximum number of log lines to keep (default: 500)
- *   - auto-scroll: Enable auto-scroll to bottom
- *   - theme: 'light' or 'dark' (default: auto-detect)
- *   - log-file: Path to log file (for file-based updates)
- *
- * Events:
- *   - log-received: Fired when a new log message is received
- *   - logs-cleared: Fired when logs are cleared
+ * @example
+ * <loki-log-stream api-url="http://localhost:57374" max-lines="500" auto-scroll theme="dark"></loki-log-stream>
  */
 
 import { LokiElement } from '../core/loki-theme.js';
 import { getApiClient, ApiEvents } from '../core/loki-api-client.js';
 
+/** @type {Object<string, {color: string, label: string}>} Log level display configuration */
 const LOG_LEVELS = {
   info: { color: 'var(--loki-blue)', label: 'INFO' },
   success: { color: 'var(--loki-green)', label: 'SUCCESS' },
@@ -36,6 +22,17 @@ const LOG_LEVELS = {
   debug: { color: 'var(--loki-text-muted)', label: 'DEBUG' },
 };
 
+/**
+ * @class LokiLogStream
+ * @extends LokiElement
+ * @fires log-received - When a new log message arrives
+ * @fires logs-cleared - When the log buffer is cleared
+ * @property {string} api-url - API base URL (default: window.location.origin)
+ * @property {number} max-lines - Maximum log lines to retain (default: 500)
+ * @property {boolean} auto-scroll - Auto-scroll to bottom on new messages
+ * @property {string} theme - 'light' or 'dark' (default: auto-detect)
+ * @property {string} log-file - Path to log file for file-based polling
+ */
 export class LokiLogStream extends LokiElement {
   static get observedAttributes() {
     return ['api-url', 'max-lines', 'auto-scroll', 'theme', 'log-file'];
