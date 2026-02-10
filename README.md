@@ -82,8 +82,44 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           mode: review          # review, fix, or test
           provider: claude      # claude, codex, or gemini
-          max_iterations: 3     # higher = more thorough
-          budget_limit: '5.00'  # max cost in USD
+          max_iterations: 3     # sets LOKI_MAX_ITERATIONS env var
+          budget_limit: '5.00'  # max cost in USD (maps to --budget flag)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+**Prerequisites:**
+- An API key for your chosen provider (set as a repository secret):
+  - Claude: `ANTHROPIC_API_KEY`
+  - Codex: `OPENAI_API_KEY`
+  - Gemini: `GOOGLE_API_KEY`
+- The action automatically installs `loki-mode` and `@anthropic-ai/claude-code` (for the Claude provider)
+
+**Action Inputs:**
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `mode` | `review` | `review`, `fix`, or `test` |
+| `provider` | `claude` | `claude`, `codex`, or `gemini` |
+| `budget_limit` | `5.00` | Max cost in USD (maps to `--budget` CLI flag) |
+| `budget` | | Alias for `budget_limit` |
+| `max_iterations` | `3` | Sets `LOKI_MAX_ITERATIONS` env var |
+| `github_token` | (required) | GitHub token for PR comments |
+| `prd_file` | | Path to PRD file relative to repo root |
+| `auto_confirm` | `true` | Skip confirmation prompts (always true in CI) |
+| `install_claude` | `true` | Auto-install Claude Code CLI if not present |
+| `node_version` | `20` | Node.js version |
+
+**Using with a PRD file (fix/test modes):**
+
+```yaml
+- uses: asklokesh/loki-mode@v5
+  with:
+    mode: fix
+    prd_file: 'docs/my-prd.md'
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+  env:
+    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
 **Modes:**

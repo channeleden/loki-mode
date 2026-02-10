@@ -16,20 +16,36 @@ inputs:
     required: false
     default: 'claude'
   budget_limit:
-    description: 'Max cost in USD before stopping'
+    description: 'Max cost in USD before stopping (maps to --budget CLI flag)'
     required: false
     default: '5.00'
+  budget:
+    description: 'Alias for budget_limit (max cost in USD before stopping)'
+    required: false
+    default: ''
   github_token:
     description: 'GitHub token for PR comments'
     required: true
   max_iterations:
-    description: 'Maximum loki iterations (lower = faster, higher = more thorough)'
+    description: 'Maximum loki iterations (sets LOKI_MAX_ITERATIONS env var)'
     required: false
     default: '3'
   node_version:
     description: 'Node.js version to use'
     required: false
     default: '20'
+  prd_file:
+    description: 'Path to PRD file relative to repo root (optional, used as positional arg to loki start)'
+    required: false
+    default: ''
+  auto_confirm:
+    description: 'Skip confirmation prompts (auto-enabled in CI environments)'
+    required: false
+    default: 'true'
+  install_claude:
+    description: 'Automatically install Claude Code CLI if not present (requires ANTHROPIC_API_KEY)'
+    required: false
+    default: 'true'
 
 runs:
   using: 'composite'
@@ -46,6 +62,19 @@ runs:
         echo "--- Installing loki-mode from npm ---"
         npm install -g loki-mode
         echo "Installed version: $(loki version 2>/dev/null || echo 'unknown')"
+
+    - name: Install Claude Code CLI
+      if: inputs.install_claude == 'true' && inputs.provider == 'claude'
+      shell: bash
+      run: |
+        set -eo pipefail
+        if command -v claude &>/dev/null; then
+          echo "Claude Code CLI already installed: $(claude --version 2>/dev/null || echo 'unknown')"
+        else
+          echo "--- Installing Claude Code CLI ---"
+          npm install -g @anthropic-ai/claude-code
+          echo "Installed Claude Code CLI: $(claude --version 2>/dev/null || echo 'unknown')"
+        fi
 
     - name: Get PR diff
       id: pr-diff
@@ -140,18 +169,26 @@ runs:
         LOKI_MAX_ITERATIONS: ${{ inputs.max_iterations }}
         LOKI_DASHBOARD: 'false'
         LOKI_COMPLEXITY: 'simple'
-        LOKI_BUDGET_LIMIT: ${{ inputs.budget_limit }}
+        LOKI_BUDGET_LIMIT: ${{ inputs.budget || inputs.budget_limit }}
         LOKI_COUNCIL_ENABLED: 'false'
         LOKI_SKIP_PREREQS: 'true'
+        LOKI_AUTO_CONFIRM: ${{ inputs.auto_confirm }}
+        CI: 'true'
       run: |
         PRD_FILE="${{ steps.review-prd.outputs.prd_file }}"
         OUTPUT_FILE="${RUNNER_TEMP}/loki-review-output.txt"
 
         echo "--- Running loki review (provider: $LOKI_PROVIDER, max_iterations: $LOKI_MAX_ITERATIONS) ---"
 
+        # Build budget flag
+        BUDGET_FLAG=""
+        if [ -n "$LOKI_BUDGET_LIMIT" ] && [ "$LOKI_BUDGET_LIMIT" != "" ]; then
+          BUDGET_FLAG="--budget $LOKI_BUDGET_LIMIT"
+        fi
+
         # Run loki and capture output; do not fail the action on non-zero exit
         # (loki may exit non-zero on timeout, which is acceptable)
-        loki start --simple --no-dashboard --provider "$LOKI_PROVIDER" "$PRD_FILE" \
+        loki start --simple --no-dashboard --provider "$LOKI_PROVIDER" $BUDGET_FLAG "$PRD_FILE" \
           2>&1 | tee "$OUTPUT_FILE" || true
 
         echo "--- Loki review completed ---"
@@ -166,14 +203,30 @@ runs:
         LOKI_MAX_ITERATIONS: ${{ inputs.max_iterations }}
         LOKI_DASHBOARD: 'false'
         LOKI_COMPLEXITY: 'simple'
-        LOKI_BUDGET_LIMIT: ${{ inputs.budget_limit }}
+        LOKI_BUDGET_LIMIT: ${{ inputs.budget || inputs.budget_limit }}
         LOKI_COUNCIL_ENABLED: 'false'
         LOKI_SKIP_PREREQS: 'true'
+        LOKI_AUTO_CONFIRM: ${{ inputs.auto_confirm }}
+        CI: 'true'
       run: |
         OUTPUT_FILE="${RUNNER_TEMP}/loki-fix-output.txt"
+        PRD_FILE="${{ inputs.prd_file }}"
 
         echo "--- Running loki in fix mode (provider: $LOKI_PROVIDER) ---"
-        loki start --simple --no-dashboard --provider "$LOKI_PROVIDER" \
+
+        # Build budget flag
+        BUDGET_FLAG=""
+        if [ -n "$LOKI_BUDGET_LIMIT" ] && [ "$LOKI_BUDGET_LIMIT" != "" ]; then
+          BUDGET_FLAG="--budget $LOKI_BUDGET_LIMIT"
+        fi
+
+        # Build PRD argument if provided
+        PRD_ARG=""
+        if [ -n "$PRD_FILE" ]; then
+          PRD_ARG="$PRD_FILE"
+        fi
+
+        loki start --simple --no-dashboard --provider "$LOKI_PROVIDER" $BUDGET_FLAG $PRD_ARG \
           2>&1 | tee "$OUTPUT_FILE" || true
 
         echo "output_file=${OUTPUT_FILE}" >> "$GITHUB_OUTPUT"
@@ -187,14 +240,30 @@ runs:
         LOKI_MAX_ITERATIONS: ${{ inputs.max_iterations }}
         LOKI_DASHBOARD: 'false'
         LOKI_COMPLEXITY: 'simple'
-        LOKI_BUDGET_LIMIT: ${{ inputs.budget_limit }}
+        LOKI_BUDGET_LIMIT: ${{ inputs.budget || inputs.budget_limit }}
         LOKI_COUNCIL_ENABLED: 'false'
         LOKI_SKIP_PREREQS: 'true'
+        LOKI_AUTO_CONFIRM: ${{ inputs.auto_confirm }}
+        CI: 'true'
       run: |
         OUTPUT_FILE="${RUNNER_TEMP}/loki-test-output.txt"
+        PRD_FILE="${{ inputs.prd_file }}"
 
         echo "--- Running loki in test mode (provider: $LOKI_PROVIDER) ---"
-        loki start --simple --no-dashboard --provider "$LOKI_PROVIDER" \
+
+        # Build budget flag
+        BUDGET_FLAG=""
+        if [ -n "$LOKI_BUDGET_LIMIT" ] && [ "$LOKI_BUDGET_LIMIT" != "" ]; then
+          BUDGET_FLAG="--budget $LOKI_BUDGET_LIMIT"
+        fi
+
+        # Build PRD argument if provided
+        PRD_ARG=""
+        if [ -n "$PRD_FILE" ]; then
+          PRD_ARG="$PRD_FILE"
+        fi
+
+        loki start --simple --no-dashboard --provider "$LOKI_PROVIDER" $BUDGET_FLAG $PRD_ARG \
           2>&1 | tee "$OUTPUT_FILE" || true
 
         echo "output_file=${OUTPUT_FILE}" >> "$GITHUB_OUTPUT"

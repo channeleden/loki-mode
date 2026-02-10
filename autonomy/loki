@@ -389,12 +389,22 @@ cmd_start() {
                 echo "  --sandbox             Run in Docker sandbox"
                 echo "  --skip-memory         Skip loading memory context at startup"
                 echo "  --budget USD          Cost budget limit (auto-pause when exceeded)"
+                echo "  --yes, -y             Skip confirmation prompts (auto-confirm)"
+                echo ""
+                echo "Environment Variables:"
+                echo "  LOKI_PRD_FILE         Path to PRD file (alternative to positional arg)"
+                echo "  LOKI_AUTO_CONFIRM     Set to 'true' to skip confirmation prompts"
+                echo "  CI                    When 'true', auto-confirms prompts"
+                echo "  LOKI_MAX_ITERATIONS   Max iteration count"
+                echo "  LOKI_BUDGET_LIMIT     Cost budget limit in USD"
                 echo ""
                 echo "Examples:"
                 echo "  loki start                      # Interactive or resume existing"
                 echo "  loki start ./prd.md             # Start with PRD file"
                 echo "  loki start ./prd.md --parallel  # Parallel mode with worktrees"
                 echo "  loki start --provider codex     # Use OpenAI Codex CLI"
+                echo "  loki start --yes                # Skip confirmation prompt"
+                echo "  LOKI_PRD_FILE=./prd.md loki start  # PRD via env var"
                 exit 0
                 ;;
             --provider)
@@ -444,6 +454,10 @@ cmd_start() {
                 export LOKI_SKIP_MEMORY=true
                 shift
                 ;;
+            --yes|-y)
+                export LOKI_AUTO_CONFIRM=true
+                shift
+                ;;
             --budget)
                 if [[ -n "${2:-}" ]]; then
                     if ! echo "$2" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
@@ -477,19 +491,29 @@ cmd_start() {
         esac
     done
 
+    # Support LOKI_PRD_FILE environment variable as fallback
+    if [ -z "$prd_file" ] && [ -n "${LOKI_PRD_FILE:-}" ]; then
+        prd_file="$LOKI_PRD_FILE"
+    fi
+
     if [ -n "$prd_file" ]; then
         args+=("$prd_file")
     else
         # No PRD file specified -- warn and confirm before consuming API credits
-        echo -e "${YELLOW}Warning: No PRD file specified.${NC}"
-        echo "Loki Mode will start autonomous execution in the current directory"
-        echo "without a requirements document."
-        echo ""
-        echo -e "This will consume API credits. Continue? [y/N] \c"
-        read -r confirm
-        if [[ ! "$confirm" =~ ^[Yy] ]]; then
-            echo "Aborted. Usage: loki start <path-to-prd.md>"
-            exit 0
+        # Auto-confirm in CI environments or when LOKI_AUTO_CONFIRM is set
+        if [[ "${LOKI_AUTO_CONFIRM:-}" == "true" ]] || [[ "${CI:-}" == "true" ]]; then
+            echo -e "${YELLOW}Warning: No PRD file specified. Auto-confirming (CI mode).${NC}"
+        else
+            echo -e "${YELLOW}Warning: No PRD file specified.${NC}"
+            echo "Loki Mode will start autonomous execution in the current directory"
+            echo "without a requirements document."
+            echo ""
+            echo -e "This will consume API credits. Continue? [y/N] \c"
+            read -r confirm
+            if [[ ! "$confirm" =~ ^[Yy] ]]; then
+                echo "Aborted. Usage: loki start <path-to-prd.md>"
+                exit 0
+            fi
         fi
     fi
 
@@ -3845,9 +3869,13 @@ for filename in ['patterns.jsonl', 'mistakes.jsonl', 'successes.jsonl']:
             local type="${2:-}"
 
             if [ -z "$type" ]; then
-                echo -e "${YELLOW}This will delete ALL cross-project learnings.${NC}"
-                echo -n "Are you sure? (yes/no): "
-                read -r confirm
+                if [[ "${LOKI_AUTO_CONFIRM:-}" == "true" ]] || [[ "${CI:-}" == "true" ]]; then
+                    confirm="yes"
+                else
+                    echo -e "${YELLOW}This will delete ALL cross-project learnings.${NC}"
+                    echo -n "Are you sure? (yes/no): "
+                    read -r confirm
+                fi
                 if [ "$confirm" = "yes" ]; then
                     rm -rf "$learnings_dir"
                     mkdir -p "$learnings_dir"

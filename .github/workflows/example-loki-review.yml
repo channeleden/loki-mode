@@ -7,15 +7,28 @@
 # To use this in your own repository:
 #   1. Copy this file to .github/workflows/loki-review.yml
 #   2. Uncomment the entire workflow below
-#   3. Ensure your AI provider CLI is available (or set API keys)
-#   4. The action installs loki-mode from npm automatically
+#   3. Set your AI provider API key as a repository secret
+#   4. The action installs loki-mode and Claude Code CLI automatically
 #
 # Prerequisites:
-#   - The AI provider CLI must be accessible in the runner environment.
-#     For Claude: set ANTHROPIC_API_KEY secret.
-#     For Codex: set OPENAI_API_KEY secret.
-#     For Gemini: set GOOGLE_API_KEY secret.
+#   - An API key for your chosen AI provider, set as a GitHub secret:
+#     For Claude: ANTHROPIC_API_KEY (recommended)
+#     For Codex: OPENAI_API_KEY
+#     For Gemini: GOOGLE_API_KEY
 #   - The github_token input is required for posting PR comments.
+#   - The action automatically installs loki-mode and the provider CLI.
+#
+# Available inputs:
+#   mode           - review (default), fix, or test
+#   provider       - claude (default), codex, or gemini
+#   budget_limit   - Max cost in USD (default: 5.00, maps to --budget flag)
+#   budget         - Alias for budget_limit
+#   max_iterations - Max loki iterations (default: 3, sets LOKI_MAX_ITERATIONS)
+#   prd_file       - Path to PRD file relative to repo root (optional)
+#   auto_confirm   - Skip confirmation prompts (default: true)
+#   install_claude - Auto-install Claude Code CLI (default: true)
+#   node_version   - Node.js version (default: 20)
+#   github_token   - GitHub token for PR comments (required)
 #
 # For more information, see:
 #   https://github.com/asklokesh/loki-mode
