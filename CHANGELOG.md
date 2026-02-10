@@ -5,6 +5,26 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.32.0] - 2026-02-10
+
+### Added
+- `loki doctor` command for system prerequisite checks (#22)
+- `--json` flag for `loki status` machine-readable output (#20)
+- Dark/light theme toggle for dashboard (#17)
+- Keyboard shortcuts for dashboard navigation (#18)
+- Stylized eye favicon for dashboard (#19)
+- JSDoc documentation for all dashboard-ui web components (#14)
+- Environment variables reference page in wiki (#15)
+- Mermaid architecture diagram in README (#16)
+- REST API with JWT authentication PRD template (#23)
+- 97 unit tests for memory/token_economics.py (#24)
+- 14 shell script tests for loki CLI commands (#25)
+
+### Fixed
+- Auto-confirm precedence: LOKI_AUTO_CONFIRM now takes priority over CI env var
+- Word-splitting safety in action.yml using bash arrays
+- Variable scope leak in memory clear command
+
 ## [5.31.0] - 2026-02-09
 
 ### Added
