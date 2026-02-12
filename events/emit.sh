@@ -25,30 +25,37 @@ mkdir -p "$EVENTS_DIR"
 TYPE="${1:-state}"
 SOURCE="${2:-cli}"
 ACTION="${3:-unknown}"
-if [ $# -ge 3 ]; then shift 3; else shift $#; fi
+if [ "$#" -ge 3 ]; then shift 3; else shift "$#"; fi
 
 # Generate event ID and timestamp
 EVENT_ID=$(head -c 4 /dev/urandom | od -An -tx1 | tr -d ' \n')
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
 
+# JSON escape helper: handles \, ", and control characters
+json_escape() {
+    printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g; s/\r/\\r/g' | tr -d '\n'
+}
+
 # Build payload JSON
-PAYLOAD="{\"action\":\"$ACTION\""
+ACTION_ESC=$(json_escape "$ACTION")
+PAYLOAD="{\"action\":\"$ACTION_ESC\""
 for arg in "$@"; do
     key="${arg%%=*}"
     value="${arg#*=}"
-    # Escape special characters for JSON
-    key_escaped=$(printf '%s' "$key" | sed 's/\\/\\\\/g; s/"/\\"/g')
-    value=$(printf '%s' "$value" | sed 's/\\/\\\\/g; s/"/\\"/g')
-    PAYLOAD="$PAYLOAD,\"$key_escaped\":\"$value\""
+    key_escaped=$(json_escape "$key")
+    value_escaped=$(json_escape "$value")
+    PAYLOAD="$PAYLOAD,\"$key_escaped\":\"$value_escaped\""
 done
 PAYLOAD="$PAYLOAD}"
 
-# Build full event JSON
+# Build full event JSON (escape type/source for safe embedding)
+TYPE_ESC=$(json_escape "$TYPE")
+SOURCE_ESC=$(json_escape "$SOURCE")
 EVENT=$(cat <<EOF
 {
   "id": "$EVENT_ID",
-  "type": "$TYPE",
-  "source": "$SOURCE",
+  "type": "$TYPE_ESC",
+  "source": "$SOURCE_ESC",
   "timestamp": "$TIMESTAMP",
   "payload": $PAYLOAD,
   "version": "1.0"

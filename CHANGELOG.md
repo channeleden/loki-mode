@@ -5,6 +5,82 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.33.0] - 2026-02-11
+
+### Fixed - Critical (5)
+- run.sh: PAUSE file deleted before handle_pause() checks it (#4)
+- run.sh: LOKI_HUMAN_INPUT never cleared after use, repeats every iteration (#5)
+- memory/engine.py: Naive vs timezone-aware datetime crashes consolidation (#1)
+- memory/engine.py+storage.py: Episode filename format mismatch breaks consolidation (#2)
+- mcp/server.py: Local mcp/ package shadows pip SDK via importlib.util bypass (#3)
+
+### Fixed - High (13)
+- dashboard/server.py: time_range parameter ignored in _read_events() (#6)
+- dashboard/server.py: Default 0.0.0.0 bind with CORS * exposes control endpoints (#7)
+- dashboard/server.py: No agent_id sanitization in signal file writes (#8)
+- dashboard/control.py: Default port 8420 changed to 57374 (#58)
+- dashboard-ui: Memory browser Close/Consolidate/Refresh buttons non-functional (#9)
+- dashboard-ui: Invalid nested CSS from getBaseStyles() inside :host {} (#10)
+- vscode-extension: Dashboard auto-start polls wrong port 9898 vs 57374 (#11)
+- vscode-extension: Wrong field mapping for /status API response (#12)
+- mcp/server.py: id(kwargs) timing key never matches, memory leak (#13)
+- run.sh: Queue format mismatch between GitHub import and init (#14)
+- autonomy/loki: loki api start never creates logs directory (#15)
+- completion-council.sh: State records verdict before anti-sycophancy override (#16)
+- run.sh: Force-review approval skips COMPLETED marker and report (#17)
+
+### Fixed - Medium (22)
+- memory/retrieval.py: Namespace-unaware direct path access bypasses storage (#19)
+- memory/vector_index.py: In-place normalization corrupts stored embeddings (#20)
+- dashboard/server.py: get_episode() missing dir existence check (#21)
+- dashboard/server.py: get_skill() missing dir existence check (#22)
+- dashboard/server.py: Inconsistent LOKI_DIR resolution (#23)
+- dashboard-ui: detach() creates new function, event listener never removed (#24)
+- dashboard-ui: .toUpperCase() on potentially non-string value (#25)
+- dashboard-ui: stopPolling() kills shared singleton polling (#26)
+- dashboard-ui: Council polls every 3s ignoring tab visibility (#27)
+- dashboard-ui: Agent JSON in onclick breaks with special chars (#28)
+- dashboard-ui: Full DOM rebuild every 3s disrupts interaction (#29)
+- autonomy/loki: Wrong Gemini package name @anthropic-ai -> @google (#30)
+- autonomy/loki: Codex help shows legacy flag instead of --full-auto (#31)
+- autonomy/loki: Gemini help shows --yolo instead of --approval-mode=yolo (#32)
+- autonomy/loki: shift 2 crash on missing option value (#33)
+- autonomy/loki: Single quotes in user input break inline Python (#34)
+- autonomy/loki: --project filter dropped in recursive show all (#35)
+- autonomy/loki: Unescaped user input in notification JSON (#36)
+- hooks/validate-bash.sh: $ anchors bypass dangerous patterns (#37)
+- hooks/track-metrics.sh: TOOL_NAME raw in JSON without escaping (#38)
+- events/emit.sh: Failed shift 3 re-processes args as payload (#39)
+- docker-compose.yml: Named volume shadows bind-mounted .loki/ (#41)
+
+### Fixed - Low (9)
+- memory/storage.py: Lock files never cleaned up, prevent dir removal (#42)
+- dashboard/server.py: evidence_file.read_text() unprotected by try/except (#43)
+- dashboard/server.py: kill_agent() returns HTTP 200 on failure (#44)
+- dashboard-ui: 5 components missing customElements.get() guard (#45)
+- mcp/server.py: Version hardcoded to 5.25.0 (#46)
+- mcp/server.py: Integer division makes durations always 0 (#47)
+- run.sh: Non-atomic writes to dashboard-state.json (#48)
+- run.sh: PRD paths with special chars break JSON (#49)
+- hooks/validate-bash.sh: Trailing newline in logged JSON (#51)
+- events/emit.sh: Key names not JSON-escaped (#52)
+- hooks/quality-gate.sh: TODOS count becomes "0\n0" (#53)
+- completion-council.sh: COUNCIL_SIZE>3 assigns empty role (#54)
+
+### Added
+- completion-council.sh: council_evaluate_member() function for test/convergence/error checks
+- completion-council.sh: council_aggregate_votes() function with 2/3 majority logic
+- completion-council.sh: council_devils_advocate_review() with 5 skeptical checks
+- completion-council.sh: council_evaluate() orchestration entry point
+- Dockerfile: Missing COPY for providers/, memory/, events/ (#18)
+- Dockerfile.sandbox: Missing COPY for memory/, events/ (#55)
+- package.json: learning/ added to npm files whitelist (#56)
+- .npmignore: Exclude __pycache__, test files, .loki/ (#57)
+
+### Changed
+- SKILL.md: Removed unimplemented feature claims, added Planned Features section
+- SKILL.md: Honest capability documentation matching actual code
+
 ## [5.32.2] - 2026-02-09
 
 ### Changed

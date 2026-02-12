@@ -104,6 +104,10 @@ export class LokiCouncilDashboard extends LokiElement {
       document.removeEventListener('visibilitychange', this._visibilityHandler);
       this._visibilityHandler = null;
     }
+    if (this._pendingRaf) {
+      cancelAnimationFrame(this._pendingRaf);
+      this._pendingRaf = null;
+    }
   }
 
   async _loadData() {
@@ -207,6 +211,12 @@ export class LokiCouncilDashboard extends LokiElement {
     const s = this.shadowRoot;
     if (!s) return;
 
+    // Cancel any pending deferred event binding from _renderAgents
+    if (this._pendingRaf) {
+      cancelAnimationFrame(this._pendingRaf);
+      this._pendingRaf = null;
+    }
+
     s.innerHTML = `
       <style>${this.getBaseStyles()}${this._getStyles()}</style>
       <div class="council-dashboard">
@@ -218,7 +228,7 @@ export class LokiCouncilDashboard extends LokiElement {
               : `<span class="badge badge-inactive">Disabled</span>`
             }
           </div>
-          <button class="btn btn-primary" onclick="this.getRootNode().host._forceReview()">
+          <button class="btn btn-primary" id="force-review-btn">
             Force Review
           </button>
         </div>
@@ -227,7 +237,7 @@ export class LokiCouncilDashboard extends LokiElement {
           ${COUNCIL_TABS.map(tab => `
             <button
               class="tab ${this._activeTab === tab.id ? 'active' : ''}"
-              onclick="this.getRootNode().host._setTab('${tab.id}')"
+              data-tab="${tab.id}"
             >${tab.label}</button>
           `).join('')}
         </div>
@@ -239,6 +249,26 @@ export class LokiCouncilDashboard extends LokiElement {
         ${this._error ? `<div class="error-banner">${this._error}</div>` : ''}
       </div>
     `;
+
+    this._attachEventListeners();
+  }
+
+  _attachEventListeners() {
+    const s = this.shadowRoot;
+    if (!s) return;
+
+    // Force Review button
+    const forceBtn = s.getElementById('force-review-btn');
+    if (forceBtn) {
+      forceBtn.addEventListener('click', () => this._forceReview());
+    }
+
+    // Tab buttons
+    s.querySelectorAll('.tab[data-tab]').forEach(tab => {
+      tab.addEventListener('click', () => this._setTab(tab.dataset.tab));
+    });
+
+    // Agent cards (bound in _renderAgents via deferred rAF)
   }
 
   _renderTabContent() {
@@ -438,8 +468,10 @@ export class LokiCouncilDashboard extends LokiElement {
       </div>
     `;
 
-    // Defer event binding until after render inserts this HTML
-    requestAnimationFrame(() => {
+    // Defer event binding until after render inserts this HTML.
+    // Store rAF id so render() can cancel stale callbacks.
+    this._pendingRaf = requestAnimationFrame(() => {
+      this._pendingRaf = null;
       const s = this.shadowRoot;
       if (!s) return;
       s.querySelectorAll('.agent-card[data-agent-index]').forEach(card => {

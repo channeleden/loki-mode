@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, Union, TYPE_CHECKING
 
@@ -746,7 +746,7 @@ class MemoryRetrieval:
         Returns:
             List of memories within the time range
         """
-        until = until or datetime.now()
+        until = until or datetime.now(timezone.utc)
         results: List[Dict[str, Any]] = []
 
         # Search episodic memories by date directory (via storage layer)
@@ -756,7 +756,7 @@ class MemoryRetrieval:
                 continue
 
             try:
-                dir_date = datetime.strptime(date_dir.name, "%Y-%m-%d")
+                dir_date = datetime.strptime(date_dir.name, "%Y-%m-%d").replace(tzinfo=timezone.utc)
             except ValueError:
                 continue
 
@@ -938,7 +938,7 @@ class MemoryRetrieval:
         Returns:
             Results with recency boost applied
         """
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
 
         for result in results:
             timestamp = result.get("timestamp") or result.get("last_used")
@@ -1281,25 +1281,34 @@ class MemoryRetrieval:
         """
         Save all vector indices to disk.
         """
-        vectors_path = self.base_path / "vectors"
-        vectors_path.mkdir(parents=True, exist_ok=True)
+        if hasattr(self.storage, 'ensure_directory'):
+            self.storage.ensure_directory("vectors")
 
         for name, index in self.vector_indices.items():
-            index_path = vectors_path / f"{name}_index"
-            index.save(str(index_path))
+            # Resolve path through storage to respect namespace isolation
+            if hasattr(self.storage, '_resolve_path'):
+                index_path = self.storage._resolve_path(f"vectors/{name}_index")
+            else:
+                index_path = str(self.base_path / "vectors" / f"{name}_index")
+            index.save(index_path)
 
     def load_indices(self) -> None:
         """
         Load all vector indices from disk.
         """
-        vectors_path = self.base_path / "vectors"
-        if not vectors_path.exists():
+        vectors_files = self.storage.list_files("vectors", "*")
+        if not vectors_files:
             return
 
         for name, index in self.vector_indices.items():
-            index_path = vectors_path / f"{name}_index"
-            if index_path.exists():
-                index.load(str(index_path))
+            if hasattr(self.storage, '_resolve_path'):
+                index_path = self.storage._resolve_path(f"vectors/{name}_index")
+            else:
+                index_path = str(self.base_path / "vectors" / f"{name}_index")
+            # Check if the npz file exists (VectorIndex.load expects base path without extension)
+            import os
+            if os.path.exists(f"{index_path}.npz"):
+                index.load(index_path)
 
     # -------------------------------------------------------------------------
     # Private Helper Methods
@@ -1453,16 +1462,16 @@ class MemoryRetrieval:
             return
 
         index = self.vector_indices["episodic"]
-        episodic_path = self.base_path / "episodic"
+        date_dirs = self.storage.list_files("episodic", "*")
 
-        if not episodic_path.exists():
-            return
-
-        for date_dir in episodic_path.iterdir():
+        for date_dir in date_dirs:
             if not date_dir.is_dir():
                 continue
 
-            for episode_file in date_dir.glob("*.json"):
+            episode_files = self.storage.list_files(
+                f"episodic/{date_dir.name}", "*.json"
+            )
+            for episode_file in episode_files:
                 if episode_file.name == "index.json":
                     continue
 

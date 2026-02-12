@@ -209,9 +209,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add CORS middleware - allow_origins=* is safe because server binds to
-# 127.0.0.1 by default. Set LOKI_DASHBOARD_HOST to override if LAN access needed.
-_cors_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "*").split(",")
+# Add CORS middleware - restricted to localhost by default.
+# Set LOKI_DASHBOARD_CORS to override (comma-separated origins).
+_cors_default = "http://localhost:57374,http://127.0.0.1:57374"
+_cors_origins = os.environ.get("LOKI_DASHBOARD_CORS", _cors_default).split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in _cors_origins if o.strip()],
@@ -2046,6 +2047,7 @@ async def get_agents():
 @app.post("/api/agents/{agent_id}/kill")
 async def kill_agent(agent_id: str):
     """Kill a specific agent by ID."""
+    agent_id = _sanitize_agent_id(agent_id)
     agents_file = _get_loki_dir() / "state" / "agents.json"
     if not agents_file.exists():
         raise HTTPException(404, "No agents file found")
@@ -2296,7 +2298,7 @@ def run_server(host: str = None, port: int = None) -> None:
     """Run the dashboard server."""
     import uvicorn
     if host is None:
-        # Default to localhost-only; CORS * is safe since not exposed to LAN
+        # Default to localhost-only for security
         host = os.environ.get("LOKI_DASHBOARD_HOST", "127.0.0.1")
     if port is None:
         port = int(os.environ.get("LOKI_DASHBOARD_PORT", "57374"))

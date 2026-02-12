@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -118,7 +118,7 @@ class MemoryEngine:
                 "index.json",
                 {
                     "version": "1.0",
-                    "last_updated": datetime.now().isoformat(),
+                    "last_updated": datetime.now(timezone.utc).isoformat(),
                     "topics": [],
                     "total_memories": 0,
                     "total_tokens_available": 0,
@@ -131,7 +131,7 @@ class MemoryEngine:
                 "timeline.json",
                 {
                     "version": "1.0",
-                    "last_updated": datetime.now().isoformat(),
+                    "last_updated": datetime.now(timezone.utc).isoformat(),
                     "recent_actions": [],
                     "key_decisions": [],
                     "active_context": {
@@ -195,7 +195,7 @@ class MemoryEngine:
         Returns:
             Number of memories removed
         """
-        cutoff = datetime.now() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
         removed_count = 0
 
         # Get referenced episode IDs from semantic patterns
@@ -215,7 +215,7 @@ class MemoryEngine:
 
             # Parse date from directory name (e.g., 2026-01-06)
             try:
-                dir_date = datetime.strptime(date_dir.name, "%Y-%m-%d")
+                dir_date = datetime.strptime(date_dir.name, "%Y-%m-%d").replace(tzinfo=timezone.utc)
             except ValueError:
                 continue
 
@@ -251,7 +251,7 @@ class MemoryEngine:
         """
         # Determine storage path based on timestamp
         trace_dict = trace.to_dict() if hasattr(trace, "to_dict") else trace.__dict__.copy()
-        timestamp = trace_dict.get("timestamp", datetime.now().isoformat())
+        timestamp = trace_dict.get("timestamp", datetime.now(timezone.utc).isoformat())
 
         if isinstance(timestamp, str):
             date_str = timestamp[:10]  # Extract YYYY-MM-DD
@@ -436,7 +436,7 @@ class MemoryEngine:
         for pattern in patterns_data["patterns"]:
             if pattern.get("id") == pattern_id:
                 pattern["usage_count"] = pattern.get("usage_count", 0) + 1
-                pattern["last_used"] = datetime.now().isoformat()
+                pattern["last_used"] = datetime.now(timezone.utc).isoformat()
                 break
 
         self.storage.write_json("semantic/patterns.json", patterns_data)
@@ -618,7 +618,7 @@ class MemoryEngine:
         Returns:
             List of memories within the time range
         """
-        until = until or datetime.now()
+        until = until or datetime.now(timezone.utc)
         results: List[Dict[str, Any]] = []
 
         episodic_path = Path(self.base_path) / "episodic"
@@ -630,7 +630,7 @@ class MemoryEngine:
                 continue
 
             try:
-                dir_date = datetime.strptime(date_dir.name, "%Y-%m-%d")
+                dir_date = datetime.strptime(date_dir.name, "%Y-%m-%d").replace(tzinfo=timezone.utc)
             except ValueError:
                 continue
 
@@ -745,7 +745,7 @@ class MemoryEngine:
             "index.json",
             {
                 "version": "1.0",
-                "last_updated": datetime.now().isoformat(),
+                "last_updated": datetime.now(timezone.utc).isoformat(),
                 "topics": list(topics.values()),
                 "total_memories": total_memories,
                 "total_tokens_available": total_tokens,
@@ -774,7 +774,7 @@ class MemoryEngine:
         # Create action summary
         context = episode.get("context", {})
         action_entry = {
-            "timestamp": episode.get("timestamp", datetime.now().isoformat()),
+            "timestamp": episode.get("timestamp", datetime.now(timezone.utc).isoformat()),
             "action": context.get("goal", "Task completed")[:100],
             "outcome": episode.get("outcome", "unknown"),
             "topic_id": context.get("phase", "general"),
@@ -783,7 +783,7 @@ class MemoryEngine:
         # Add to recent actions (keep last 50)
         timeline["recent_actions"].insert(0, action_entry)
         timeline["recent_actions"] = timeline["recent_actions"][:50]
-        timeline["last_updated"] = datetime.now().isoformat()
+        timeline["last_updated"] = datetime.now(timezone.utc).isoformat()
 
         self.storage.write_json("timeline.json", timeline)
 
@@ -802,7 +802,7 @@ class MemoryEngine:
         topic_found = False
         for topic in index["topics"]:
             if topic.get("id") == category:
-                topic["last_accessed"] = datetime.now().isoformat()
+                topic["last_accessed"] = datetime.now(timezone.utc).isoformat()
                 topic["relevance_score"] = max(
                     topic.get("relevance_score", 0.5),
                     pattern.get("confidence", 0.5),
@@ -815,11 +815,11 @@ class MemoryEngine:
                 "id": category,
                 "summary": f"Patterns for {category}",
                 "relevance_score": pattern.get("confidence", 0.5),
-                "last_accessed": datetime.now().isoformat(),
+                "last_accessed": datetime.now(timezone.utc).isoformat(),
                 "token_count": len(json.dumps(pattern)) // 4,
             })
 
-        index["last_updated"] = datetime.now().isoformat()
+        index["last_updated"] = datetime.now(timezone.utc).isoformat()
         index["total_memories"] = index.get("total_memories", 0) + 1
 
         self.storage.write_json("index.json", index)
@@ -851,10 +851,14 @@ class MemoryEngine:
             if timestamp_str.endswith("Z"):
                 timestamp_str = timestamp_str[:-1]
             timestamp = datetime.fromisoformat(timestamp_str)
+            if timestamp.tzinfo is None:
+                timestamp = timestamp.replace(tzinfo=timezone.utc)
         elif isinstance(timestamp_str, datetime):
             timestamp = timestamp_str
+            if timestamp.tzinfo is None:
+                timestamp = timestamp.replace(tzinfo=timezone.utc)
         else:
-            timestamp = datetime.now()
+            timestamp = datetime.now(timezone.utc)
 
         # Extract phase and goal from context dict
         context = data.get("context", {})
@@ -904,8 +908,12 @@ class MemoryEngine:
                 if last_used_raw.endswith("Z"):
                     last_used_raw = last_used_raw[:-1]
                 last_used = datetime.fromisoformat(last_used_raw)
+                if last_used.tzinfo is None:
+                    last_used = last_used.replace(tzinfo=timezone.utc)
             elif isinstance(last_used_raw, datetime):
                 last_used = last_used_raw
+                if last_used.tzinfo is None:
+                    last_used = last_used.replace(tzinfo=timezone.utc)
 
         # Convert links dicts to Link objects
         links_raw = data.get("links", [])

@@ -118,6 +118,23 @@ class MemoryStorage:
         for directory in directories:
             directory.mkdir(parents=True, exist_ok=True)
 
+        # Clean up stale lock files from previous crashed processes
+        self._cleanup_stale_locks()
+
+    def _cleanup_stale_locks(self) -> None:
+        """Remove stale .lock files older than 5 minutes (safe with concurrent processes)."""
+        try:
+            stale_cutoff = datetime.now(timezone.utc) - timedelta(minutes=5)
+            for lock_file in self.base_path.rglob("*.lock"):
+                try:
+                    mtime = datetime.fromtimestamp(lock_file.stat().st_mtime, tz=timezone.utc)
+                    if mtime < stale_cutoff:
+                        lock_file.unlink()
+                except OSError:
+                    pass
+        except OSError:
+            pass
+
     def _ensure_index(self) -> None:
         """Initialize index.json if it doesn't exist."""
         index_path = self.base_path / "index.json"
@@ -383,10 +400,19 @@ class MemoryStorage:
                 if file_path.exists():
                     with self._file_lock(file_path, exclusive=True):
                         file_path.unlink()
-                    # Clean up lock file
+                    # Clean up lock file (safety net in case _file_lock missed it)
                     lock_path = file_path.with_suffix(".json.lock")
-                    if lock_path.exists():
-                        lock_path.unlink()
+                    try:
+                        if lock_path.exists():
+                            lock_path.unlink()
+                    except OSError:
+                        pass
+                    # Clean up any remaining lock files before checking if dir is empty
+                    for stale_lock in date_dir.glob("*.lock"):
+                        try:
+                            stale_lock.unlink()
+                        except OSError:
+                            pass
                     # Clean up empty date directory
                     if not any(date_dir.iterdir()):
                         date_dir.rmdir()

@@ -348,15 +348,15 @@ class VectorIndex:
         Normalize copies of all vectors for cosine similarity search.
 
         This is called automatically before search operations.
-        Uses copies to avoid corrupting the original stored embeddings.
+        Uses explicit copies to avoid corrupting the original stored embeddings.
         """
         self._normalized_embeddings = []
         for embedding in self.embeddings:
-            norm = np.linalg.norm(embedding)
+            vec_copy = embedding.copy()
+            norm = np.linalg.norm(vec_copy)
             if norm > 0:
-                self._normalized_embeddings.append(embedding / norm)
-            else:
-                self._normalized_embeddings.append(embedding.copy())
+                vec_copy = vec_copy / norm
+            self._normalized_embeddings.append(vec_copy)
         self._normalized = True
 
     def _cosine_similarity(self, a: np.ndarray, b: np.ndarray) -> float:

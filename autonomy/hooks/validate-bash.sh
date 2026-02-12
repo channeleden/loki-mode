@@ -8,29 +8,36 @@ INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('command',''))")
 CWD=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('cwd',''))")
 
-# Dangerous command patterns
+# Dangerous command patterns (matched anywhere in the command string)
+# Safe paths like /tmp/ and relative paths (./) are excluded below
 BLOCKED_PATTERNS=(
-    "^rm -rf /"
-    "^rm -rf ~"
-    "^rm -rf \\\$HOME"
+    "rm -rf /"
+    "rm -rf ~"
+    "rm -rf \\\$HOME"
     "> /dev/sd"
-    "^mkfs "
-    "^dd if=/dev/zero"
-    "^chmod -R 777 /"
+    "mkfs[. ]"
+    "dd if=/dev/zero"
+    "chmod -R 777 /"
+)
+
+# Safe path patterns that override rm -rf / matches
+SAFE_PATTERNS=(
+    "rm -rf /tmp/"
 )
 
 # Check for blocked patterns
 for pattern in "${BLOCKED_PATTERNS[@]}"; do
     if echo "$COMMAND" | grep -qE "$pattern"; then
-        cat << EOF
-{
-  "hookSpecificOutput": {
-    "hookEventName": "PreToolUse",
-    "permissionDecision": "deny",
-    "permissionDecisionReason": "Blocked: potentially dangerous command pattern detected"
-  }
-}
-EOF
+        # Check if a safe pattern also matches (whitelist override)
+        is_safe=false
+        for safe in "${SAFE_PATTERNS[@]}"; do
+            if echo "$COMMAND" | grep -qE "$safe"; then
+                is_safe=true
+                break
+            fi
+        done
+        "$is_safe" && continue
+        printf '%s' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"Blocked: potentially dangerous command pattern detected"}}'
         exit 2
     fi
 done
@@ -42,13 +49,6 @@ printf '%s' "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"command\":$(ech
 echo >> "$LOG_DIR/bash-audit.jsonl"
 
 # Allow command
-cat << EOF
-{
-  "hookSpecificOutput": {
-    "hookEventName": "PreToolUse",
-    "permissionDecision": "allow"
-  }
-}
-EOF
+printf '%s' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
 
 exit 0

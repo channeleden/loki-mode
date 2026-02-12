@@ -65,7 +65,7 @@ loki start
 ./autonomy/run.sh
 ```
 
-You should see: "Loki API server listening on http://localhost:9898"
+You should see: "Loki API server listening on http://localhost:57374"
 
 ### Step 2: Use the Extension
 
@@ -99,7 +99,7 @@ Configure Loki Mode in your VS Code settings:
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| `loki.apiEndpoint` | Backend API server URL | `http://localhost:3456` |
+| `loki.apiEndpoint` | Backend API server URL | `http://localhost:57374` |
 | `loki.defaultProvider` | Default AI provider | `claude` |
 | `loki.autoRefresh` | Auto-refresh interval (ms) | `5000` |
 | `loki.showNotifications` | Show progress notifications | `true` |
@@ -108,7 +108,7 @@ Configure Loki Mode in your VS Code settings:
 
 ```json
 {
-  "loki.apiEndpoint": "http://localhost:3456",
+  "loki.apiEndpoint": "http://localhost:57374",
   "loki.defaultProvider": "claude",
   "loki.autoRefresh": 3000,
   "loki.showNotifications": true
@@ -193,7 +193,7 @@ npm install -g loki-mode
 loki server
 
 # Using Docker
-docker run -p 3456:3456 lokesh/loki-mode
+docker run -p 57374:57374 lokesh/loki-mode
 
 # From source
 cd autonomy && ./run.sh --server

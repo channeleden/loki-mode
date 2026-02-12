@@ -220,15 +220,12 @@ council_vote() {
     local verdicts=""
 
     # Run council members (sequentially for reliability, parallel if provider supports it)
+    # Roles cycle through the 3 core roles for councils larger than 3 members
+    local _council_roles=("requirements_verifier" "test_auditor" "devils_advocate")
     local member=1
     while [ $member -le $COUNCIL_SIZE ]; do
-        local role=""
-        case $member in
-            1) role="requirements_verifier" ;;
-            2) role="test_auditor" ;;
-            3) role="devils_advocate" ;;
-            *) role="generalist" ;;
-        esac
+        local role_index=$(( (member - 1) % ${#_council_roles[@]} ))
+        local role="${_council_roles[$role_index]}"
 
         log_info "Council member $member/$COUNCIL_SIZE ($role) reviewing..."
 
@@ -269,6 +266,7 @@ council_vote() {
             log_warn "Anti-sycophancy: Devil's advocate REJECTED unanimous approval"
             log_warn "Overriding to require one more iteration for verification"
             approve_count=$((approve_count - 1))
+            reject_count=$((reject_count + 1))
         else
             log_info "Anti-sycophancy: Devil's advocate confirmed approval"
         fi
@@ -455,6 +453,9 @@ council_member_review() {
         devils_advocate)
             role_instruction="You are the DEVIL'S ADVOCATE. Your job is to find reasons the project is NOT complete. Look for: missing error handling, security issues, performance problems, missing documentation, untested edge cases, hardcoded values, TODO comments. Be skeptical."
             ;;
+        *)
+            role_instruction="You are a REVIEWER. Evaluate project completion from a general perspective. Check code quality, completeness, test coverage, and overall readiness. Be thorough and honest."
+            ;;
     esac
 
     local prompt="You are a council member reviewing project completion.
@@ -624,6 +625,15 @@ council_heuristic_review() {
                 ((issues++))
             fi
             ;;
+        *)
+            # Generic reviewer: combine checks from all roles
+            if echo "$evidence" | grep -q "No PRD available"; then
+                ((issues++))
+            fi
+            if echo "$evidence" | grep -qiE "(fail|error|FAIL)"; then
+                ((issues++))
+            fi
+            ;;
     esac
 
     if [ $issues -gt 0 ]; then
@@ -633,6 +643,360 @@ council_heuristic_review() {
         echo "VOTE:APPROVE"
         echo "REASON: Heuristic check passed for $role role"
     fi
+}
+
+#===============================================================================
+# Council Evaluate Member - Evaluate a single member's assessment
+#
+# Checks test results, git convergence, and error logs to produce a vote.
+# This is the core evaluation logic used by council_aggregate_votes().
+#
+# Arguments:
+#   $1 - member role (requirements_verifier, test_auditor, devils_advocate)
+#   $2 - evaluation criteria description
+#
+# Returns: prints "COMPLETE <reason>" or "CONTINUE <reason>"
+#===============================================================================
+
+council_evaluate_member() {
+    local role="$1"
+    local criteria="${2:-general completion check}"
+    local loki_dir="${TARGET_DIR:-.}/.loki"
+    local vote="COMPLETE"
+    local reasons=""
+
+    # Check 1: Do tests pass? Look for test results in .loki/
+    local test_failures=0
+    for test_log in "$loki_dir"/logs/test-*.log "$loki_dir"/logs/*test*.log; do
+        if [ -f "$test_log" ]; then
+            local fail_count
+            fail_count=$(grep -ciE "(FAIL|ERROR|failed|error:)" "$test_log" 2>/dev/null || echo "0")
+            test_failures=$((test_failures + fail_count))
+        fi
+    done
+    if [ "$test_failures" -gt 0 ]; then
+        vote="CONTINUE"
+        reasons="${reasons}test failures found ($test_failures); "
+    fi
+
+    # Check 2: Has git diff changed since last iteration? (convergence check)
+    # If code is still changing, work may not be done
+    local current_diff_hash
+    current_diff_hash=$(git diff --stat HEAD 2>/dev/null | (md5sum 2>/dev/null || md5 -r 2>/dev/null) | cut -d' ' -f1 || echo "unknown")
+    if [ "$COUNCIL_CONSECUTIVE_NO_CHANGE" -eq 0 ] && [ "$ITERATION_COUNT" -gt "$COUNCIL_MIN_ITERATIONS" ]; then
+        # Code is still actively changing -- likely not done
+        vote="CONTINUE"
+        reasons="${reasons}code still changing between iterations; "
+    fi
+
+    # Check 3: Are there uncaught errors in logs?
+    local error_count=0
+    if [ -d "$loki_dir/logs" ]; then
+        for log_file in "$loki_dir"/logs/*.log; do
+            if [ -f "$log_file" ]; then
+                local errs
+                errs=$(tail -50 "$log_file" 2>/dev/null | grep -ciE "(uncaught|unhandled|panic|fatal|segfault|traceback)" 2>/dev/null || echo "0")
+                error_count=$((error_count + errs))
+            fi
+        done
+    fi
+    if [ "$error_count" -gt 0 ]; then
+        vote="CONTINUE"
+        reasons="${reasons}uncaught errors in logs ($error_count); "
+    fi
+
+    # Role-specific checks
+    case "$role" in
+        requirements_verifier)
+            # Check if pending tasks remain
+            if [ -f "$loki_dir/queue/pending.json" ]; then
+                local pending
+                pending=$(_QUEUE_FILE="$loki_dir/queue/pending.json" python3 -c "import json, os; print(len(json.load(open(os.environ['_QUEUE_FILE']))))" 2>/dev/null || echo "0")
+                if [ "$pending" -gt 0 ]; then
+                    vote="CONTINUE"
+                    reasons="${reasons}$pending tasks still pending; "
+                fi
+            fi
+            ;;
+        test_auditor)
+            # Check if any test log exists at all
+            local has_tests=false
+            for f in "$loki_dir"/logs/test-*.log "$loki_dir"/logs/*test*.log; do
+                [ -f "$f" ] && has_tests=true && break
+            done
+            if [ "$has_tests" = "false" ]; then
+                vote="CONTINUE"
+                reasons="${reasons}no test results found; "
+            fi
+            ;;
+        devils_advocate)
+            # Check for TODO/FIXME markers
+            local todo_count
+            todo_count=$(grep -rl "TODO\|FIXME\|HACK\|XXX" . --include="*.ts" --include="*.js" --include="*.py" --include="*.sh" 2>/dev/null | wc -l | tr -d ' ')
+            if [ "$todo_count" -gt 5 ]; then
+                vote="CONTINUE"
+                reasons="${reasons}$todo_count files with TODO/FIXME markers; "
+            fi
+            ;;
+    esac
+
+    # Clean up trailing separator
+    reasons="${reasons%; }"
+    if [ -z "$reasons" ]; then
+        reasons="all checks passed for $role ($criteria)"
+    fi
+
+    echo "$vote $reasons"
+}
+
+#===============================================================================
+# Council Aggregate Votes - Collect votes from all members
+#
+# Runs council_evaluate_member() for each council member, tallies votes,
+# and writes results to COUNCIL_STATE_DIR/votes/round-N.json.
+#
+# 2/3 majority needed for COMPLETE verdict.
+#
+# Returns: prints "COMPLETE" or "CONTINUE"
+#===============================================================================
+
+council_aggregate_votes() {
+    local round="${ITERATION_COUNT:-0}"
+    local vote_output_dir="$COUNCIL_STATE_DIR/votes"
+    mkdir -p "$vote_output_dir"
+
+    local complete_count=0
+    local continue_count=0
+    local total_members=$COUNCIL_SIZE
+    local votes_json="["
+    local first=true
+
+    local _council_roles=("requirements_verifier" "test_auditor" "devils_advocate")
+    local member=1
+    while [ $member -le $total_members ]; do
+        local role_index=$(( (member - 1) % ${#_council_roles[@]} ))
+        local role="${_council_roles[$role_index]}"
+
+        local result
+        result=$(council_evaluate_member "$role" "round $round evaluation")
+        local vote_value
+        vote_value=$(echo "$result" | cut -d' ' -f1)
+        local vote_reason
+        vote_reason=$(echo "$result" | cut -d' ' -f2-)
+
+        if [ "$vote_value" = "COMPLETE" ]; then
+            ((complete_count++))
+        else
+            ((continue_count++))
+        fi
+
+        log_info "  Evaluate member $member ($role): $vote_value - $vote_reason"
+
+        # Build JSON array entry
+        if [ "$first" = "true" ]; then
+            first=false
+        else
+            votes_json="${votes_json},"
+        fi
+        # Escape double quotes in reason for JSON safety
+        local safe_reason
+        safe_reason=$(echo "$vote_reason" | sed 's/"/\\"/g')
+        votes_json="${votes_json}{\"member\":$member,\"role\":\"$role\",\"vote\":\"$vote_value\",\"reason\":\"$safe_reason\"}"
+
+        ((member++))
+    done
+    votes_json="${votes_json}]"
+
+    # Calculate threshold: 2/3 majority
+    local threshold=$(( (total_members * 2 + 2) / 3 ))  # ceiling of 2/3
+    local verdict="CONTINUE"
+    if [ "$complete_count" -ge "$threshold" ]; then
+        verdict="COMPLETE"
+    fi
+
+    # Write round results to JSON file
+    local round_file="$vote_output_dir/round-${round}.json"
+    _ROUND="$round" \
+    _COMPLETE="$complete_count" \
+    _CONTINUE="$continue_count" \
+    _TOTAL="$total_members" \
+    _THRESHOLD="$threshold" \
+    _VERDICT="$verdict" \
+    _VOTES="$votes_json" \
+    python3 -c "
+import json, os
+from datetime import datetime, timezone
+round_data = {
+    'round': int(os.environ['_ROUND']),
+    'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+    'complete_votes': int(os.environ['_COMPLETE']),
+    'continue_votes': int(os.environ['_CONTINUE']),
+    'total_members': int(os.environ['_TOTAL']),
+    'threshold': int(os.environ['_THRESHOLD']),
+    'verdict': os.environ['_VERDICT'],
+    'votes': json.loads(os.environ['_VOTES'])
+}
+with open('$round_file', 'w') as f:
+    json.dump(round_data, f, indent=2)
+" || log_warn "Failed to write round vote file"
+
+    log_info "Aggregate vote: $complete_count COMPLETE / $continue_count CONTINUE (threshold: $threshold) -> $verdict"
+
+    echo "$verdict"
+}
+
+#===============================================================================
+# Council Devils Advocate (Enhanced) - Skeptical re-evaluation on unanimous COMPLETE
+#
+# When council_aggregate_votes() returns unanimous COMPLETE, one member
+# re-evaluates with a skeptical perspective. If any issue is found, the
+# verdict flips to CONTINUE.
+#
+# Arguments:
+#   $1 - round number
+#
+# Returns: prints "OVERRIDE_CONTINUE" if flipped, or "CONFIRMED_COMPLETE" if upheld
+#===============================================================================
+
+council_devils_advocate_review() {
+    local round="${1:-$ITERATION_COUNT}"
+    local loki_dir="${TARGET_DIR:-.}/.loki"
+
+    log_warn "Unanimous COMPLETE detected - running devil's advocate re-evaluation..."
+
+    local issues_found=0
+    local issue_details=""
+
+    # Skeptical check 1: Are tests actually running and passing?
+    local has_test_results=false
+    for f in "$loki_dir"/logs/test-*.log "$loki_dir"/logs/*test*.log; do
+        if [ -f "$f" ]; then
+            has_test_results=true
+            # Look for test runner output indicating pass
+            if ! tail -30 "$f" 2>/dev/null | grep -qiE "(passed|success|ok|all tests)"; then
+                ((issues_found++))
+                issue_details="${issue_details}test log $(basename "$f") has no clear pass indicator; "
+            fi
+        fi
+    done
+    if [ "$has_test_results" = "false" ]; then
+        ((issues_found++))
+        issue_details="${issue_details}no test result logs found at all; "
+    fi
+
+    # Skeptical check 2: Are there still failing tasks in the queue?
+    if [ -f "$loki_dir/queue/failed.json" ]; then
+        local failed_count
+        failed_count=$(_QUEUE_FILE="$loki_dir/queue/failed.json" python3 -c "import json, os; print(len(json.load(open(os.environ['_QUEUE_FILE']))))" 2>/dev/null || echo "0")
+        if [ "$failed_count" -gt 0 ]; then
+            ((issues_found++))
+            issue_details="${issue_details}$failed_count tasks in failed queue; "
+        fi
+    fi
+
+    # Skeptical check 3: TODO/FIXME/HACK density
+    local todo_count
+    todo_count=$(grep -rl "TODO\|FIXME\|HACK\|XXX" . --include="*.ts" --include="*.js" --include="*.py" --include="*.sh" 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$todo_count" -gt 3 ]; then
+        ((issues_found++))
+        issue_details="${issue_details}$todo_count files still contain TODO/FIXME markers; "
+    fi
+
+    # Skeptical check 4: Large number of uncommitted changes
+    local uncommitted
+    uncommitted=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$uncommitted" -gt 10 ]; then
+        ((issues_found++))
+        issue_details="${issue_details}$uncommitted uncommitted files; "
+    fi
+
+    # Skeptical check 5: Recent error events
+    if [ -f "$loki_dir/events.jsonl" ]; then
+        local recent_errors
+        recent_errors=$(tail -50 "$loki_dir/events.jsonl" 2>/dev/null | grep -ciE "\"level\":\s*\"error\"" 2>/dev/null || echo "0")
+        if [ "$recent_errors" -gt 0 ]; then
+            ((issues_found++))
+            issue_details="${issue_details}$recent_errors recent error events; "
+        fi
+    fi
+
+    # Record the devil's advocate result
+    issue_details="${issue_details%; }"
+    local da_file="$COUNCIL_STATE_DIR/votes/devils-advocate-round-${round}.json"
+    _ROUND="$round" \
+    _ISSUES="$issues_found" \
+    _DETAILS="${issue_details:-none}" \
+    python3 -c "
+import json, os
+from datetime import datetime, timezone
+da_result = {
+    'round': int(os.environ['_ROUND']),
+    'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+    'issues_found': int(os.environ['_ISSUES']),
+    'details': os.environ['_DETAILS'],
+    'override': int(os.environ['_ISSUES']) > 0
+}
+with open('$da_file', 'w') as f:
+    json.dump(da_result, f, indent=2)
+" || log_warn "Failed to write devil's advocate result"
+
+    if [ "$issues_found" -gt 0 ]; then
+        log_warn "Devil's advocate found $issues_found issues: $issue_details"
+        log_warn "Overriding unanimous COMPLETE -> CONTINUE"
+        echo "OVERRIDE_CONTINUE"
+    else
+        log_info "Devil's advocate confirmed: no issues found, COMPLETE upheld"
+        echo "CONFIRMED_COMPLETE"
+    fi
+}
+
+#===============================================================================
+# Council Evaluate - Unified entry point for council voting pipeline
+#
+# Orchestrates the full evaluation:
+#   1. Run council_aggregate_votes() to collect all member votes
+#   2. If unanimous COMPLETE, run council_devils_advocate_review()
+#   3. Return final verdict
+#
+# Returns 0 if COMPLETE (should stop), 1 if CONTINUE
+#===============================================================================
+
+council_evaluate() {
+    if [ "$COUNCIL_ENABLED" != "true" ]; then
+        return 1
+    fi
+
+    log_info "Running council evaluation pipeline (round $ITERATION_COUNT)..."
+
+    # Step 1: Aggregate votes from all members
+    local aggregate_result
+    aggregate_result=$(council_aggregate_votes)
+
+    if [ "$aggregate_result" = "COMPLETE" ]; then
+        # Step 2: Check if unanimous -- compare complete_count to COUNCIL_SIZE
+        # Re-derive complete count from the round file
+        local round_file="$COUNCIL_STATE_DIR/votes/round-${ITERATION_COUNT}.json"
+        local complete_count=0
+        if [ -f "$round_file" ]; then
+            complete_count=$(_RF="$round_file" python3 -c "import json, os; print(json.load(open(os.environ['_RF'])).get('complete_votes', 0))" 2>/dev/null || echo "0")
+        fi
+
+        if [ "$complete_count" -eq "$COUNCIL_SIZE" ] && [ "$COUNCIL_SIZE" -ge 3 ]; then
+            # Step 3: Unanimous -- run devil's advocate
+            local da_result
+            da_result=$(council_devils_advocate_review "$ITERATION_COUNT")
+            if [ "$da_result" = "OVERRIDE_CONTINUE" ]; then
+                log_warn "Council evaluate: devil's advocate overrode unanimous COMPLETE"
+                return 1  # CONTINUE
+            fi
+        fi
+
+        log_info "Council evaluate: verdict is COMPLETE"
+        return 0  # COMPLETE (should stop)
+    fi
+
+    log_info "Council evaluate: verdict is CONTINUE"
+    return 1  # CONTINUE
 }
 
 #===============================================================================

@@ -337,7 +337,7 @@ describe('DashboardWebviewProvider', () => {
 
     describe('API Integration', () => {
         it('should construct valid API endpoints', () => {
-            const baseUrl = 'http://localhost:9898';
+            const baseUrl = 'http://localhost:57374';
             const endpoints = [
                 '/api/tasks',
                 '/status',

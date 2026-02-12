@@ -1067,14 +1067,16 @@ import_github_issues() {
     local pending_file=".loki/queue/pending.json"
     local task_count=0
 
-    # Ensure pending.json exists with correct format for GitHub import
+    # BUG #14 fix: Normalize to bare [] format (consistent with init_loki_dir
+    # and all other queue consumers). Previously used {"tasks":[]} wrapper here
+    # but bare [] everywhere else, causing format mismatch.
     if [ ! -f "$pending_file" ]; then
-        echo '{"tasks":[]}' > "$pending_file"
-    elif jq -e 'type == "array"' "$pending_file" &>/dev/null; then
-        # Normalize bare array format to {"tasks":[...]} for GitHub import compatibility
+        echo '[]' > "$pending_file"
+    elif jq -e 'type == "object"' "$pending_file" &>/dev/null; then
+        # Normalize {"tasks":[...]} wrapper to bare array
         local _tmp_normalize
         _tmp_normalize=$(mktemp)
-        jq '{tasks: .}' "$pending_file" > "$_tmp_normalize" && mv "$_tmp_normalize" "$pending_file"
+        jq 'if type == "object" then .tasks // [] else . end' "$pending_file" > "$_tmp_normalize" && mv "$_tmp_normalize" "$pending_file"
         rm -f "$_tmp_normalize"
     fi
 
@@ -1094,8 +1096,8 @@ import_github_issues() {
         url=$(echo "$issue" | jq -r '.url')
         labels=$(echo "$issue" | jq -c '[.labels[].name]')
 
-        # Check if task already exists
-        if jq -e ".tasks[] | select(.github_issue == $number)" "$pending_file" &>/dev/null; then
+        # Check if task already exists (bare array format)
+        if jq -e ".[] | select(.github_issue == $number)" "$pending_file" &>/dev/null; then
             log_info "Issue #$number already imported, skipping"
             continue
         fi
@@ -1137,10 +1139,10 @@ import_github_issues() {
                 created_at: $created
             }')
 
-        # Append to pending.json with temp file cleanup on error
+        # Append to pending.json (bare array format) with temp file cleanup on error
         local temp_file
         temp_file=$(mktemp)
-        if jq ".tasks += [$task_json]" "$pending_file" > "$temp_file" && mv "$temp_file" "$pending_file"; then
+        if jq ". += [$task_json]" "$pending_file" > "$temp_file" && mv "$temp_file" "$pending_file"; then
             log_info "Imported issue #$number: $title"
             task_count=$((task_count + 1))
         else
@@ -1293,8 +1295,8 @@ export_tasks_to_github() {
         return 0
     fi
 
-    # Export non-GitHub tasks as issues
-    jq -c '.tasks[] | select(.source != "github")' "$pending_file" 2>/dev/null | while read -r task; do
+    # Export non-GitHub tasks as issues (handles both bare array and wrapper formats)
+    jq -c 'if type == "object" then .tasks // [] else . end | .[] | select(.source != "github")' "$pending_file" 2>/dev/null | while read -r task; do
         local title desc
         title=$(echo "$task" | jq -r '.title')
         desc=$(echo "$task" | jq -r '.description // ""')
@@ -2415,13 +2417,20 @@ write_dashboard_state() {
     local project_path=$(pwd)
     local _tmp_state="${output_file}.tmp"
 
+    # BUG #49 fix: Escape project path/name for JSON to handle special chars
+    # (spaces, quotes, backslashes in directory names)
+    local project_name_escaped
+    local project_path_escaped
+    project_name_escaped=$(printf '%s' "$project_name" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    project_path_escaped=$(printf '%s' "$project_path" | sed 's/\\/\\\\/g; s/"/\\"/g')
+
     cat > "$_tmp_state" << EOF
 {
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "version": "$version",
   "project": {
-    "name": "$project_name",
-    "path": "$project_path"
+    "name": "$project_name_escaped",
+    "path": "$project_path_escaped"
   },
   "mode": "$mode",
   "provider": "${PROVIDER_NAME:-claude}",
@@ -4665,12 +4674,12 @@ build_prompt() {
     fi
 
     # Human directive injection (from HUMAN_INPUT.md)
+    # NOTE: Do NOT unset LOKI_HUMAN_INPUT here - build_prompt runs in a subshell
+    # (command substitution) so unset would not affect the parent shell.
+    # The caller (run_autonomous) clears it after consuming the prompt.
     local human_directive=""
     if [ -n "${LOKI_HUMAN_INPUT:-}" ]; then
         human_directive="HUMAN_DIRECTIVE (PRIORITY): $LOKI_HUMAN_INPUT Execute this directive BEFORE continuing normal tasks."
-        # Clear after consumption so it doesn't repeat every iteration
-        unset LOKI_HUMAN_INPUT
-        rm -f "${TARGET_DIR:-.}/.loki/HUMAN_INPUT.md"
     fi
 
     # Queue task injection (from dashboard or API)
@@ -4794,6 +4803,15 @@ run_autonomous() {
         track_iteration_start "$ITERATION_COUNT" "$prd_path"
 
         local prompt=$(build_prompt $retry "$prd_path" $ITERATION_COUNT)
+
+        # BUG #5 fix: Clear LOKI_HUMAN_INPUT in the parent shell after build_prompt
+        # consumed it. build_prompt runs in a subshell (command substitution), so
+        # any unset inside it does not affect the parent. Clear here to prevent
+        # the same directive from repeating every iteration.
+        if [ -n "${LOKI_HUMAN_INPUT:-}" ]; then
+            unset LOKI_HUMAN_INPUT
+            rm -f "${TARGET_DIR:-.}/.loki/HUMAN_INPUT.md"
+        fi
 
         echo ""
         log_header "Attempt $((retry + 1)) of $MAX_RETRIES"
@@ -5234,11 +5252,19 @@ check_human_intervention() {
     local loki_dir="${TARGET_DIR:-.}/.loki"
 
     # Check for PAUSE file
+    # BUG #4 fix: Check handle_pause return value before deleting PAUSE file.
+    # handle_pause returns 1 if STOP was requested during the pause, so we must
+    # propagate that as return 2 (stop) instead of always returning 1 (continue).
     if [ -f "$loki_dir/PAUSE" ]; then
         log_warn "PAUSE file detected - pausing execution"
         notify_intervention_needed "Execution paused via PAUSE file"
         handle_pause
+        local pause_result=$?
         rm -f "$loki_dir/PAUSE"
+        if [ "$pause_result" -eq 1 ]; then
+            # STOP was requested during pause
+            return 2
+        fi
         return 1
     fi
 
@@ -5287,8 +5313,13 @@ check_human_intervention() {
         rm -f "$loki_dir/signals/COUNCIL_REVIEW_REQUESTED"
         if type council_vote &>/dev/null && council_vote; then
             log_header "COMPLETION COUNCIL: FORCE REVIEW - PROJECT COMPLETE"
-            # Complete the missing steps: COMPLETED marker, memory consolidation, report
-            touch "$loki_dir/COMPLETED"
+            # BUG #17 fix: Write COMPLETED marker, generate council report, and
+            # run memory consolidation (matching the normal council approval path
+            # in council_should_stop).
+            echo "Council force-review approved at iteration $ITERATION_COUNT on $(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$loki_dir/COMPLETED"
+            if type council_write_report &>/dev/null; then
+                council_write_report
+            fi
             log_info "Running memory consolidation..."
             run_memory_consolidation
             notify_all_complete

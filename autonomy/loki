@@ -873,8 +873,8 @@ cmd_status() {
     # Check budget
     if [ -f "$LOKI_DIR/metrics/budget.json" ]; then
         local budget_limit budget_used budget_remaining
-        budget_limit=$(python3 -c "import json; d=json.load(open('$LOKI_DIR/metrics/budget.json')); print(d.get('budget_limit', 0))" 2>/dev/null || echo "0")
-        budget_used=$(python3 -c "import json; d=json.load(open('$LOKI_DIR/metrics/budget.json')); print(round(d.get('budget_used', 0), 2))" 2>/dev/null || echo "0")
+        budget_limit=$(LOKI_BUDGET_FILE="$LOKI_DIR/metrics/budget.json" python3 -c "import json,os; d=json.load(open(os.environ['LOKI_BUDGET_FILE'])); print(d.get('budget_limit', 0))" 2>/dev/null || echo "0")
+        budget_used=$(LOKI_BUDGET_FILE="$LOKI_DIR/metrics/budget.json" python3 -c "import json,os; d=json.load(open(os.environ['LOKI_BUDGET_FILE'])); print(round(d.get('budget_used', 0), 2))" 2>/dev/null || echo "0")
         if [ "$budget_limit" != "0" ]; then
             echo -e "${CYAN}Budget:${NC} \$$budget_used / \$$budget_limit"
         fi
@@ -3109,8 +3109,10 @@ send_slack_notification() {
     project_name=$(basename "$(pwd)")
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    local message_escaped
+    local message_escaped event_escaped project_escaped
     message_escaped=$(printf '%s' "$message" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g')
+    event_escaped=$(printf '%s' "$event_type" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g')
+    project_escaped=$(printf '%s' "$project_name" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g')
 
     # Build Slack payload with blocks for better formatting
     local payload
@@ -3121,7 +3123,7 @@ send_slack_notification() {
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": "Loki Mode: $event_type"
+                "text": "Loki Mode: $event_escaped"
             }
         },
         {
@@ -3136,7 +3138,7 @@ send_slack_notification() {
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "*Project:* $project_name | *Time:* $timestamp"
+                    "text": "*Project:* $project_escaped | *Time:* $timestamp"
                 }
             ]
         }
@@ -3165,8 +3167,10 @@ send_discord_notification() {
     project_name=$(basename "$(pwd)")
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    local message_escaped
+    local message_escaped event_escaped project_escaped
     message_escaped=$(printf '%s' "$message" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g')
+    event_escaped=$(printf '%s' "$event_type" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g')
+    project_escaped=$(printf '%s' "$project_name" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g')
 
     # Build Discord embed payload
     local payload
@@ -3174,11 +3178,11 @@ send_discord_notification() {
 {
     "embeds": [
         {
-            "title": "Loki Mode: $event_type",
+            "title": "Loki Mode: $event_escaped",
             "description": "$message_escaped",
             "color": 5814783,
             "footer": {
-                "text": "Project: $project_name | $timestamp"
+                "text": "Project: $project_escaped | $timestamp"
             }
         }
     ]
@@ -3206,19 +3210,22 @@ send_webhook_notification() {
     project_name=$(basename "$(pwd)")
     local timestamp
     timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-    local message_escaped
+    local message_escaped event_escaped project_escaped cwd_escaped
     message_escaped=$(printf '%s' "$message" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g')
+    event_escaped=$(printf '%s' "$event_type" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g')
+    project_escaped=$(printf '%s' "$project_name" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g')
+    cwd_escaped=$(printf '%s' "$(pwd)" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g')
 
     # Build generic JSON payload
     local payload
     payload=$(cat <<EOF
 {
     "source": "loki-mode",
-    "event": "$event_type",
+    "event": "$event_escaped",
     "message": "$message_escaped",
-    "project": "$project_name",
+    "project": "$project_escaped",
     "timestamp": "$timestamp",
-    "cwd": "$(pwd)"
+    "cwd": "$cwd_escaped"
 }
 EOF
 )
@@ -3405,12 +3412,13 @@ SESSEOF
 
         # Mark session stopped
         if [ -f "$LOKI_DIR/session.json" ]; then
-            python3 -c "
-import json
-with open('$LOKI_DIR/session.json', 'r') as f:
+            LOKI_SESSION_FILE="$LOKI_DIR/session.json" python3 -c "
+import json, os
+p = os.environ['LOKI_SESSION_FILE']
+with open(p, 'r') as f:
     d = json.load(f)
 d['status'] = 'stopped'
-with open('$LOKI_DIR/session.json', 'w') as f:
+with open(p, 'w') as f:
     json.dump(d, f, indent=2)
 " 2>/dev/null || true
         fi
@@ -4169,11 +4177,11 @@ cmd_memory() {
                 case "$1" in
                     --limit|-l)
                         limit="${2:-20}"
-                        shift 2
+                        if [ $# -ge 2 ]; then shift 2; else shift; fi
                         ;;
                     --project|-p)
                         project="${2:-}"
-                        shift 2
+                        if [ $# -ge 2 ]; then shift 2; else shift; fi
                         ;;
                     *)
                         shift
@@ -4364,11 +4372,11 @@ for filename in ['patterns.jsonl', 'mistakes.jsonl', 'successes.jsonl']:
         export)
             local output="${2:-learnings-export.json}"
 
-            python3 -c "
+            LOKI_LEARNINGS_DIR="$learnings_dir" python3 -c "
 import json
 import os
 
-learnings_dir = '$learnings_dir'
+learnings_dir = os.environ['LOKI_LEARNINGS_DIR']
 result = {'patterns': [], 'mistakes': [], 'successes': []}
 
 for category in ['patterns', 'mistakes', 'successes']:
@@ -4392,12 +4400,12 @@ print(f'Exported to $output')
             echo -e "${BOLD}Learning Statistics${NC}"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-            python3 -c "
+            LOKI_LEARNINGS_DIR="$learnings_dir" python3 -c "
 import json
 import os
 from collections import Counter
 
-learnings_dir = '$learnings_dir'
+learnings_dir = os.environ['LOKI_LEARNINGS_DIR']
 projects = Counter()
 categories = Counter()
 
@@ -4431,13 +4439,13 @@ for proj, count in projects.most_common(10):
             echo -e "${BOLD}Deduplicating Learnings${NC}"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-            python3 -c "
+            LOKI_LEARNINGS_DIR="$learnings_dir" python3 -c "
 import json
 import os
 import hashlib
 from datetime import datetime, timezone
 
-learnings_dir = '$learnings_dir'
+learnings_dir = os.environ['LOKI_LEARNINGS_DIR']
 
 def dedupe_file(filepath):
     '''Deduplicate a JSONL file, keeping first occurrence of each unique description'''
@@ -4526,13 +4534,14 @@ except Exception as e:
         consolidate)
             # Run consolidation pipeline
             local hours="${2:-24}"
-            python3 -c "
+            LOKI_HOURS="$hours" python3 -c "
+import os
 try:
     from memory.consolidation import ConsolidationPipeline
     from memory.storage import MemoryStorage
     storage = MemoryStorage('.loki/memory')
     pipeline = ConsolidationPipeline(storage)
-    result = pipeline.consolidate(since_hours=$hours)
+    result = pipeline.consolidate(since_hours=int(os.environ.get('LOKI_HOURS', '24')))
     print('Consolidation complete:')
     print(f'  Patterns created: {result.patterns_created}')
     print(f'  Patterns merged: {result.patterns_merged}')
@@ -5326,9 +5335,9 @@ cmd_council() {
             fi
 
             if [ -f "$council_dir/state.json" ]; then
-                python3 -c "
-import json
-with open('$council_dir/state.json') as f:
+                LOKI_COUNCIL_STATE="$council_dir/state.json" python3 -c "
+import json, os
+with open(os.environ['LOKI_COUNCIL_STATE']) as f:
     state = json.load(f)
 print(f\"Enabled: {state.get('initialized', False)}\")
 print(f\"Total votes: {state.get('total_votes', 0)}\")
@@ -5354,9 +5363,9 @@ else:
             echo -e "${CYAN}=== Council Decision Log ===${NC}"
 
             if [ -f "$council_dir/state.json" ]; then
-                python3 -c "
-import json
-with open('$council_dir/state.json') as f:
+                LOKI_COUNCIL_STATE="$council_dir/state.json" python3 -c "
+import json, os
+with open(os.environ['LOKI_COUNCIL_STATE']) as f:
     state = json.load(f)
 verdicts = state.get('verdicts', [])
 if not verdicts:

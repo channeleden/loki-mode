@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { DEFAULT_API_BASE_URL } from '../utils/constants';
-import { parseStatusResponse } from '../api/validators';
 
 /**
  * Represents the current Loki Mode session state
@@ -386,24 +385,31 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<SessionItem>
 
     private async fetchSession(): Promise<void> {
         try {
-            const response = await fetch(`${this.apiEndpoint}/status`);
+            const response = await fetch(`${this.apiEndpoint}/api/status`);
             if (response.ok) {
-                const rawData = await response.json();
-                const data = parseStatusResponse(rawData);
-                // Map /status response fields to LokiSession interface
-                const isRunning = data.state === 'running' || data.running === true;
-                const isPaused = data.state === 'paused' || data.paused === true;
+                const rawData = await response.json() as Record<string, unknown>;
+                // server.py /api/status returns: status, version, uptime_seconds,
+                // active_sessions, running_agents, pending_tasks, phase, iteration,
+                // complexity, mode, provider, current_task
+                const serverStatus = typeof rawData.status === 'string' ? rawData.status : '';
+                const isRunning = serverStatus === 'running' || serverStatus === 'autonomous';
+                const isPaused = serverStatus === 'paused';
                 let status: 'idle' | 'running' | 'paused' | 'error' = 'idle';
                 if (isPaused) { status = 'paused'; }
                 else if (isRunning) { status = 'running'; }
+                else if (serverStatus === 'stopped') { status = 'idle'; }
+                const pendingTasks = typeof rawData.pending_tasks === 'number' ? rawData.pending_tasks : 0;
+                const provider = typeof rawData.provider === 'string' ? rawData.provider : 'claude';
+                const phase = typeof rawData.phase === 'string' && rawData.phase ? rawData.phase : 'Idle';
+                const currentTask = typeof rawData.current_task === 'string' ? rawData.current_task : undefined;
                 this.session = {
                     active: isRunning || isPaused,
-                    provider: (data.provider as 'claude' | 'codex' | 'gemini') ?? 'claude',
-                    phase: data.currentPhase ?? 'Idle',
+                    provider: (provider as 'claude' | 'codex' | 'gemini') ?? 'claude',
+                    phase,
                     status,
-                    currentTask: data.currentTask,
+                    currentTask,
                     completedTasks: 0,
-                    totalTasks: data.pendingTasks ?? 0
+                    totalTasks: pendingTasks
                 };
                 this.updateDurationTimer();
             } else {

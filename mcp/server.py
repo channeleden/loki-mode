@@ -412,23 +412,39 @@ def _emit_context_relevance_signal(
     thread.start()
 
 
+# BUG #3 FIX: The local mcp/ package shadows the pip-installed mcp SDK.
+# Load FastMCP directly from site-packages using importlib.util to bypass
+# Python's package name resolution entirely (avoids infinite recursion).
+import importlib.util
+import site
+
+_fastmcp_found = False
+_search_paths = []
 try:
-    # The local mcp/ package shadows the pip-installed mcp SDK.
-    # Temporarily remove the parent directory from sys.path so that
-    # "from mcp.server.fastmcp" resolves to the pip package, not this file.
-    _parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    _path_modified = False
-    if _parent_dir in sys.path:
-        sys.path.remove(_parent_dir)
-        _path_modified = True
-    try:
-        from mcp.server.fastmcp import FastMCP
-    finally:
-        # Restore parent dir at end of path so other local imports still work
-        if _path_modified:
-            sys.path.append(_parent_dir)
-except ImportError:
-    logger.error("MCP SDK not installed. Run: pip install mcp")
+    _search_paths.extend(site.getsitepackages())
+except AttributeError:
+    pass
+try:
+    _search_paths.append(site.getusersitepackages())
+except AttributeError:
+    pass
+
+for _site_dir in _search_paths:
+    _fastmcp_path = os.path.join(_site_dir, "mcp", "server", "fastmcp.py")
+    if os.path.isfile(_fastmcp_path):
+        _spec = importlib.util.spec_from_file_location(
+            "mcp_pip_sdk.server.fastmcp", _fastmcp_path,
+            submodule_search_locations=[]
+        )
+        if _spec and _spec.loader:
+            _fastmcp_mod = importlib.util.module_from_spec(_spec)
+            _spec.loader.exec_module(_fastmcp_mod)
+            FastMCP = _fastmcp_mod.FastMCP
+            _fastmcp_found = True
+            break
+
+if not _fastmcp_found:
+    logger.error("MCP SDK (pip package 'mcp') not found in site-packages. Install with: pip install mcp")
     sys.exit(1)
 
 # Read version from VERSION file instead of hardcoding
