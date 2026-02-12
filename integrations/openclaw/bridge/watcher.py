@@ -91,7 +91,7 @@ class LokiFileWatcher:
             })
 
     @staticmethod
-    def _read_json(path: str) -> dict | None:
+    def _read_json(path: str):  # -> Optional[dict]
         """Read and parse a JSON file, returning None on any error."""
         try:
             with open(path, "r", encoding="utf-8") as f:

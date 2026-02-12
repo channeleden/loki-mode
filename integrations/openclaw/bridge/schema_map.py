@@ -128,7 +128,7 @@ def _normalize_event_key(loki_event: dict) -> str:
     return event_type
 
 
-def map_event(loki_event: dict) -> dict | None:
+def map_event(loki_event: dict):  # -> Optional[dict]
     """Map a Loki event to OpenClaw gateway message format.
 
     Accepts either Loki event format (individual JSON file or JSONL entry).
