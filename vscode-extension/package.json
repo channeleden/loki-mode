@@ -2,7 +2,7 @@
   "name": "loki-mode",
   "displayName": "Loki Mode",
   "description": "Multi-agent autonomous development system for Claude Code, OpenAI Codex CLI, and Google Gemini CLI",
-  "version": "5.34.0",
+  "version": "5.35.0",
   "publisher": "asklokesh",
   "license": "MIT",
   "repository": {
@@ -96,6 +96,24 @@
         "title": "Open Dashboard",
         "category": "Loki",
         "icon": "$(dashboard)"
+      },
+      {
+        "command": "loki.refreshCheckpoints",
+        "title": "Refresh Checkpoints",
+        "category": "Loki",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "loki.createCheckpoint",
+        "title": "Create Checkpoint",
+        "category": "Loki",
+        "icon": "$(save)"
+      },
+      {
+        "command": "loki.rollbackCheckpoint",
+        "title": "Rollback to Checkpoint",
+        "category": "Loki",
+        "icon": "$(discard)"
       }
     ],
     "viewsContainers": {
@@ -129,6 +147,11 @@
           "id": "loki-tasks",
           "name": "Tasks",
           "contextualTitle": "Loki Tasks"
+        },
+        {
+          "id": "loki-checkpoints",
+          "name": "Checkpoints",
+          "contextualTitle": "Loki Checkpoints"
         },
         {
           "id": "loki-memory",
@@ -167,6 +190,10 @@
         "contents": "No tasks available.\nStart a Loki session to see tasks."
       },
       {
+        "view": "loki-checkpoints",
+        "contents": "No checkpoints available.\n[Create Checkpoint](command:loki.createCheckpoint)"
+      },
+      {
         "view": "loki-memory",
         "contents": "[DEPRECATED] This view is deprecated.\nPlease use the Memory tab in the main Dashboard instead.\n[Open Dashboard](command:loki.openDashboard)"
       },
@@ -190,6 +217,23 @@
           "command": "loki.refreshTasks",
           "when": "view == loki-tasks",
           "group": "navigation"
+        },
+        {
+          "command": "loki.refreshCheckpoints",
+          "when": "view == loki-checkpoints",
+          "group": "navigation"
+        },
+        {
+          "command": "loki.createCheckpoint",
+          "when": "view == loki-checkpoints",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "loki.rollbackCheckpoint",
+          "when": "view == loki-checkpoints && viewItem == checkpoint",
+          "group": "inline"
         }
       ],
       "commandPalette": [
@@ -208,6 +252,10 @@
         {
           "command": "loki.resume",
           "when": "loki.isPaused"
+        },
+        {
+          "command": "loki.rollbackCheckpoint",
+          "when": "false"
         }
       ]
     },

@@ -21,7 +21,7 @@ sys.path.insert(0, cwd)
 try:
     from memory.engine import MemoryEngine
     from memory.schemas import EpisodeTrace
-    from datetime import datetime
+    from datetime import datetime, timezone
     import json
 
     engine = MemoryEngine(os.path.join(cwd, '.loki/memory'))
@@ -30,7 +30,7 @@ try:
     episode = EpisodeTrace(
         id=session_id,
         task_id=f'session-{session_id}',
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
         duration_seconds=0,
         agent='loki-mode',
         phase='session',

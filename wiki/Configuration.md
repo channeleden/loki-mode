@@ -81,7 +81,7 @@ dashboard:
 #-------------------------------------------------------------------------------
 api:
   # API server port (legacy Node.js server; dashboard uses LOKI_DASHBOARD_PORT)
-  port: 9898
+  port: 57374
 
   # API server host (use 0.0.0.0 for external access)
   host: localhost

@@ -163,7 +163,7 @@ class UnifiedMemoryAccess:
         self.storage.append_action(
             source=source,
             action=action,
-            timestamp=utcnow()
+            timestamp=datetime.now(timezone.utc)
         )
 ```
 

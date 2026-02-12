@@ -3622,6 +3622,195 @@ EXTRACT_SCRIPT
 }
 
 # ============================================================================
+# Session Continuity - Automatic CONTINUITY.md Management
+# Creates/updates .loki/CONTINUITY.md with structured working memory
+# so agents can cheaply load session context (<500 tokens / ~2KB)
+# ============================================================================
+
+update_continuity() {
+    local continuity_file=".loki/CONTINUITY.md"
+    local iteration="${ITERATION_COUNT:-0}"
+    local provider="${PROVIDER_NAME:-claude}"
+    local phase=""
+
+    # Read current phase from orchestrator state
+    if [ -f ".loki/state/orchestrator.json" ]; then
+        phase=$(python3 -c "import json; print(json.load(open('.loki/state/orchestrator.json')).get('currentPhase', 'BOOTSTRAP'))" 2>/dev/null || echo "BOOTSTRAP")
+    else
+        phase="BOOTSTRAP"
+    fi
+
+    # Calculate elapsed time from orchestrator startedAt
+    local elapsed="0m"
+    if [ -f ".loki/state/orchestrator.json" ]; then
+        local started_at
+        started_at=$(python3 -c "import json; print(json.load(open('.loki/state/orchestrator.json')).get('startedAt', ''))" 2>/dev/null || echo "")
+        if [ -n "$started_at" ]; then
+            local elapsed_secs
+            export _CONT_STARTED_AT="$started_at"
+            elapsed_secs=$(python3 << 'ELAPSED_CALC'
+import os
+from datetime import datetime, timezone
+try:
+    sa = os.environ["_CONT_STARTED_AT"]
+    start = datetime.fromisoformat(sa.replace("Z", "+00:00"))
+    now = datetime.now(timezone.utc)
+    print(int((now - start).total_seconds()))
+except Exception:
+    print(0)
+ELAPSED_CALC
+)
+            elapsed_secs="${elapsed_secs:-0}"
+            unset _CONT_STARTED_AT
+            elapsed=$(format_duration "$elapsed_secs")
+        fi
+    fi
+
+    # Get RARV phase name
+    local rarv_phase=""
+    if [ "$iteration" -gt 0 ]; then
+        rarv_phase=$(get_rarv_phase_name "$iteration")
+    fi
+
+    # Use python3 with env vars (no shell interpolation into Python code)
+    export _CONT_FILE="$continuity_file"
+    export _CONT_ITERATION="$iteration"
+    export _CONT_PHASE="$phase"
+    export _CONT_PROVIDER="$provider"
+    export _CONT_ELAPSED="$elapsed"
+    export _CONT_RARV="$rarv_phase"
+
+    python3 << 'CONTINUITY_SCRIPT'
+import json
+import os
+from datetime import datetime, timezone
+
+cont_file = os.environ["_CONT_FILE"]
+iteration = os.environ["_CONT_ITERATION"]
+phase = os.environ["_CONT_PHASE"]
+provider = os.environ["_CONT_PROVIDER"]
+elapsed = os.environ["_CONT_ELAPSED"]
+rarv = os.environ.get("_CONT_RARV", "")
+timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+sections = []
+sections.append(f"# Session Continuity\n\nUpdated: {timestamp}\n")
+
+# Current State
+state_lines = [f"- Iteration: {iteration}"]
+if phase:
+    state_lines.append(f"- Phase: {phase}")
+if rarv:
+    state_lines.append(f"- RARV Step: {rarv}")
+state_lines.append(f"- Provider: {provider}")
+state_lines.append(f"- Elapsed: {elapsed}")
+sections.append("## Current State\n\n" + "\n".join(state_lines) + "\n")
+
+# Last Completed Task - from last git commit
+last_task_lines = []
+try:
+    import subprocess
+    result = subprocess.run(
+        ["git", "log", "-1", "--pretty=format:%s", "--no-merges"],
+        capture_output=True, text=True, timeout=5
+    )
+    if result.returncode == 0 and result.stdout.strip():
+        last_task_lines.append(f"- Last commit: {result.stdout.strip()[:120]}")
+    files_result = subprocess.run(
+        ["git", "diff", "--name-only", "HEAD~1", "HEAD"],
+        capture_output=True, text=True, timeout=5
+    )
+    if files_result.returncode == 0 and files_result.stdout.strip():
+        changed = files_result.stdout.strip().split("\n")[:5]
+        last_task_lines.append(f"- Files changed: {', '.join(changed)}")
+        if len(files_result.stdout.strip().split("\n")) > 5:
+            last_task_lines.append(f"  (+{len(files_result.stdout.strip().split(chr(10))) - 5} more)")
+except Exception:
+    pass
+if not last_task_lines:
+    last_task_lines.append("- No commits yet")
+sections.append("## Last Completed Task\n\n" + "\n".join(last_task_lines) + "\n")
+
+# Active Blockers
+blocker_lines = []
+blocked_file = ".loki/queue/blocked.json"
+if os.path.exists(blocked_file):
+    try:
+        with open(blocked_file) as f:
+            blocked = json.load(f)
+        if isinstance(blocked, dict):
+            blocked = blocked.get("tasks", [])
+        for b in blocked[:3]:
+            title = b.get("title", b.get("id", "unknown"))
+            reason = b.get("reason", b.get("description", ""))
+            line = f"- {title}"
+            if reason:
+                line += f": {reason[:80]}"
+            blocker_lines.append(line)
+    except Exception:
+        pass
+if not blocker_lines:
+    blocker_lines.append("- None")
+sections.append("## Active Blockers\n\n" + "\n".join(blocker_lines) + "\n")
+
+# Next Up - top 3 from pending queue
+next_lines = []
+pending_file = ".loki/queue/pending.json"
+if os.path.exists(pending_file):
+    try:
+        with open(pending_file) as f:
+            pending = json.load(f)
+        if isinstance(pending, dict):
+            pending = pending.get("tasks", [])
+        for t in pending[:3]:
+            title = t.get("title", t.get("id", "unknown"))
+            next_lines.append(f"- {title}")
+    except Exception:
+        pass
+if not next_lines:
+    next_lines.append("- No pending tasks")
+sections.append("## Next Up\n\n" + "\n".join(next_lines) + "\n")
+
+# Key Decisions - from memory timeline (last 5)
+decision_lines = []
+timeline_file = ".loki/memory/timeline.json"
+if os.path.exists(timeline_file):
+    try:
+        with open(timeline_file) as f:
+            timeline = json.load(f)
+        decisions = []
+        if isinstance(timeline, list):
+            for entry in timeline:
+                if entry.get("type") == "key_decision" or "decision" in entry.get("type", ""):
+                    decisions.append(entry)
+                elif "key_decisions" in entry:
+                    for d in entry["key_decisions"]:
+                        decisions.append(d if isinstance(d, dict) else {"description": str(d)})
+        elif isinstance(timeline, dict) and "key_decisions" in timeline:
+            decisions = timeline["key_decisions"]
+        for d in decisions[-5:]:
+            desc = d.get("description", d.get("title", d.get("summary", str(d))))
+            if isinstance(desc, str):
+                decision_lines.append(f"- {desc[:100]}")
+    except Exception:
+        pass
+if not decision_lines:
+    decision_lines.append("- None recorded yet")
+sections.append("## Key Decisions This Session\n\n" + "\n".join(decision_lines) + "\n")
+
+# Write the file (overwrite each time to keep it fresh)
+os.makedirs(os.path.dirname(cont_file) if os.path.dirname(cont_file) else ".", exist_ok=True)
+with open(cont_file, "w") as f:
+    f.write("\n".join(sections))
+CONTINUITY_SCRIPT
+
+    # Clean up exported env vars
+    unset _CONT_FILE _CONT_ITERATION _CONT_PHASE _CONT_PROVIDER _CONT_ELAPSED _CONT_RARV
+
+    log_info "Updated session continuity: $continuity_file"
+}
+
+# ============================================================================
 # Knowledge Compounding - Structured Solutions (v5.30.0)
 # Inspired by Compound Engineering Plugin's docs/solutions/ with YAML frontmatter
 # ============================================================================
@@ -3789,6 +3978,329 @@ if created > 0:
 else:
     print("No new solutions to compound (need 2+ related learnings per category)")
 COMPOUND_SCRIPT
+}
+
+# ============================================================================
+# 3-Reviewer Parallel Code Review (v5.35.0)
+# Specialist pool from skills/quality-gates.md with blind review
+# architecture-strategist always included, 2 more selected by keyword scoring
+# ============================================================================
+
+run_code_review() {
+    local loki_dir="${TARGET_DIR:-.}/.loki"
+    local review_dir="$loki_dir/quality/reviews"
+    local review_id
+    review_id="review-$(date -u +%Y%m%dT%H%M%SZ)-${ITERATION_COUNT:-0}"
+    mkdir -p "$review_dir/$review_id"
+
+    # Get diff from last commit (staged changes)
+    local diff_content
+    diff_content=$(git -C "${TARGET_DIR:-.}" diff HEAD~1 2>/dev/null || git -C "${TARGET_DIR:-.}" diff --cached 2>/dev/null || echo "")
+    if [ -z "$diff_content" ]; then
+        log_info "Code review: No diff to review, skipping"
+        return 0
+    fi
+
+    local changed_files
+    changed_files=$(git -C "${TARGET_DIR:-.}" diff --name-only HEAD~1 2>/dev/null || git -C "${TARGET_DIR:-.}" diff --name-only --cached 2>/dev/null || echo "")
+
+    log_header "CODE REVIEW: $review_id"
+    log_info "Selecting 3 specialist reviewers from pool..."
+
+    # Write diff/files to temp files for python to read (avoid env var size limits)
+    local diff_file="$review_dir/$review_id/diff.txt"
+    local files_file="$review_dir/$review_id/files.txt"
+    echo "$diff_content" > "$diff_file"
+    echo "$changed_files" > "$files_file"
+
+    # Select specialists via keyword scoring (python3 reads files, not env vars)
+    export LOKI_REVIEW_DIFF_FILE="$diff_file"
+    export LOKI_REVIEW_FILES_FILE="$files_file"
+    local selected_specialists
+    selected_specialists=$(python3 << 'SPECIALIST_SELECT'
+import os
+import json
+
+SPECIALISTS = {
+    "security-sentinel": {
+        "keywords": ["auth", "login", "password", "token", "api", "sql", "query", "cookie", "cors", "csrf"],
+        "focus": "OWASP Top 10, injection, auth, secrets, input validation",
+        "checks": "injection (SQL, XSS, command, template), auth bypass, secrets in code, missing input validation, OWASP Top 10, insecure defaults",
+        "priority": 0
+    },
+    "test-coverage-auditor": {
+        "keywords": ["test", "spec", "coverage", "assert", "mock", "fixture", "expect", "describe"],
+        "focus": "Missing tests, edge cases, error paths, boundary conditions",
+        "checks": "missing test cases, uncovered error paths, boundary conditions, mock correctness, test isolation, flaky test patterns",
+        "priority": 1
+    },
+    "performance-oracle": {
+        "keywords": ["database", "query", "cache", "render", "loop", "fetch", "load", "index", "join", "pool"],
+        "focus": "N+1 queries, memory leaks, caching, bundle size, lazy loading",
+        "checks": "N+1 queries, unbounded loops, memory leaks, missing caching, excessive re-renders, large bundle imports, missing pagination",
+        "priority": 2
+    },
+    "dependency-analyst": {
+        "keywords": ["package", "import", "require", "dependency", "npm", "pip", "yarn", "lock"],
+        "focus": "Outdated packages, CVEs, bloat, unused deps, license issues",
+        "checks": "outdated dependencies, known CVEs, unnecessary imports, dependency bloat, license compatibility, unused packages",
+        "priority": 3
+    }
+}
+
+diff_path = os.environ.get("LOKI_REVIEW_DIFF_FILE", "")
+files_path = os.environ.get("LOKI_REVIEW_FILES_FILE", "")
+
+diff_text = ""
+files_text = ""
+if diff_path and os.path.exists(diff_path):
+    with open(diff_path, "r") as f:
+        diff_text = f.read().lower()
+if files_path and os.path.exists(files_path):
+    with open(files_path, "r") as f:
+        files_text = f.read().lower()
+
+search_text = diff_text + " " + files_text
+
+# Score each specialist by keyword matches
+scores = {}
+for name, spec in SPECIALISTS.items():
+    score = sum(1 for kw in spec["keywords"] if kw in search_text)
+    scores[name] = score
+
+# Sort by score descending, then by priority ascending (tie-breaker)
+ranked = sorted(scores.keys(), key=lambda n: (-scores[n], SPECIALISTS[n]["priority"]))
+
+# If no keywords matched at all, use defaults
+if all(s == 0 for s in scores.values()):
+    selected = ["security-sentinel", "test-coverage-auditor"]
+else:
+    selected = ranked[:2]
+
+# Output JSON: architecture-strategist always first, then the 2 selected
+result = {
+    "reviewers": [
+        {
+            "name": "architecture-strategist",
+            "focus": "SOLID, coupling, cohesion, patterns, abstraction, dependency direction",
+            "checks": "SOLID violations, excessive coupling, wrong patterns, missing abstractions, dependency direction issues, god classes/functions"
+        }
+    ] + [
+        {
+            "name": name,
+            "focus": SPECIALISTS[name]["focus"],
+            "checks": SPECIALISTS[name]["checks"]
+        }
+        for name in selected
+    ],
+    "scores": {n: scores[n] for n in scores}
+}
+print(json.dumps(result))
+SPECIALIST_SELECT
+    )
+    unset LOKI_REVIEW_DIFF_FILE LOKI_REVIEW_FILES_FILE
+
+    if [ -z "$selected_specialists" ]; then
+        log_error "Code review: Specialist selection failed"
+        return 1
+    fi
+
+    # Save selection metadata
+    echo "$selected_specialists" > "$review_dir/$review_id/selection.json"
+
+    # Extract reviewer names for logging
+    local reviewer_names
+    reviewer_names=$(echo "$selected_specialists" | python3 -c "import sys,json; d=json.load(sys.stdin); print(', '.join(r['name'] for r in d['reviewers']))")
+    log_info "Selected reviewers: $reviewer_names"
+
+    emit_event_json "code_review_start" \
+        "review_id=$review_id" \
+        "reviewers=$reviewer_names" \
+        "iteration=$ITERATION_COUNT"
+
+    # Dispatch 3 parallel blind reviews using provider-specific invocation
+    local pids=()
+    local reviewer_count
+    reviewer_count=$(echo "$selected_specialists" | python3 -c "import sys,json; print(len(json.load(sys.stdin)['reviewers']))")
+
+    for i in $(seq 0 $((reviewer_count - 1))); do
+        local reviewer_name reviewer_focus reviewer_checks
+        reviewer_name=$(echo "$selected_specialists" | python3 -c "import sys,json; print(json.load(sys.stdin)['reviewers'][$i]['name'])")
+        reviewer_focus=$(echo "$selected_specialists" | python3 -c "import sys,json; print(json.load(sys.stdin)['reviewers'][$i]['focus'])")
+        reviewer_checks=$(echo "$selected_specialists" | python3 -c "import sys,json; print(json.load(sys.stdin)['reviewers'][$i]['checks'])")
+
+        local review_output="$review_dir/$review_id/${reviewer_name}.txt"
+
+        # Build prompt via python to avoid shell quoting issues with diff content
+        local review_prompt_file="$review_dir/$review_id/${reviewer_name}-prompt.txt"
+        export LOKI_REVIEW_PROMPT_NAME="$reviewer_name"
+        export LOKI_REVIEW_PROMPT_FOCUS="$reviewer_focus"
+        export LOKI_REVIEW_PROMPT_CHECKS="$reviewer_checks"
+        export LOKI_REVIEW_PROMPT_DIFF_FILE="$diff_file"
+        export LOKI_REVIEW_PROMPT_FILES_FILE="$files_file"
+        export LOKI_REVIEW_PROMPT_OUT="$review_prompt_file"
+        python3 << 'BUILD_PROMPT'
+import os
+
+name = os.environ["LOKI_REVIEW_PROMPT_NAME"]
+focus = os.environ["LOKI_REVIEW_PROMPT_FOCUS"]
+checks = os.environ["LOKI_REVIEW_PROMPT_CHECKS"]
+
+with open(os.environ["LOKI_REVIEW_PROMPT_FILES_FILE"], "r") as f:
+    files = f.read().strip()
+with open(os.environ["LOKI_REVIEW_PROMPT_DIFF_FILE"], "r") as f:
+    diff = f.read().strip()
+
+prompt = f"""You are {name}. Your SOLE focus is: {focus}.
+
+Review ONLY for: {checks}.
+
+Files changed:
+{files}
+
+Diff:
+{diff}
+
+Output format (STRICT - follow exactly):
+VERDICT: PASS or FAIL
+FINDINGS:
+- [severity] description (file:line)
+Severity levels: Critical, High, Medium, Low
+
+If no issues found, output:
+VERDICT: PASS
+FINDINGS:
+- None"""
+
+with open(os.environ["LOKI_REVIEW_PROMPT_OUT"], "w") as f:
+    f.write(prompt)
+BUILD_PROMPT
+        unset LOKI_REVIEW_PROMPT_NAME LOKI_REVIEW_PROMPT_FOCUS LOKI_REVIEW_PROMPT_CHECKS
+        unset LOKI_REVIEW_PROMPT_DIFF_FILE LOKI_REVIEW_PROMPT_FILES_FILE LOKI_REVIEW_PROMPT_OUT
+
+        log_step "Dispatching reviewer: $reviewer_name"
+
+        # Launch blind review in background (provider-specific)
+        (
+            local prompt_text
+            prompt_text=$(cat "$review_prompt_file")
+            case "${PROVIDER_NAME:-claude}" in
+                claude)
+                    claude --dangerously-skip-permissions -p "$prompt_text" \
+                        --output-format text > "$review_output" 2>/dev/null
+                    ;;
+                codex)
+                    codex exec --full-auto "$prompt_text" \
+                        > "$review_output" 2>/dev/null
+                    ;;
+                gemini)
+                    invoke_gemini_capture "$prompt_text" \
+                        > "$review_output" 2>/dev/null
+                    ;;
+                *)
+                    echo "VERDICT: PASS" > "$review_output"
+                    echo "FINDINGS:" >> "$review_output"
+                    echo "- [Low] Unknown provider, review skipped" >> "$review_output"
+                    ;;
+            esac
+        ) &
+        pids+=($!)
+    done
+
+    # Wait for all reviewers to complete
+    log_info "Waiting for $reviewer_count reviewers to complete (blind review)..."
+    for pid in "${pids[@]}"; do
+        wait "$pid" || true
+    done
+
+    log_info "All reviewers complete. Aggregating verdicts..."
+
+    # Aggregate verdicts: check for FAIL + Critical/High severity
+    local has_blocking=false
+    local pass_count=0
+    local fail_count=0
+    local verdicts_summary=""
+
+    for i in $(seq 0 $((reviewer_count - 1))); do
+        local reviewer_name
+        reviewer_name=$(echo "$selected_specialists" | python3 -c "import sys,json; print(json.load(sys.stdin)['reviewers'][$i]['name'])")
+        local review_output="$review_dir/$review_id/${reviewer_name}.txt"
+
+        if [ ! -f "$review_output" ] || [ ! -s "$review_output" ]; then
+            log_warn "Reviewer $reviewer_name produced no output"
+            verdicts_summary="${verdicts_summary}${reviewer_name}:NO_OUTPUT "
+            continue
+        fi
+
+        # Extract verdict
+        local verdict
+        verdict=$(grep -i "^VERDICT:" "$review_output" | head -1 | sed 's/^VERDICT:[[:space:]]*//' | tr '[:lower:]' '[:upper:]' | tr -d '[:space:]')
+
+        if [ "$verdict" = "FAIL" ]; then
+            ((fail_count++))
+            # Check for Critical/High severity findings
+            if grep -qiE "\[(Critical|High)\]" "$review_output"; then
+                has_blocking=true
+                log_error "BLOCKING: $reviewer_name found Critical/High severity issues"
+            else
+                log_warn "FAIL: $reviewer_name found Medium/Low issues (non-blocking)"
+            fi
+        else
+            ((pass_count++))
+            log_info "PASS: $reviewer_name"
+        fi
+        verdicts_summary="${verdicts_summary}${reviewer_name}:${verdict:-UNKNOWN} "
+    done
+
+    # Save aggregate results via python3 + env vars (no shell interpolation in JSON)
+    export LOKI_REVIEW_AGG_FILE="$review_dir/$review_id/aggregate.json"
+    export LOKI_REVIEW_AGG_ID="$review_id"
+    export LOKI_REVIEW_AGG_ITER="$ITERATION_COUNT"
+    export LOKI_REVIEW_AGG_PASS="$pass_count"
+    export LOKI_REVIEW_AGG_FAIL="$fail_count"
+    export LOKI_REVIEW_AGG_BLOCKING="$has_blocking"
+    export LOKI_REVIEW_AGG_VERDICTS="$verdicts_summary"
+    python3 << 'AGG_SCRIPT'
+import json, os
+result = {
+    "review_id": os.environ["LOKI_REVIEW_AGG_ID"],
+    "iteration": int(os.environ["LOKI_REVIEW_AGG_ITER"]),
+    "pass_count": int(os.environ["LOKI_REVIEW_AGG_PASS"]),
+    "fail_count": int(os.environ["LOKI_REVIEW_AGG_FAIL"]),
+    "has_blocking": os.environ["LOKI_REVIEW_AGG_BLOCKING"] == "true",
+    "verdicts": os.environ["LOKI_REVIEW_AGG_VERDICTS"].strip()
+}
+with open(os.environ["LOKI_REVIEW_AGG_FILE"], "w") as f:
+    json.dump(result, f, indent=2)
+AGG_SCRIPT
+    unset LOKI_REVIEW_AGG_FILE LOKI_REVIEW_AGG_ID LOKI_REVIEW_AGG_ITER
+    unset LOKI_REVIEW_AGG_PASS LOKI_REVIEW_AGG_FAIL LOKI_REVIEW_AGG_BLOCKING LOKI_REVIEW_AGG_VERDICTS
+
+    emit_event_json "code_review_complete" \
+        "review_id=$review_id" \
+        "pass_count=$pass_count" \
+        "fail_count=$fail_count" \
+        "has_blocking=$has_blocking" \
+        "iteration=$ITERATION_COUNT"
+
+    # Anti-sycophancy check: unanimous PASS is suspicious
+    if [ "$pass_count" -eq "$reviewer_count" ] && [ "$fail_count" -eq 0 ]; then
+        log_warn "ANTI-SYCOPHANCY: All $reviewer_count reviewers passed unanimously"
+        log_warn "Devil's advocate note: Unanimous approval may indicate insufficient scrutiny"
+        log_warn "Consider manual review of $review_dir/$review_id/"
+        echo "UNANIMOUS_PASS: All reviewers approved - potential sycophancy risk" \
+            >> "$review_dir/$review_id/anti-sycophancy.txt"
+    fi
+
+    # Blocking decision
+    if [ "$has_blocking" = "true" ]; then
+        log_error "CODE REVIEW BLOCKED: Critical/High findings detected"
+        log_error "Review details: $review_dir/$review_id/"
+        return 1
+    fi
+
+    log_info "Code review passed ($pass_count/$reviewer_count PASS, $fail_count FAIL - no blocking issues)"
+    return 0
 }
 
 load_solutions_context() {
@@ -5315,6 +5827,14 @@ if __name__ == "__main__":
         # Auto-track iteration completion (for dashboard task queue)
         track_iteration_complete "$ITERATION_COUNT" "$exit_code"
 
+        # Update session continuity file for next iteration / agent handoff
+        update_continuity
+
+        # Code review gate (v5.35.0)
+        if [ "$PHASE_CODE_REVIEW" = "true" ] && [ "$ITERATION_COUNT" -gt 0 ]; then
+            run_code_review || log_warn "Code review found issues - check .loki/quality/reviews/"
+        fi
+
         # Check for success - ONLY stop on explicit completion promise
         # There's never a "complete" product - always improvements, bugs, features
         if [ $exit_code -eq 0 ]; then
@@ -5868,6 +6388,9 @@ main() {
 
     # Initialize .loki directory
     init_loki_dir
+
+    # Initialize session continuity file with empty template
+    update_continuity
 
     # Session lock: prevent concurrent sessions on same repo
     local pid_file=".loki/loki.pid"

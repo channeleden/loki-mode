@@ -5,6 +5,22 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.35.0] - 2026-02-12
+
+### Added
+- Quality gates: 3-specialist code review execution in run.sh with keyword-based selection (v5.35.0)
+- CONTINUITY.md: Automatic working memory management updated each iteration (v5.35.0)
+- VSCode extension: Checkpoint tree view with create/rollback commands (v5.35.0)
+- CLI tests: test-compound-cli.sh for knowledge compounding commands
+- CLI tests: test-checkpoint-cli.sh for checkpoint commands
+
+### Fixed
+- docs/SYNERGY-ROADMAP.md: Replaced deprecated utcnow() with datetime.now(timezone.utc)
+- autonomy/hooks/store-episode.sh: Replaced deprecated utcnow() with datetime.now(timezone.utc)
+- wiki/Configuration.md: Fixed stale port 9898 to 57374
+- wiki/Environment-Variables.md: Marked LOKI_API_PORT as deprecated (unified port 57374)
+- SKILL.md: Updated Planned Features table to reflect implemented status
+
 ## [5.34.0] - 2026-02-12
 
 ### Added

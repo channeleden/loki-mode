@@ -8,6 +8,7 @@ import { ChatViewProvider } from './views/chatViewProvider';
 import { LogsViewProvider } from './views/logsViewProvider';
 import { MemoryViewProvider } from './views/memoryViewProvider';
 import { DashboardWebviewProvider } from './views/dashboardWebview';
+import { CheckpointProvider } from './views/checkpointProvider';
 import { LokiApiClient } from './api/client';
 import { parseStatusResponse, isValidTaskStatus } from './api/validators';
 import { LokiEvent, Disposable } from './api/types';
@@ -162,6 +163,7 @@ class TasksProvider implements vscode.TreeDataProvider<TaskItem> {
 // Tree providers
 let sessionsProvider: SessionsProvider;
 let tasksProvider: TasksProvider;
+let checkpointProvider: CheckpointProvider;
 let chatViewProvider: ChatViewProvider;
 let logsViewProvider: LogsViewProvider;
 let memoryViewProvider: MemoryViewProvider;
@@ -968,6 +970,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // Initialize tree providers
     sessionsProvider = new SessionsProvider();
     tasksProvider = new TasksProvider();
+    checkpointProvider = new CheckpointProvider();
 
     // Initialize webview providers
     chatViewProvider = new ChatViewProvider(context.extensionUri, apiClient);
@@ -984,6 +987,11 @@ export function activate(context: vscode.ExtensionContext): void {
 
     const tasksView = vscode.window.createTreeView('loki-tasks', {
         treeDataProvider: tasksProvider,
+        showCollapseAll: false
+    });
+
+    const checkpointsView = vscode.window.createTreeView('loki-checkpoints', {
+        treeDataProvider: checkpointProvider,
         showCollapseAll: false
     });
 
@@ -1038,6 +1046,16 @@ export function activate(context: vscode.ExtensionContext): void {
             // Focus the dashboard view in the sidebar
             vscode.commands.executeCommand('workbench.view.extension.loki-mode');
             logger.info('Dashboard opened');
+        }),
+        vscode.commands.registerCommand('loki.refreshCheckpoints', async () => {
+            await checkpointProvider.refresh();
+            logger.debug('Checkpoints refreshed');
+        }),
+        vscode.commands.registerCommand('loki.createCheckpoint', async () => {
+            await checkpointProvider.createCheckpoint();
+        }),
+        vscode.commands.registerCommand('loki.rollbackCheckpoint', async (item) => {
+            await checkpointProvider.rollbackCheckpoint(item);
         })
     ];
 
@@ -1061,6 +1079,7 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
         sessionsView,
         tasksView,
+        checkpointsView,
         chatView,
         logsView,
         memoryView,

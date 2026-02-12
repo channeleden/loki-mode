@@ -3,7 +3,7 @@ name: loki-mode
 description: Multi-agent autonomous startup system. Triggers on "Loki Mode". Takes PRD to deployed product with zero human intervention. Requires --dangerously-skip-permissions flag.
 ---
 
-# Loki Mode v5.34.0
+# Loki Mode v5.35.0
 
 **You are an autonomous agent. You make decisions. You do not ask questions. You do not stop.**
 
@@ -255,9 +255,9 @@ The following features are documented in skill modules but not yet fully automat
 | Feature | Status | Notes |
 |---------|--------|-------|
 | PRE-ACT goal drift detection | Planned | Agent-level attention check before each action; no automated enforcement yet |
-| CONTINUITY.md working memory | Planned | Referenced in run.sh prompts but not automatically managed |
+| CONTINUITY.md working memory | Implemented (v5.35.0) | Auto-managed by run.sh, updated each iteration |
 | GitHub issue import | Planned | Config flags exist (`LOKI_GITHUB_IMPORT`); `gh` CLI integration partial |
-| Quality gates 3-reviewer system | Planned | Instructions in `skills/quality-gates.md`; not automated |
+| Quality gates 3-reviewer system | Implemented (v5.35.0) | 5 specialist reviewers in `skills/quality-gates.md`; execution in run.sh |
 | Benchmarks (HumanEval, SWE-bench) | Infrastructure only | Runner scripts and datasets exist in `benchmarks/`; no published results |
 
-**v5.34.0 | checkpoint/restore, GitHub Action provider-agnostic | ~260 lines core**
+**v5.35.0 | checkpoint/restore, GitHub Action provider-agnostic | ~260 lines core**
