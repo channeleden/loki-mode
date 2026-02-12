@@ -4309,6 +4309,9 @@ main() {
         watchdog)
             cmd_watchdog "$@"
             ;;
+        audit)
+            cmd_audit "$@"
+            ;;
         version|--version|-v)
             cmd_version
             ;;
@@ -4321,6 +4324,87 @@ main() {
         *)
             echo -e "${RED}Unknown command: $command${NC}"
             echo "Run 'loki help' for usage."
+            exit 1
+            ;;
+    esac
+}
+
+# Agent action audit log
+cmd_audit() {
+    local subcommand="${1:-help}"
+    local audit_file="$LOKI_DIR/logs/agent-audit.jsonl"
+
+    case "$subcommand" in
+        log)
+            if [ ! -f "$audit_file" ]; then
+                echo -e "${YELLOW}No audit log found at $audit_file${NC}"
+                echo "Agent action auditing records entries during loki sessions."
+                exit 0
+            fi
+            local lines="${2:-50}"
+            echo -e "${BOLD}Agent Audit Log${NC} (last $lines entries)"
+            echo "---"
+            tail -n "$lines" "$audit_file" | while IFS= read -r line; do
+                if command -v python3 &>/dev/null; then
+                    python3 -c "
+import json, sys
+try:
+    e = json.loads(sys.argv[1])
+    ts = e.get('timestamp', '?')
+    act = e.get('action', '?')
+    desc = e.get('description', '')
+    it = e.get('iteration', 0)
+    print(f'  [{ts}] [{act}] iter={it} {desc}')
+except: print(f'  {sys.argv[1]}')
+" "$line" 2>/dev/null || echo "  $line"
+                else
+                    echo "  $line"
+                fi
+            done
+            ;;
+        count)
+            if [ ! -f "$audit_file" ]; then
+                echo -e "${YELLOW}No audit log found${NC}"
+                exit 0
+            fi
+            echo -e "${BOLD}Agent Action Counts${NC}"
+            echo "---"
+            if command -v python3 &>/dev/null; then
+                python3 -c "
+import json, sys
+from collections import Counter
+counts = Counter()
+for line in open(sys.argv[1]):
+    try:
+        e = json.loads(line)
+        counts[e.get('action', 'unknown')] += 1
+    except: pass
+for action, count in sorted(counts.items(), key=lambda x: -x[1]):
+    print(f'  {action:25s} {count}')
+print(f'  {\"---\":25s} ---')
+print(f'  {\"TOTAL\":25s} {sum(counts.values())}')
+" "$audit_file" 2>/dev/null
+            else
+                echo "  python3 required for count summary"
+            fi
+            ;;
+        --help|-h|help)
+            echo -e "${BOLD}loki audit${NC} - Agent action audit log"
+            echo ""
+            echo "Usage: loki audit <subcommand>"
+            echo ""
+            echo "Subcommands:"
+            echo "  log [N]     Show last N audit log entries (default: 50)"
+            echo "  count       Count actions by type"
+            echo "  help        Show this help"
+            echo ""
+            echo "The agent audit log records actions taken during Loki sessions,"
+            echo "including CLI invocations, git commits, and session lifecycle events."
+            echo "Log file: $audit_file"
+            ;;
+        *)
+            echo -e "${RED}Unknown audit subcommand: $subcommand${NC}"
+            echo "Run 'loki audit help' for usage."
             exit 1
             ;;
     esac

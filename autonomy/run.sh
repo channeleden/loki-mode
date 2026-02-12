@@ -135,6 +135,11 @@
 #   LOKI_PROMPT_INJECTION - Enable HUMAN_INPUT.md processing (default: false)
 #                           Set to "true" only in trusted environments
 #
+# Branch Protection (agent isolation):
+#   LOKI_BRANCH_PROTECTION     - Create feature branch for agent changes (default: false)
+#                                Agent works on loki/session-<timestamp>-<pid> branch
+#                                Creates PR on session end if gh CLI is available
+#
 # Process Supervision (opt-in):
 #   LOKI_WATCHDOG              - Enable process health monitoring (default: false)
 #   LOKI_WATCHDOG_INTERVAL     - Check interval in seconds (default: 30)
@@ -1800,6 +1805,7 @@ merge_feature() {
             if resolve_conflicts_with_ai "$feature"; then
                 # AI resolved conflicts, commit the merge
                 git commit -m "feat: Merge $feature (AI-resolved conflicts)"
+                audit_agent_action "git_commit" "Committed changes" "merge=$feature,resolution=ai"
                 log_info "Merged with AI conflict resolution: $feature"
             else
                 # AI resolution failed, abort merge
@@ -3401,6 +3407,143 @@ audit_log() {
 EOF
 )
     echo "$log_entry" >> "$audit_file"
+}
+
+#===============================================================================
+# Branch Protection for Agent Changes
+#===============================================================================
+
+setup_agent_branch() {
+    # Create an isolated feature branch for agent changes.
+    # This prevents agents from committing directly to the main branch.
+    # Controlled by LOKI_BRANCH_PROTECTION env var (default: false).
+    local branch_protection="${LOKI_BRANCH_PROTECTION:-false}"
+
+    if [ "$branch_protection" != "true" ]; then
+        log_info "Branch protection disabled (LOKI_BRANCH_PROTECTION=${branch_protection})"
+        return 0
+    fi
+
+    # Ensure we are inside a git repository
+    if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+        log_warn "Not a git repository - skipping branch protection"
+        return 0
+    fi
+
+    local timestamp
+    timestamp=$(date +%s)
+    local branch_name="loki/session-${timestamp}-$$"
+
+    log_info "Branch protection enabled - creating agent branch: $branch_name"
+
+    # Create and checkout the feature branch
+    if ! git checkout -b "$branch_name" 2>/dev/null; then
+        log_error "Failed to create agent branch: $branch_name"
+        return 1
+    fi
+
+    # Store the branch name for later use (PR creation, cleanup)
+    mkdir -p .loki/state
+    echo "$branch_name" > .loki/state/agent-branch.txt
+
+    log_info "Agent branch created: $branch_name"
+    audit_log "BRANCH_PROTECTION" "branch=$branch_name"
+    echo "$branch_name"
+}
+
+create_session_pr() {
+    # Push the agent branch and create a PR if gh CLI is available.
+    # Called during session cleanup to submit agent changes for review.
+    local branch_file=".loki/state/agent-branch.txt"
+
+    if [ ! -f "$branch_file" ]; then
+        # No agent branch was created (branch protection was off)
+        return 0
+    fi
+
+    local branch_name
+    branch_name=$(cat "$branch_file" 2>/dev/null)
+
+    if [ -z "$branch_name" ]; then
+        return 0
+    fi
+
+    log_info "Pushing agent branch: $branch_name"
+
+    # Check if there are any commits on this branch beyond the base
+    local commit_count
+    commit_count=$(git rev-list --count HEAD ^"$(git merge-base HEAD main 2>/dev/null || echo HEAD)" 2>/dev/null || echo "0")
+
+    if [ "$commit_count" = "0" ]; then
+        log_info "No commits on agent branch - skipping PR creation"
+        return 0
+    fi
+
+    # Push the branch
+    if ! git push -u origin "$branch_name" 2>/dev/null; then
+        log_warn "Failed to push agent branch: $branch_name"
+        return 1
+    fi
+
+    # Create PR if gh CLI is available
+    if command -v gh &>/dev/null; then
+        local pr_url
+        pr_url=$(gh pr create \
+            --title "Loki Mode: Agent session changes ($branch_name)" \
+            --body "Automated changes from Loki Mode agent session.
+
+Branch: \`$branch_name\`
+Session PID: $$
+Created: $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --head "$branch_name" 2>/dev/null) || true
+
+        if [ -n "$pr_url" ]; then
+            log_info "PR created: $pr_url"
+            audit_log "PR_CREATED" "branch=$branch_name,url=$pr_url"
+        else
+            log_warn "Failed to create PR - branch pushed to: $branch_name"
+        fi
+    else
+        log_info "gh CLI not available - branch pushed to: $branch_name"
+        log_info "Create a PR manually for branch: $branch_name"
+    fi
+}
+
+#===============================================================================
+# Agent Action Auditing
+#===============================================================================
+
+audit_agent_action() {
+    # Record agent actions to a JSONL audit trail.
+    # Fire-and-forget: errors are silently ignored to avoid blocking execution.
+    # Args: action_type, description, [details]
+    local action_type="${1:-unknown}"
+    local description="${2:-}"
+    local details="${3:-}"
+    local audit_file=".loki/logs/agent-audit.jsonl"
+
+    (
+        mkdir -p .loki/logs 2>/dev/null
+
+        local timestamp
+        timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        local iter="${ITERATION_COUNT:-0}"
+        local pid="$$"
+
+        # Use python3 for reliable JSON formatting (jq may not be installed)
+        python3 -c "
+import json, sys
+entry = {
+    'timestamp': sys.argv[1],
+    'action': sys.argv[2],
+    'description': sys.argv[3],
+    'details': sys.argv[4],
+    'iteration': int(sys.argv[5]),
+    'pid': int(sys.argv[6])
+}
+print(json.dumps(entry))
+" "$timestamp" "$action_type" "$description" "$details" "$iter" "$pid" >> "$audit_file" 2>/dev/null
+    ) &
 }
 
 check_staged_autonomy() {
@@ -5870,6 +6013,9 @@ run_autonomous() {
         log_info "RARV Phase: $rarv_phase -> Tier: $CURRENT_TIER ($tier_param)"
 
         set +e
+        # Audit: record CLI invocation
+        audit_agent_action "cli_invoke" "Starting iteration $ITERATION_COUNT" "provider=${PROVIDER_NAME:-claude},tier=$CURRENT_TIER"
+
         # Provider-specific invocation with dynamic tier selection
         case "${PROVIDER_NAME:-claude}" in
             claude)
@@ -6763,8 +6909,12 @@ main() {
         load_solutions_context "general development"
     fi
 
+    # Setup agent branch protection (isolates agent changes to a feature branch)
+    setup_agent_branch
+
     # Log session start for audit
     audit_log "SESSION_START" "prd=$PRD_PATH,dashboard=$ENABLE_DASHBOARD,staged_autonomy=$STAGED_AUTONOMY,parallel=$PARALLEL_MODE"
+    audit_agent_action "session_start" "Session started" "prd=$PRD_PATH,provider=${PROVIDER_NAME:-claude}"
 
     # Emit session start event for dashboard
     emit_event_json "session_start" \
@@ -6858,6 +7008,10 @@ main() {
             --recovery-steps '["Check logs at .loki/logs/", "Review iteration outputs", "Check for rate limits", "Restart session"]' \
             --context "{\"provider\":\"${PROVIDER_NAME:-claude}\",\"iterations\":$ITERATION_COUNT,\"exit_code\":$result}"
     fi
+
+    # Create PR from agent branch if branch protection was enabled
+    create_session_pr
+    audit_agent_action "session_stop" "Session ended" "result=$result,iterations=$ITERATION_COUNT"
 
     # Cleanup
     stop_dashboard
