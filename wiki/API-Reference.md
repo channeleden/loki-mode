@@ -10,7 +10,7 @@ Loki Mode provides an HTTP API server for session management and real-time event
 
 | Server | Default Port | Technology | Purpose |
 |--------|--------------|------------|---------|
-| **HTTP API** | 9898 | Node.js | Session management, events, memory |
+| **HTTP API** | 57374 | Python/FastAPI | Session management, events, memory |
 
 ---
 
@@ -20,16 +20,17 @@ Start the server:
 ```bash
 loki serve
 # or
-node autonomy/api-server.js --port 9898
+loki api start --port 57374
 ```
 
 ### Configuration
 
 | Environment Variable | Default | Description |
 |---------------------|---------|-------------|
-| `LOKI_API_PORT` | 9898 | API server port |
+| `LOKI_DASHBOARD_PORT` | 57374 | API server port |
+| `LOKI_DASHBOARD_HOST` | `127.0.0.1` | Bind address (localhost-only by default) |
 | `LOKI_DIR` | `.loki` | State directory |
-| `CORS_ALLOWED_ORIGINS` | `*` | Comma-separated allowed CORS origins |
+| `LOKI_DASHBOARD_CORS` | `http://localhost:57374,http://127.0.0.1:57374` | Comma-separated allowed CORS origins |
 
 ---
 
@@ -44,7 +45,7 @@ Basic health check.
 ```json
 {
   "status": "ok",
-  "version": "5.33.0"
+  "version": "5.34.0"
 }
 ```
 
@@ -65,7 +66,7 @@ Get detailed session status.
   "currentTask": "implement-auth",
   "pendingTasks": 5,
   "provider": "claude",
-  "version": "5.33.0",
+  "version": "5.34.0",
   "lokiDir": "/path/to/project/.loki",
   "timestamp": "2026-02-02T12:00:00.000Z"
 }
@@ -184,7 +185,7 @@ Real-time event stream using Server-Sent Events.
 
 **Example:**
 ```javascript
-const events = new EventSource('http://localhost:9898/events');
+const events = new EventSource('http://localhost:57374/events');
 events.onmessage = (e) => {
   const status = JSON.parse(e.data);
   console.log('State:', status.state);
@@ -450,23 +451,24 @@ Resume a paused agent by removing the pause signal file.
 
 ## CORS
 
-All endpoints include CORS headers. By default, all origins are allowed:
+CORS is restricted to localhost by default for security (v5.34.0):
 ```
-Access-Control-Allow-Origin: *
+Access-Control-Allow-Origin: http://localhost:57374, http://127.0.0.1:57374
 Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
 Access-Control-Allow-Headers: *
 ```
 
-For production deployments, restrict CORS origins using the `CORS_ALLOWED_ORIGINS` environment variable:
+To allow additional origins, use the `LOKI_DASHBOARD_CORS` environment variable:
 
 ```bash
 # Allow specific origins (comma-separated)
-export CORS_ALLOWED_ORIGINS="https://myapp.example.com,https://dashboard.example.com"
+export LOKI_DASHBOARD_CORS="http://localhost:57374,https://dashboard.example.com"
 ```
 
 | Environment Variable | Default | Description |
 |---------------------|---------|-------------|
-| `CORS_ALLOWED_ORIGINS` | `*` | Comma-separated list of allowed CORS origins |
+| `LOKI_DASHBOARD_CORS` | `http://localhost:57374,http://127.0.0.1:57374` | Comma-separated list of allowed CORS origins |
+| `LOKI_DASHBOARD_HOST` | `127.0.0.1` | Server bind address (localhost-only by default) |
 
 ---
 
@@ -497,31 +499,31 @@ All error responses use this format:
 
 ```bash
 # Health check
-curl http://localhost:9898/health
+curl http://localhost:57374/health
 
 # Get status
-curl http://localhost:9898/status
+curl http://localhost:57374/status
 
 # Start session
-curl -X POST http://localhost:9898/start \
+curl -X POST http://localhost:57374/start \
   -H "Content-Type: application/json" \
   -d '{"prd": "./prd.md", "provider": "claude"}'
 
 # Stop session
-curl -X POST http://localhost:9898/stop
+curl -X POST http://localhost:57374/stop
 
 # Get logs
-curl "http://localhost:9898/logs?lines=100"
+curl "http://localhost:57374/logs?lines=100"
 
 # Search memory
-curl "http://localhost:9898/memory/search?q=authentication"
+curl "http://localhost:57374/memory/search?q=authentication"
 ```
 
 ### JavaScript
 
 ```javascript
 // Start session
-const response = await fetch('http://localhost:9898/start', {
+const response = await fetch('http://localhost:57374/start', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -534,7 +536,7 @@ const result = await response.json();
 console.log('Started with PID:', result.pid);
 
 // SSE for real-time updates
-const events = new EventSource('http://localhost:9898/events');
+const events = new EventSource('http://localhost:57374/events');
 events.onmessage = (e) => {
   const status = JSON.parse(e.data);
   if (status.state === 'running') {
@@ -549,12 +551,12 @@ events.onmessage = (e) => {
 import requests
 
 # Get status
-response = requests.get('http://localhost:9898/status')
+response = requests.get('http://localhost:57374/status')
 status = response.json()
 print(f"State: {status['state']}, Phase: {status['currentPhase']}")
 
 # Start session
-response = requests.post('http://localhost:9898/start', json={
+response = requests.post('http://localhost:57374/start', json={
     'prd': './prd.md',
     'provider': 'claude'
 })
@@ -562,7 +564,7 @@ result = response.json()
 print(f"Started with PID: {result['pid']}")
 
 # Search learnings
-response = requests.get('http://localhost:9898/memory/search', params={'q': 'auth'})
+response = requests.get('http://localhost:57374/memory/search', params={'q': 'auth'})
 results = response.json()
 for r in results['results']:
     print(f"[{r['type']}] {r['description']}")
@@ -575,7 +577,7 @@ for r in results['results']:
 When enterprise authentication is enabled (`LOKI_ENTERPRISE_AUTH=true`), all endpoints will require a Bearer token:
 
 ```bash
-curl -H "Authorization: Bearer loki_xxx..." http://localhost:9898/status
+curl -H "Authorization: Bearer loki_xxx..." http://localhost:57374/status
 ```
 
 Token management will be available via the `loki enterprise token` CLI commands.

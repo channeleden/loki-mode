@@ -93,7 +93,7 @@ export LOKI_ENTERPRISE_AUTH=true
 loki enterprise token generate my-token
 
 # Use token in requests
-curl -H "Authorization: Bearer loki_xxx..." http://localhost:9898/status
+curl -H "Authorization: Bearer loki_xxx..." http://localhost:57374/status
 ```
 
 Tokens are SHA256 hashed before storage.

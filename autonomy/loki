@@ -4032,6 +4032,9 @@ main() {
         compound)
             cmd_compound "$@"
             ;;
+        checkpoint|cp)
+            cmd_checkpoint "$@"
+            ;;
         council)
             cmd_council "$@"
             ;;
@@ -5313,6 +5316,263 @@ COMPOUND_RUN_SCRIPT
         *)
             echo -e "${RED}Unknown compound command: $subcommand${NC}"
             echo "Run 'loki compound help' for usage."
+            return 1
+            ;;
+    esac
+}
+
+# Checkpoint management - save and restore session state (v5.34.0)
+cmd_checkpoint() {
+    local subcommand="${1:-list}"
+    shift 2>/dev/null || true
+
+    local checkpoints_dir=".loki/state/checkpoints"
+    local index_file="$checkpoints_dir/index.jsonl"
+
+    case "$subcommand" in
+        list|ls)
+            echo -e "${BOLD}Session Checkpoints${NC}"
+            echo ""
+
+            if [ ! -f "$index_file" ]; then
+                echo "  No checkpoints yet."
+                echo ""
+                echo "  Create one with: loki checkpoint create [message]"
+                return 0
+            fi
+
+            local count=0
+            local lines=()
+            while IFS= read -r line; do
+                lines+=("$line")
+            done < "$index_file"
+
+            # Show last 10 entries (most recent last)
+            local total=${#lines[@]}
+            local start=0
+            if [ "$total" -gt 10 ]; then
+                start=$((total - 10))
+            fi
+
+            printf "  ${DIM}%-14s %-20s %-10s %s${NC}\n" "ID" "TIMESTAMP" "GIT SHA" "MESSAGE"
+
+            local i
+            for (( i=start; i<total; i++ )); do
+                local entry="${lines[$i]}"
+                local cp_id=$(echo "$entry" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null)
+                local cp_ts=$(echo "$entry" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('timestamp',''))" 2>/dev/null)
+                local cp_sha=$(echo "$entry" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('git_sha','')[:8])" 2>/dev/null)
+                local cp_msg=$(echo "$entry" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('message','')[:50])" 2>/dev/null)
+
+                if [ -n "$cp_id" ]; then
+                    printf "  ${GREEN}%-14s${NC} %-20s ${CYAN}%-10s${NC} %s\n" "$cp_id" "$cp_ts" "$cp_sha" "$cp_msg"
+                    count=$((count + 1))
+                fi
+            done
+
+            if [ "$count" -eq 0 ]; then
+                echo "  No valid checkpoints found."
+            else
+                echo ""
+                echo "  Showing ${count} of ${total} checkpoints"
+            fi
+            ;;
+
+        create)
+            local message="${*:-manual checkpoint}"
+
+            echo -e "${BOLD}Creating checkpoint...${NC}"
+            echo ""
+
+            # Ensure .loki exists
+            if [ ! -d ".loki" ]; then
+                echo -e "${RED}Error: No .loki directory found. Are you in a Loki project?${NC}"
+                return 1
+            fi
+
+            # Capture git info
+            local git_sha=""
+            local git_branch=""
+            if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+                git_sha=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+                git_branch=$(git branch --show-current 2>/dev/null || echo "unknown")
+            else
+                git_sha="not-a-git-repo"
+                git_branch="none"
+            fi
+
+            # Generate checkpoint ID with timestamp
+            local ts=$(date -u '+%Y%m%d-%H%M%S')
+            local cp_id="cp-${ts}"
+            local cp_dir="$checkpoints_dir/$cp_id"
+
+            # Create checkpoint directory
+            mkdir -p "$cp_dir"
+
+            # Copy state files
+            local copied=0
+            for item in .loki/session.json .loki/dashboard-state.json .loki/queue .loki/memory .loki/metrics .loki/council; do
+                if [ -e "$item" ]; then
+                    cp -r "$item" "$cp_dir/" 2>/dev/null && copied=$((copied + 1))
+                fi
+            done
+
+            # Write metadata
+            local iso_ts=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+            cat > "$cp_dir/metadata.json" << METADATA_EOF
+{
+    "id": "$cp_id",
+    "timestamp": "$iso_ts",
+    "git_sha": "$git_sha",
+    "git_branch": "$git_branch",
+    "message": "$message",
+    "files_copied": $copied,
+    "created_by": "loki checkpoint create"
+}
+METADATA_EOF
+
+            # Append to index
+            mkdir -p "$checkpoints_dir"
+            echo "{\"id\":\"$cp_id\",\"timestamp\":\"$iso_ts\",\"git_sha\":\"$git_sha\",\"git_branch\":\"$git_branch\",\"message\":\"$message\"}" >> "$index_file"
+
+            echo -e "  Checkpoint: ${GREEN}$cp_id${NC}"
+            echo -e "  Git SHA:    ${CYAN}${git_sha:0:8}${NC} ($git_branch)"
+            echo -e "  Message:    $message"
+            echo -e "  Files:      $copied state items copied"
+            echo -e "  Location:   $cp_dir"
+            echo ""
+            echo "  Restore with: loki checkpoint rollback $cp_id"
+            ;;
+
+        show)
+            local cp_id="${1:-}"
+            if [ -z "$cp_id" ]; then
+                echo -e "${RED}Error: Specify a checkpoint ID${NC}"
+                echo "Usage: loki checkpoint show <id>"
+                echo "Run 'loki checkpoint list' to see available checkpoints."
+                return 1
+            fi
+
+            local cp_dir="$checkpoints_dir/$cp_id"
+            local metadata="$cp_dir/metadata.json"
+
+            if [ ! -f "$metadata" ]; then
+                echo -e "${RED}Error: Checkpoint not found: $cp_id${NC}"
+                echo "Run 'loki checkpoint list' to see available checkpoints."
+                return 1
+            fi
+
+            echo -e "${BOLD}Checkpoint: $cp_id${NC}"
+            echo ""
+
+            python3 << SHOW_EOF
+import json, os
+with open("$metadata", "r") as f:
+    d = json.load(f)
+print(f"  ID:         {d.get('id', 'unknown')}")
+print(f"  Timestamp:  {d.get('timestamp', 'unknown')}")
+print(f"  Git SHA:    {d.get('git_sha', 'unknown')}")
+print(f"  Git Branch: {d.get('git_branch', 'unknown')}")
+print(f"  Message:    {d.get('message', 'none')}")
+print(f"  Files:      {d.get('files_copied', 0)} state items")
+print(f"  Created By: {d.get('created_by', 'unknown')}")
+SHOW_EOF
+
+            echo ""
+            echo "  Contents:"
+            for item in "$cp_dir"/*; do
+                [ -e "$item" ] || continue
+                local name=$(basename "$item")
+                [ "$name" = "metadata.json" ] && continue
+                if [ -d "$item" ]; then
+                    local fcount=$(find "$item" -type f 2>/dev/null | wc -l | tr -d ' ')
+                    echo -e "    ${DIM}[dir]${NC}  $name/ ($fcount files)"
+                else
+                    local fsize=$(wc -c < "$item" 2>/dev/null | tr -d ' ')
+                    echo -e "    ${DIM}[file]${NC} $name (${fsize} bytes)"
+                fi
+            done
+            ;;
+
+        rollback)
+            local cp_id="${1:-}"
+            if [ -z "$cp_id" ]; then
+                echo -e "${RED}Error: Specify a checkpoint ID${NC}"
+                echo "Usage: loki checkpoint rollback <id>"
+                echo "Run 'loki checkpoint list' to see available checkpoints."
+                return 1
+            fi
+
+            local cp_dir="$checkpoints_dir/$cp_id"
+            local metadata="$cp_dir/metadata.json"
+
+            if [ ! -f "$metadata" ]; then
+                echo -e "${RED}Error: Checkpoint not found: $cp_id${NC}"
+                echo "Run 'loki checkpoint list' to see available checkpoints."
+                return 1
+            fi
+
+            echo -e "${BOLD}Rolling back to checkpoint: $cp_id${NC}"
+            echo ""
+
+            # Restore state files
+            local restored=0
+            for item in "$cp_dir"/*; do
+                [ -e "$item" ] || continue
+                local name=$(basename "$item")
+                [ "$name" = "metadata.json" ] && continue
+
+                if [ -d "$item" ]; then
+                    rm -rf ".loki/$name"
+                    cp -r "$item" ".loki/$name" 2>/dev/null && restored=$((restored + 1))
+                else
+                    cp "$item" ".loki/$name" 2>/dev/null && restored=$((restored + 1))
+                fi
+            done
+
+            echo -e "  Restored: ${GREEN}$restored${NC} state items from $cp_id"
+
+            # Show git info for manual code rollback
+            local cp_sha=$(python3 -c "import json; d=json.load(open('$metadata')); print(d.get('git_sha','unknown'))" 2>/dev/null)
+            if [ -n "$cp_sha" ] && [ "$cp_sha" != "unknown" ] && [ "$cp_sha" != "not-a-git-repo" ]; then
+                echo ""
+                echo -e "  ${YELLOW}Note:${NC} Session state has been restored, but code is unchanged."
+                echo "  To also roll back code to the checkpoint's git state:"
+                echo ""
+                echo -e "    ${DIM}git reset --hard ${cp_sha:0:8}${NC}"
+                echo ""
+                echo -e "  ${RED}Warning:${NC} git reset --hard will discard uncommitted changes."
+                echo "  Consider 'git stash' first to preserve current work."
+            fi
+            ;;
+
+        help|--help|-h)
+            echo -e "${BOLD}loki checkpoint${NC} - Session state checkpoints"
+            echo ""
+            echo "Save and restore session state snapshots during autonomous runs."
+            echo "Checkpoints capture .loki/ state files and record the git SHA"
+            echo "at the time of creation."
+            echo ""
+            echo "Usage: loki checkpoint <command> [args]"
+            echo "       loki cp <command> [args]"
+            echo ""
+            echo "Commands:"
+            echo "  list              List recent checkpoints (default)"
+            echo "  create [message]  Create a new checkpoint"
+            echo "  show <id>         Show checkpoint details"
+            echo "  rollback <id>     Restore state from a checkpoint"
+            echo "  help              Show this help"
+            echo ""
+            echo "Examples:"
+            echo "  loki checkpoint create 'before refactor'"
+            echo "  loki cp list"
+            echo "  loki cp show cp-20260212-143022"
+            echo "  loki cp rollback cp-20260212-143022"
+            ;;
+
+        *)
+            echo -e "${RED}Unknown checkpoint command: $subcommand${NC}"
+            echo "Run 'loki checkpoint help' for usage."
             return 1
             ;;
     esac

@@ -2,7 +2,7 @@
 
 Complete installation instructions for all platforms and use cases.
 
-**Version:** v5.33.0
+**Version:** v5.34.0
 
 ---
 
@@ -90,7 +90,7 @@ Open VS Code Settings and search for "loki":
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `loki.provider` | `claude` | Default AI provider |
-| `loki.apiPort` | `9898` | API server port |
+| `loki.apiPort` | `57374` | API server port |
 | `loki.apiHost` | `localhost` | API server host |
 | `loki.autoConnect` | `true` | Auto-connect on activation |
 | `loki.showStatusBar` | `true` | Show status bar item |
@@ -110,10 +110,10 @@ loki start
 ./autonomy/run.sh
 
 # Option C: Direct API server start
-node autonomy/api-server.js
+loki serve
 ```
 
-The extension will automatically connect when it detects the server is running at `localhost:9898`.
+The extension will automatically connect when it detects the server is running at `localhost:57374`.
 
 **Troubleshooting:** If you see "API server is not running" errors, make sure you started the server first using one of the commands above.
 
@@ -579,15 +579,14 @@ Loki Mode uses two network ports for different services:
 
 | Port | Service | Description |
 |------|---------|-------------|
-| **57374** | Dashboard (FastAPI) | Web dashboard UI with real-time monitoring, task board, Completion Council views, memory browser, and log streaming. Served by `dashboard/server.py`. |
-| **9898** | REST API Server | JSON API used by the VS Code extension, CLI tools, and programmatic access. Serves endpoints like `/api/status`, `/api/tasks`, `/api/memory`, etc. |
+| **57374** | Dashboard + API (FastAPI) | Unified server serving both the web dashboard UI (real-time monitoring, task board, Completion Council, memory browser, log streaming) and the REST API (used by VS Code extension, CLI tools, programmatic access). Served by `dashboard/server.py`. |
 
 ### When to Use Which Port
 
 - **Browser access** (dashboard, monitoring): Use port **57374** -- `http://localhost:57374`
-- **API calls** (REST, programmatic): Use port **9898** -- `http://localhost:9898`
-- **VS Code extension**: Connects to API on port **9898** automatically (configurable via `loki.apiPort` setting)
-- **Both ports** are started automatically when you run `loki start` or `./autonomy/run.sh`. No manual configuration is needed.
+- **API calls** (REST, programmatic): Use port **57374** -- `http://localhost:57374`
+- **VS Code extension**: Connects to API on port **57374** automatically (configurable via `loki.apiPort` setting)
+- The server is started automatically when you run `loki start` or `./autonomy/run.sh`. No manual configuration is needed.
 
 ### Port Configuration
 
@@ -595,8 +594,8 @@ Loki Mode uses two network ports for different services:
 # Dashboard port (default: 57374)
 LOKI_DASHBOARD_PORT=57374 loki dashboard start
 
-# API port (default: 9898)
-loki serve --port 9898
+# API port (default: 57374)
+loki serve --port 57374
 ```
 
 ### CORS Configuration

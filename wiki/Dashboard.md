@@ -171,17 +171,17 @@ dashboard:
 
 ## API Integration
 
-The dashboard uses the HTTP API at port 9898 for data:
+The dashboard uses the unified HTTP API at port 57374 for data:
 
 ```javascript
 // Dashboard fetches from API
-const status = await fetch('http://localhost:9898/status').then(r => r.json());
-const logs = await fetch('http://localhost:9898/logs?lines=100').then(r => r.json());
+const status = await fetch('http://localhost:57374/status').then(r => r.json());
+const logs = await fetch('http://localhost:57374/logs?lines=100').then(r => r.json());
 ```
 
 SSE for real-time updates:
 ```javascript
-const events = new EventSource('http://localhost:9898/events');
+const events = new EventSource('http://localhost:57374/events');
 events.onmessage = (e) => updateUI(JSON.parse(e.data));
 ```
 
@@ -212,7 +212,7 @@ loki api status
 loki serve
 
 # Check status endpoint
-curl http://localhost:9898/status
+curl http://localhost:57374/status
 ```
 
 ### Connection Refused

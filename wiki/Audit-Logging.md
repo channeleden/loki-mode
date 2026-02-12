@@ -183,7 +183,7 @@ loki enterprise audit export --from 2026-01-01 --level error
 ### Get Audit Entries
 
 ```bash
-curl "http://localhost:9898/audit?limit=50"
+curl "http://localhost:57374/audit?limit=50"
 ```
 
 ### Query Parameters
@@ -201,7 +201,7 @@ curl "http://localhost:9898/audit?limit=50"
 ### Get Summary
 
 ```bash
-curl http://localhost:9898/audit/summary
+curl http://localhost:57374/audit/summary
 ```
 
 ---

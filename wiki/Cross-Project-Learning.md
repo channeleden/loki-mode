@@ -145,7 +145,7 @@ loki memory dedupe
 ### Get Summary
 
 ```bash
-curl http://localhost:9898/memory
+curl http://localhost:57374/memory
 ```
 
 Response:
@@ -161,7 +161,7 @@ Response:
 ### Get Learnings by Type
 
 ```bash
-curl "http://localhost:9898/memory/patterns?limit=10"
+curl "http://localhost:57374/memory/patterns?limit=10"
 ```
 
 Response:
@@ -184,13 +184,13 @@ Response:
 ### Search
 
 ```bash
-curl "http://localhost:9898/memory/search?q=authentication"
+curl "http://localhost:57374/memory/search?q=authentication"
 ```
 
 ### Clear
 
 ```bash
-curl -X DELETE http://localhost:9898/memory/patterns
+curl -X DELETE http://localhost:57374/memory/patterns
 ```
 
 ---

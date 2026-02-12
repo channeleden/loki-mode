@@ -3879,6 +3879,167 @@ if top:
 SOLUTIONS_SCRIPT
 }
 
+# ============================================================================
+# Checkpoint/Snapshot System (v5.34.0)
+# Git-based checkpoints after task completion with state snapshots
+# Inspired by Cursor Self-Driving Codebases + Entire.io provenance tracking
+# ============================================================================
+
+create_checkpoint() {
+    # Create a git checkpoint after task completion
+    # Args: $1 = task description, $2 = task_id (optional)
+    local task_desc="${1:-task completed}"
+    local task_id="${2:-unknown}"
+    local checkpoint_dir=".loki/state/checkpoints"
+    local iteration="${ITERATION_COUNT:-0}"
+
+    mkdir -p "$checkpoint_dir"
+
+    # Only checkpoint if there are uncommitted changes
+    if ! git diff --quiet 2>/dev/null && ! git diff --cached --quiet 2>/dev/null; then
+        log_info "No uncommitted changes to checkpoint"
+        return 0
+    fi
+
+    # Capture git state
+    local git_sha
+    git_sha=$(git rev-parse HEAD 2>/dev/null || echo "no-git")
+    local git_branch
+    git_branch=$(git branch --show-current 2>/dev/null || echo "unknown")
+
+    # Snapshot .loki state files
+    local timestamp
+    timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    local checkpoint_id="cp-${iteration}-$(date +%s)"
+    local cp_dir="${checkpoint_dir}/${checkpoint_id}"
+
+    mkdir -p "$cp_dir"
+
+    # Copy critical state files (lightweight -- not full .loki/)
+    for f in state/orchestrator.json queue/pending.json queue/completed.json queue/in-progress.json queue/current-task.json; do
+        if [ -f ".loki/$f" ]; then
+            local target_dir="$cp_dir/$(dirname "$f")"
+            mkdir -p "$target_dir"
+            cp ".loki/$f" "$cp_dir/$f" 2>/dev/null || true
+        fi
+    done
+
+    # Write checkpoint metadata
+    local safe_desc
+    safe_desc=$(printf '%s' "$task_desc" | sed 's/\\/\\\\/g; s/"/\\"/g' | head -c 200)
+    cat > "$cp_dir/metadata.json" << CPEOF
+{
+  "id": "${checkpoint_id}",
+  "timestamp": "${timestamp}",
+  "iteration": ${iteration},
+  "task_id": "${task_id}",
+  "task_description": "${safe_desc}",
+  "git_sha": "${git_sha}",
+  "git_branch": "${git_branch}",
+  "provider": "${PROVIDER_NAME:-claude}",
+  "phase": "$(cat .loki/state/orchestrator.json 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin).get("currentPhase","unknown"))' 2>/dev/null || echo 'unknown')"
+}
+CPEOF
+
+    # Maintain checkpoint index for fast listing
+    local index_file="${checkpoint_dir}/index.jsonl"
+    printf '{"id":"%s","ts":"%s","iter":%d,"task":"%s","sha":"%s"}\n' \
+        "$checkpoint_id" "$timestamp" "$iteration" "$safe_desc" "$git_sha" \
+        >> "$index_file"
+
+    # Retention: keep last 50 checkpoints, prune older
+    local cp_count
+    cp_count=$(find "$checkpoint_dir" -maxdepth 1 -type d -name "cp-*" 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$cp_count" -gt 50 ]; then
+        local to_remove=$((cp_count - 50))
+        find "$checkpoint_dir" -maxdepth 1 -type d -name "cp-*" 2>/dev/null | sort | head -n "$to_remove" | while read -r old_cp; do
+            rm -r "$old_cp" 2>/dev/null || true
+        done
+        # Rebuild index from remaining checkpoints
+        : > "$index_file"
+        for remaining in "$checkpoint_dir"/cp-*/metadata.json; do
+            [ -f "$remaining" ] || continue
+            python3 -c "
+import json,sys
+m=json.load(open('$remaining'))
+print(json.dumps({'id':m['id'],'ts':m['timestamp'],'iter':m['iteration'],'task':m.get('task_description',''),'sha':m['git_sha']}))
+" >> "$index_file" 2>/dev/null || true
+        done
+    fi
+
+    log_info "Checkpoint created: ${checkpoint_id} (git: ${git_sha:0:8})"
+}
+
+rollback_to_checkpoint() {
+    # Rollback state files to a specific checkpoint
+    # Args: $1 = checkpoint_id
+    local checkpoint_id="$1"
+    local checkpoint_dir=".loki/state/checkpoints"
+    local cp_dir="${checkpoint_dir}/${checkpoint_id}"
+
+    if [ ! -d "$cp_dir" ]; then
+        log_error "Checkpoint not found: ${checkpoint_id}"
+        return 1
+    fi
+
+    # Read checkpoint metadata
+    local git_sha
+    git_sha=$(python3 -c "import json; print(json.load(open('${cp_dir}/metadata.json'))['git_sha'])" 2>/dev/null || echo "")
+
+    log_warn "Rolling back to checkpoint: ${checkpoint_id}"
+
+    # Create a pre-rollback checkpoint first
+    create_checkpoint "pre-rollback snapshot" "rollback"
+
+    # Restore state files
+    for f in state/orchestrator.json queue/pending.json queue/completed.json queue/in-progress.json queue/current-task.json; do
+        if [ -f "${cp_dir}/${f}" ]; then
+            local target_dir=".loki/$(dirname "$f")"
+            mkdir -p "$target_dir"
+            cp "${cp_dir}/${f}" ".loki/${f}" 2>/dev/null || true
+        fi
+    done
+
+    # Log the rollback
+    local timestamp
+    timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    printf '{"event":"rollback","checkpoint":"%s","git_sha":"%s","timestamp":"%s"}\n' \
+        "$checkpoint_id" "$git_sha" "$timestamp" \
+        >> ".loki/events.jsonl" 2>/dev/null || true
+
+    log_info "State files restored from checkpoint: ${checkpoint_id}"
+
+    if [ -n "$git_sha" ] && [ "$git_sha" != "no-git" ]; then
+        log_info "Git SHA at checkpoint: ${git_sha}"
+        log_info "To rollback code: git reset --hard ${git_sha}"
+    fi
+}
+
+list_checkpoints() {
+    # List recent checkpoints
+    local checkpoint_dir=".loki/state/checkpoints"
+    local index_file="${checkpoint_dir}/index.jsonl"
+    local limit="${1:-10}"
+
+    if [ ! -f "$index_file" ]; then
+        echo "No checkpoints found."
+        return
+    fi
+
+    tail -n "$limit" "$index_file" | python3 -c "
+import sys, json
+lines = sys.stdin.readlines()
+for line in reversed(lines):
+    try:
+        cp = json.loads(line)
+        sha = cp.get('sha','')[:8]
+        task = cp.get('task','')[:60]
+        print(f\"  {cp['id']}  {cp['ts']}  [{sha}]  {task}\")
+    except:
+        continue
+"
+}
+
 start_dashboard() {
     log_header "Starting Loki Dashboard"
 
@@ -5794,6 +5955,9 @@ main() {
 
     # Compound learnings into structured solution files (v5.30.0)
     compound_session_to_solutions
+
+    # Create session-end checkpoint (v5.34.0)
+    create_checkpoint "session end (iterations=$ITERATION_COUNT)" "session-end"
 
     # Log session end for audit
     audit_log "SESSION_END" "result=$result,prd=$PRD_PATH"

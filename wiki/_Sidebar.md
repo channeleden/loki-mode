@@ -39,6 +39,6 @@
 
 ---
 
-**Version:** 5.33.0
+**Version:** 5.34.0
 
 [GitHub](https://github.com/asklokesh/loki-mode) | [npm](https://www.npmjs.com/package/loki-mode)

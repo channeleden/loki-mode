@@ -1985,6 +1985,149 @@ async def force_council_review():
 
 
 # =============================================================================
+# Checkpoint API (v5.34.0)
+# =============================================================================
+
+class CheckpointCreate(BaseModel):
+    """Schema for creating a checkpoint."""
+    message: Optional[str] = Field(None, description="Optional description for the checkpoint")
+
+
+def _sanitize_checkpoint_id(checkpoint_id: str) -> str:
+    """Validate checkpoint_id contains only safe characters for file paths."""
+    if not checkpoint_id or ".." in checkpoint_id or not _SAFE_ID_RE.match(checkpoint_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid checkpoint_id: must contain only alphanumeric characters, hyphens, and underscores",
+        )
+    return checkpoint_id
+
+
+@app.get("/api/checkpoints")
+async def list_checkpoints(limit: int = Query(default=20, ge=1, le=200)):
+    """List recent checkpoints from index.jsonl."""
+    loki_dir = _get_loki_dir()
+    index_file = loki_dir / "state" / "checkpoints" / "index.jsonl"
+    checkpoints = []
+
+    if index_file.exists():
+        try:
+            for line in index_file.read_text().strip().split("\n"):
+                if line.strip():
+                    try:
+                        checkpoints.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        pass
+        except Exception:
+            pass
+
+    # Return most recent first, limited
+    checkpoints.reverse()
+    return checkpoints[:limit]
+
+
+@app.get("/api/checkpoints/{checkpoint_id}")
+async def get_checkpoint(checkpoint_id: str):
+    """Get checkpoint details by ID."""
+    checkpoint_id = _sanitize_checkpoint_id(checkpoint_id)
+    loki_dir = _get_loki_dir()
+    metadata_file = loki_dir / "state" / "checkpoints" / checkpoint_id / "metadata.json"
+
+    if not metadata_file.exists():
+        raise HTTPException(status_code=404, detail="Checkpoint not found")
+
+    try:
+        return json.loads(metadata_file.read_text())
+    except (json.JSONDecodeError, IOError) as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read checkpoint: {e}")
+
+
+@app.post("/api/checkpoints", status_code=201)
+async def create_checkpoint(body: CheckpointCreate = None):
+    """Create a new checkpoint capturing current state."""
+    import subprocess
+    import shutil
+
+    loki_dir = _get_loki_dir()
+    checkpoints_dir = loki_dir / "state" / "checkpoints"
+    checkpoints_dir.mkdir(parents=True, exist_ok=True)
+
+    # Generate checkpoint ID from timestamp
+    now = datetime.now(timezone.utc)
+    checkpoint_id = now.strftime("chk-%Y%m%d-%H%M%S")
+
+    # Create checkpoint directory
+    checkpoint_dir = checkpoints_dir / checkpoint_id
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+    # Capture git SHA
+    git_sha = ""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode == 0:
+            git_sha = result.stdout.strip()
+    except Exception:
+        pass
+
+    # Copy key state files into checkpoint
+    state_files = [
+        "dashboard-state.json",
+        "session.json",
+    ]
+    for fname in state_files:
+        src = loki_dir / fname
+        if src.exists():
+            try:
+                shutil.copy2(str(src), str(checkpoint_dir / fname))
+            except Exception:
+                pass
+
+    # Copy queue directory if present
+    queue_src = loki_dir / "queue"
+    if queue_src.exists():
+        try:
+            shutil.copytree(str(queue_src), str(checkpoint_dir / "queue"), dirs_exist_ok=True)
+        except Exception:
+            pass
+
+    # Build metadata
+    message = ""
+    if body and body.message:
+        message = body.message
+
+    metadata = {
+        "id": checkpoint_id,
+        "created_at": now.isoformat(),
+        "git_sha": git_sha,
+        "message": message,
+        "files": [f.name for f in checkpoint_dir.iterdir() if f.is_file()],
+    }
+
+    # Write metadata.json
+    (checkpoint_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))
+
+    # Append to index.jsonl
+    index_file = checkpoints_dir / "index.jsonl"
+    with open(str(index_file), "a") as f:
+        f.write(json.dumps(metadata) + "\n")
+
+    # Retention policy: keep last 50 checkpoints
+    MAX_CHECKPOINTS = 50
+    all_dirs = sorted(
+        [d for d in checkpoints_dir.iterdir() if d.is_dir()],
+        key=lambda d: d.name,
+    )
+    while len(all_dirs) > MAX_CHECKPOINTS:
+        oldest = all_dirs.pop(0)
+        shutil.rmtree(str(oldest), ignore_errors=True)
+
+    return metadata
+
+
+# =============================================================================
 # Agent Management API (v5.25.0)
 # =============================================================================
 

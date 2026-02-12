@@ -5,6 +5,23 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.34.0] - 2026-02-12
+
+### Added
+- Checkpoint/snapshot system with automatic git SHA tracking (v5.34.0)
+- Automatic state checkpoints after session completion in run.sh
+- `loki checkpoint` CLI with create/list/show/rollback subcommands
+- 3 checkpoint REST API endpoints (GET/POST /api/checkpoints)
+- Checkpoint retention policy (50 max, auto-prune oldest)
+- Pre-rollback safety snapshot before restoring state
+
+### Fixed
+- Dockerfile: Added missing COPY for learning/ and templates/ directories
+- Dockerfile.sandbox: Added missing COPY for learning/ and templates/ directories
+- Wiki API-Reference: Fixed stale port 9898 references (now 57374)
+- Wiki API-Reference: Updated CORS documentation to reflect v5.33.0 security defaults
+- Wiki API-Reference: Updated technology from Node.js to Python/FastAPI
+
 ## [5.33.0] - 2026-02-11
 
 ### Fixed - Critical (5)

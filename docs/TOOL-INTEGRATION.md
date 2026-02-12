@@ -72,7 +72,7 @@ loki memory index
 loki memory retrieve "authentication"
 
 # Manage API server (enables VS Code, dashboard)
-loki serve --port 9898
+loki serve --port 57374
 loki api start
 
 # View dashboard (web UI)

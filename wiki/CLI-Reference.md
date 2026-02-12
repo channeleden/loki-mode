@@ -224,7 +224,7 @@ loki api [SUBCOMMAND] [OPTIONS]
 **Options:**
 | Option | Description |
 |--------|-------------|
-| `--port PORT` | Server port (default: 9898) |
+| `--port PORT` | Server port (default: 57374) |
 | `--host HOST` | Server host (default: localhost) |
 
 **Subcommands (api):**

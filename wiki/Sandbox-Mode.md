@@ -285,7 +285,7 @@ sudo loki sandbox start
 docker info
 
 # Check for port conflicts
-lsof -i :9898
+lsof -i :57374
 
 # View container logs
 docker logs loki-sandbox

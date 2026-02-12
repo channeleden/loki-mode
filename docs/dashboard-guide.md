@@ -24,7 +24,7 @@ open http://localhost:57374
 
 The dashboard automatically syncs with Loki Mode when it's running, polling `dashboard-state.json` every 2 seconds.
 
-**Ports:** The dashboard runs on port **57374**. The REST API server runs separately on port **9898**. See [INSTALLATION.md](INSTALLATION.md#ports) for details.
+**Ports:** The dashboard and API run on unified port **57374** (FastAPI serves both). See [INSTALLATION.md](INSTALLATION.md#ports) for details.
 
 ---
 
