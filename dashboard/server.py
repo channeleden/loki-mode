@@ -8,6 +8,8 @@ import asyncio
 import json
 import logging
 import os
+import time
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path as _Path
@@ -42,6 +44,29 @@ from .models import (
 from . import registry
 from . import auth
 from . import audit
+
+# ---------------------------------------------------------------------------
+# Simple in-memory rate limiter for control endpoints
+# ---------------------------------------------------------------------------
+
+class _RateLimiter:
+    """Simple in-memory rate limiter for control endpoints."""
+
+    def __init__(self, max_calls: int = 10, window_seconds: int = 60):
+        self._max_calls = max_calls
+        self._window = window_seconds
+        self._calls: dict[str, list[float]] = defaultdict(list)
+
+    def check(self, key: str) -> bool:
+        now = time.time()
+        self._calls[key] = [t for t in self._calls[key] if now - t < self._window]
+        if len(self._calls[key]) >= self._max_calls:
+            return False
+        self._calls[key].append(now)
+        return True
+
+
+_control_limiter = _RateLimiter(max_calls=10, window_seconds=60)
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -440,7 +465,7 @@ async def get_project(
     )
 
 
-@app.put("/api/projects/{project_id}", response_model=ProjectResponse)
+@app.put("/api/projects/{project_id}", response_model=ProjectResponse, dependencies=[Depends(auth.require_scope("control"))])
 async def update_project(
     project_id: int,
     project_update: ProjectUpdate,
@@ -486,7 +511,7 @@ async def update_project(
     )
 
 
-@app.delete("/api/projects/{project_id}", status_code=204)
+@app.delete("/api/projects/{project_id}", status_code=204, dependencies=[Depends(auth.require_scope("control"))])
 async def delete_project(
     project_id: int,
     db: AsyncSession = Depends(get_db),
@@ -662,7 +687,7 @@ async def get_task(
     return TaskResponse.model_validate(task)
 
 
-@app.put("/api/tasks/{task_id}", response_model=TaskResponse)
+@app.put("/api/tasks/{task_id}", response_model=TaskResponse, dependencies=[Depends(auth.require_scope("control"))])
 async def update_task(
     task_id: int,
     task_update: TaskUpdate,
@@ -703,7 +728,7 @@ async def update_task(
     return TaskResponse.model_validate(task)
 
 
-@app.delete("/api/tasks/{task_id}", status_code=204)
+@app.delete("/api/tasks/{task_id}", status_code=204, dependencies=[Depends(auth.require_scope("control"))])
 async def delete_task(
     task_id: int,
     db: AsyncSession = Depends(get_db),
@@ -890,7 +915,7 @@ async def get_registered_project(identifier: str):
     return project
 
 
-@app.delete("/api/registry/projects/{identifier}", status_code=204)
+@app.delete("/api/registry/projects/{identifier}", status_code=204, dependencies=[Depends(auth.require_scope("control"))])
 async def unregister_project(identifier: str):
     """Remove a project from the registry."""
     if not registry.unregister_project(identifier):
@@ -1028,7 +1053,7 @@ async def list_tokens(include_revoked: bool = False):
     return auth.list_tokens(include_revoked=include_revoked)
 
 
-@app.delete("/api/enterprise/tokens/{identifier}")
+@app.delete("/api/enterprise/tokens/{identifier}", dependencies=[Depends(auth.require_scope("admin"))])
 async def revoke_token(identifier: str, permanent: bool = False):
     """
     Revoke or delete a token (enterprise only).
@@ -1606,18 +1631,22 @@ def _read_events(time_range: str = "7d") -> list:
 
 
 # Session control endpoints (proxy to control.py functions)
-@app.post("/api/control/pause")
+@app.post("/api/control/pause", dependencies=[Depends(auth.require_scope("control"))])
 async def pause_session():
     """Pause the current session by creating PAUSE file."""
+    if not _control_limiter.check("control"):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
     pause_file = _get_loki_dir() / "PAUSE"
     pause_file.parent.mkdir(parents=True, exist_ok=True)
     pause_file.write_text(datetime.now(timezone.utc).isoformat())
     return {"success": True, "message": "Session paused"}
 
 
-@app.post("/api/control/resume")
+@app.post("/api/control/resume", dependencies=[Depends(auth.require_scope("control"))])
 async def resume_session():
     """Resume a paused session by removing PAUSE/STOP files."""
+    if not _control_limiter.check("control"):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
     for fname in ["PAUSE", "STOP"]:
         fpath = _get_loki_dir() / fname
         try:
@@ -1627,9 +1656,11 @@ async def resume_session():
     return {"success": True, "message": "Session resumed"}
 
 
-@app.post("/api/control/stop")
+@app.post("/api/control/stop", dependencies=[Depends(auth.require_scope("control"))])
 async def stop_session():
     """Stop the session by creating STOP file and sending SIGTERM."""
+    if not _control_limiter.check("control"):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
     stop_file = _get_loki_dir() / "STOP"
     stop_file.parent.mkdir(parents=True, exist_ok=True)
     stop_file.write_text(datetime.now(timezone.utc).isoformat())
@@ -2132,7 +2163,7 @@ async def create_checkpoint(body: CheckpointCreate = None):
 # =============================================================================
 
 @app.get("/api/agents")
-async def get_agents():
+async def get_agents(token: Optional[dict] = Depends(auth.get_current_token)):
     """Get all active and recent agents."""
     agents_file = _get_loki_dir() / "state" / "agents.json"
     agents = []
@@ -2187,9 +2218,11 @@ async def get_agents():
     return agents
 
 
-@app.post("/api/agents/{agent_id}/kill")
+@app.post("/api/agents/{agent_id}/kill", dependencies=[Depends(auth.require_scope("control"))])
 async def kill_agent(agent_id: str):
     """Kill a specific agent by ID."""
+    if not _control_limiter.check("control"):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
     agent_id = _sanitize_agent_id(agent_id)
     agents_file = _get_loki_dir() / "state" / "agents.json"
     if not agents_file.exists():
@@ -2234,9 +2267,11 @@ async def kill_agent(agent_id: str):
         )
 
 
-@app.post("/api/agents/{agent_id}/pause")
+@app.post("/api/agents/{agent_id}/pause", dependencies=[Depends(auth.require_scope("control"))])
 async def pause_agent(agent_id: str):
     """Pause a specific agent by writing a pause signal."""
+    if not _control_limiter.check("control"):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
     agent_id = _sanitize_agent_id(agent_id)
     signal_dir = _get_loki_dir() / "signals"
     signal_dir.mkdir(parents=True, exist_ok=True)
@@ -2246,9 +2281,11 @@ async def pause_agent(agent_id: str):
     return {"success": True, "message": f"Pause signal sent to agent {agent_id}"}
 
 
-@app.post("/api/agents/{agent_id}/resume")
+@app.post("/api/agents/{agent_id}/resume", dependencies=[Depends(auth.require_scope("control"))])
 async def resume_agent(agent_id: str):
     """Resume a paused agent."""
+    if not _control_limiter.check("control"):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
     agent_id = _sanitize_agent_id(agent_id)
     signal_file = _get_loki_dir() / "signals" / f"PAUSE_AGENT_{agent_id}"
     try:
@@ -2259,7 +2296,7 @@ async def resume_agent(agent_id: str):
 
 
 @app.get("/api/logs")
-async def get_logs(lines: int = 100):
+async def get_logs(lines: int = 100, token: Optional[dict] = Depends(auth.get_current_token)):
     """Get recent log entries from session log files."""
     log_dir = _get_loki_dir() / "logs"
     entries = []

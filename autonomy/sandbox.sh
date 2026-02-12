@@ -727,7 +727,7 @@ docker_desktop_sandbox_prompt() {
     docker sandbox exec -w "$PROJECT_DIR" \
         ${DESKTOP_ENV_ARGS[@]+"${DESKTOP_ENV_ARGS[@]}"} \
         "$DESKTOP_SANDBOX_NAME" \
-        bash -c "echo '$message' > ${PROJECT_DIR}/.loki/HUMAN_INPUT.md"
+        bash -c "printf '%s\n' \"\$1\" > ${PROJECT_DIR}/.loki/HUMAN_INPUT.md" -- "$message"
 
     log_success "Prompt sent to sandbox"
 }

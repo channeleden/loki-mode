@@ -5,7 +5,7 @@
 FROM ubuntu:24.04
 
 LABEL maintainer="Lokesh Mure"
-LABEL version="5.35.0"
+LABEL version="5.36.0"
 LABEL description="Multi-agent autonomous startup system for Claude Code, Codex CLI, and Gemini CLI"
 
 # Prevent interactive prompts during install
@@ -53,6 +53,9 @@ RUN rm -rf /usr/lib/python3/dist-packages/setuptools* \
 RUN npm install -g npm@latest \
     && npm cache clean --force
 
+# Security: Create non-root user (UID 1000 for host volume mount compatibility)
+RUN useradd -m -s /bin/bash -u 1000 loki
+
 # Create app directory
 WORKDIR /opt/loki-mode
 
@@ -77,17 +80,20 @@ RUN pip3 install --no-cache-dir --break-system-packages \
 # Make scripts executable
 RUN chmod +x autonomy/run.sh autonomy/loki
 
-# Set up symlinks
-RUN mkdir -p /root/.claude/skills && \
-    ln -sf /opt/loki-mode /root/.claude/skills/loki-mode && \
+# Set up symlinks for loki user
+RUN mkdir -p /home/loki/.claude/skills && \
+    ln -sf /opt/loki-mode /home/loki/.claude/skills/loki-mode && \
     ln -sf /opt/loki-mode/autonomy/loki /usr/local/bin/loki
+
+# Security: Set ownership and switch to non-root user
+RUN mkdir -p /workspace && \
+    chown -R loki:loki /opt/loki-mode /workspace /home/loki
 
 # Set workspace as working directory
 WORKDIR /workspace
 
-# Run as non-root user for security (optional, uncomment if needed)
-# RUN useradd -m -s /bin/bash loki && chown -R loki:loki /opt/loki-mode
-# USER loki
+# Security: Switch to non-root user
+USER loki
 
 # Default command shows help
 CMD ["loki", "help"]

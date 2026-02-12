@@ -3333,7 +3333,24 @@ check_staged_autonomy() {
 }
 
 check_command_allowed() {
-    # Check if a command is in the blocked list
+    # Check if a command string contains any blocked patterns from BLOCKED_COMMANDS.
+    #
+    # SECURITY NOTE: This function is intentionally NOT called by run.sh because
+    # run.sh does not directly execute arbitrary shell commands from user or agent
+    # input. Command execution is handled by the AI CLI's own permission model:
+    #   - Claude Code: --dangerously-skip-permissions (with its own allowlist)
+    #   - Codex CLI: --full-auto or exec --dangerously-bypass-approvals-and-sandbox
+    #   - Gemini CLI: --approval-mode=yolo
+    #
+    # HUMAN_INPUT.md content is injected as a text prompt to the AI agent (not
+    # executed as a shell command), and is already guarded by:
+    #   - LOKI_PROMPT_INJECTION=false by default (disabled unless explicitly enabled)
+    #   - Symlink rejection (prevents path traversal attacks)
+    #   - 1MB file size limit
+    #
+    # This function is retained as a utility for external callers (sandbox.sh,
+    # custom hooks, or user scripts) that may need to validate commands against
+    # the BLOCKED_COMMANDS list before execution.
     local command="$1"
 
     IFS=',' read -ra BLOCKED_ARRAY <<< "$BLOCKED_COMMANDS"

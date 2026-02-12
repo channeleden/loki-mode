@@ -5,6 +5,18 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.36.0] - 2026-02-12
+
+### Security
+- Dashboard: Wire auth.py to all destructive API endpoints (control/stop, agent/kill, DELETE operations)
+- Dashboard: Add rate limiting (10 req/min) on session control and agent management endpoints
+- Dashboard: Add per-token random salt to SHA-256 token hashing (backwards compatible with unsalted tokens)
+- Dashboard: Add auth scope "admin" on enterprise token revocation endpoint
+- Dockerfile: Enable non-root user execution (UID 1000, matching Dockerfile.sandbox pattern)
+- sandbox.sh: Fix shell injection in docker_desktop_sandbox_prompt via printf positional args
+- run.sh: Document check_command_allowed() security architecture (CLI permission model enforcement)
+- requirements.txt: Pin all Python dependencies to exact versions
+
 ## [5.35.0] - 2026-02-12
 
 ### Added

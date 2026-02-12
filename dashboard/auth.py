@@ -53,9 +53,20 @@ def _save_tokens(tokens: dict) -> None:
         json.dump(tokens, f, indent=2, default=str)
 
 
-def _hash_token(token: str) -> str:
-    """Hash a token for storage."""
-    return hashlib.sha256(token.encode()).hexdigest()
+def _hash_token(token: str, salt: str = None) -> tuple[str, str]:
+    """Hash a token for storage with a per-token random salt.
+
+    Args:
+        token: The raw token string to hash.
+        salt: Optional salt. If None, a new random salt is generated.
+
+    Returns:
+        Tuple of (hex_digest, salt).
+    """
+    if salt is None:
+        salt = secrets.token_hex(16)
+    digest = hashlib.sha256((salt + token).encode()).hexdigest()
+    return digest, salt
 
 
 def _constant_time_compare(a: str, b: str) -> bool:
@@ -94,7 +105,7 @@ def generate_token(
 
     # Generate secure random token
     raw_token = f"loki_{secrets.token_urlsafe(32)}"
-    token_hash = _hash_token(raw_token)
+    token_hash, token_salt = _hash_token(raw_token)
     token_id = token_hash[:12]
 
     tokens = _load_tokens()
@@ -114,6 +125,7 @@ def generate_token(
         "id": token_id,
         "name": name,
         "hash": token_hash,
+        "salt": token_salt,
         "scopes": scopes or ["*"],
         "created_at": datetime.now(timezone.utc).isoformat(),
         "expires_at": expires_at,
@@ -229,11 +241,12 @@ def validate_token(raw_token: str) -> Optional[dict]:
     if not raw_token or not raw_token.startswith("loki_"):
         return None
 
-    token_hash = _hash_token(raw_token)
     tokens = _load_tokens()
 
     # Find matching token (using constant-time comparison to prevent timing attacks)
     for token in tokens["tokens"].values():
+        stored_salt = token.get("salt", "")
+        token_hash, _ = _hash_token(raw_token, salt=stored_salt)
         if _constant_time_compare(token["hash"], token_hash):
             # Check if revoked
             if token.get("revoked"):
