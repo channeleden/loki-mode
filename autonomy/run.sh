@@ -784,8 +784,14 @@ get_iteration_duration_ms() {
 
 validate_api_keys() {
     local provider="${LOKI_PROVIDER:-claude}"
-    local key_var=""
 
+    # CLI tools (claude, codex, gemini) use their own login sessions.
+    # Only require API keys inside Docker/K8s where CLI login isn't available.
+    if [[ ! -f "/.dockerenv" ]] && [[ -z "${KUBERNETES_SERVICE_HOST:-}" ]]; then
+        return 0
+    fi
+
+    local key_var=""
     case "$provider" in
         claude) key_var="ANTHROPIC_API_KEY" ;;
         codex)  key_var="OPENAI_API_KEY" ;;
