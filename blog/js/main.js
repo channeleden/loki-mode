@@ -7,16 +7,40 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.text();
         })
         .then(version => {
+            const v = version.trim();
+            if (!v) return;
             // Update all version badges (mobile header and sidebar)
-            const versionEls = document.querySelectorAll('.version');
-            if (version.trim()) {
-                versionEls.forEach(el => {
-                    el.textContent = 'v' + version.trim();
-                });
+            document.querySelectorAll('.version').forEach(el => {
+                el.textContent = 'v' + v;
+            });
+            // Update announcement banner version
+            const bannerVersion = document.getElementById('banner-version');
+            if (bannerVersion) {
+                bannerVersion.textContent = 'NEW in v' + v + ':';
             }
         })
         .catch(() => {
             // Silently fail - keep hardcoded version as fallback
+        });
+
+    // Auto-fetch latest release description for announcement banner
+    fetch('https://api.github.com/repos/asklokesh/loki-mode/releases/latest')
+        .then(response => {
+            if (!response.ok) throw new Error('Release fetch failed');
+            return response.json();
+        })
+        .then(release => {
+            const bannerText = document.getElementById('banner-text');
+            if (bannerText && release.name) {
+                // Extract a short summary from release name or first line of body
+                const summary = release.name.replace(/^v[\d.]+\s*[-:]\s*/, '');
+                if (summary) {
+                    bannerText.textContent = summary;
+                }
+            }
+        })
+        .catch(() => {
+            // Silently fail - keep hardcoded text as fallback
         });
 
     // Configure marked for secure rendering

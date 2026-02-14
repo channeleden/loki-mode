@@ -5,7 +5,7 @@
 FROM ubuntu:24.04
 
 LABEL maintainer="Lokesh Mure"
-LABEL version="5.38.0"
+LABEL version="5.39.0"
 LABEL description="Multi-agent autonomous startup system for Claude Code, Codex CLI, and Gemini CLI"
 
 # Prevent interactive prompts during install
@@ -24,8 +24,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js 20 LTS from NodeSource (fixes nodejs/npm CVEs)
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+# Install Node.js 20 LTS from NodeSource with GPG verification
+RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" > /etc/apt/sources.list.d/nodesource.list \
+    && apt-get update \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/* \
     && npm cache clean --force
@@ -60,18 +62,19 @@ RUN useradd -m -s /bin/bash -u 1000 loki
 WORKDIR /opt/loki-mode
 
 # Copy Loki Mode files
-COPY SKILL.md VERSION ./
-COPY autonomy/ ./autonomy/
-COPY skills/ ./skills/
-COPY references/ ./references/
-COPY docs/ ./docs/
-COPY providers/ ./providers/
-COPY memory/ ./memory/
-COPY events/ ./events/
-COPY dashboard/ ./dashboard/
-COPY mcp/ ./mcp/
-COPY learning/ ./learning/
-COPY templates/ ./templates/
+COPY --chown=loki:loki SKILL.md VERSION ./
+COPY --chown=loki:loki autonomy/ ./autonomy/
+COPY --chown=loki:loki skills/ ./skills/
+COPY --chown=loki:loki references/ ./references/
+COPY --chown=loki:loki docs/ ./docs/
+COPY --chown=loki:loki providers/ ./providers/
+COPY --chown=loki:loki memory/ ./memory/
+COPY --chown=loki:loki events/ ./events/
+COPY --chown=loki:loki dashboard/ ./dashboard/
+COPY --chown=loki:loki mcp/ ./mcp/
+COPY --chown=loki:loki learning/ ./learning/
+COPY --chown=loki:loki templates/ ./templates/
+COPY --chown=loki:loki integrations/ ./integrations/
 
 # Install dashboard Python dependencies
 RUN pip3 install --no-cache-dir --break-system-packages \
@@ -91,6 +94,9 @@ RUN mkdir -p /workspace && \
 
 # Set workspace as working directory
 WORKDIR /workspace
+
+# Expose dashboard/API port
+EXPOSE 57374
 
 # Security: Switch to non-root user
 USER loki

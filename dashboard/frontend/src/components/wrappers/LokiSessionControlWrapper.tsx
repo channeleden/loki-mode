@@ -44,7 +44,7 @@ export interface SessionEventDetail {
  * Props for the LokiSessionControlWrapper component
  */
 export interface LokiSessionControlWrapperProps {
-  /** API base URL (default: http://localhost:8420) */
+  /** API base URL (default: http://localhost:57374) */
   apiUrl?: string;
   /** Theme name for styling */
   theme?: ThemeName;
@@ -88,7 +88,7 @@ declare global {
  * @example
  * ```tsx
  * <LokiSessionControlWrapper
- *   apiUrl="http://localhost:8420"
+ *   apiUrl="http://localhost:57374"
  *   theme="dark"
  *   compact={false}
  *   onSessionStart={(status) => {
@@ -101,7 +101,7 @@ declare global {
  * ```
  */
 export function LokiSessionControlWrapper({
-  apiUrl = 'http://localhost:8420',
+  apiUrl = 'http://localhost:57374',
   theme = 'light',
   compact = false,
   onSessionStart,

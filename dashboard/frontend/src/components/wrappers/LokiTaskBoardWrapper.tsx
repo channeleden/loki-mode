@@ -69,7 +69,7 @@ export interface TaskClickEventDetail {
  * Props for the LokiTaskBoardWrapper component
  */
 export interface LokiTaskBoardWrapperProps {
-  /** API base URL (default: http://localhost:8420) */
+  /** API base URL (default: http://localhost:57374) */
   apiUrl?: string;
   /** Filter tasks by project ID */
   projectId?: string;
@@ -114,7 +114,7 @@ declare global {
  * @example
  * ```tsx
  * <LokiTaskBoardWrapper
- *   apiUrl="http://localhost:8420"
+ *   apiUrl="http://localhost:57374"
  *   projectId="1"
  *   theme="dark"
  *   onTaskMoved={({ taskId, oldStatus, newStatus }) => {
@@ -127,7 +127,7 @@ declare global {
  * ```
  */
 export function LokiTaskBoardWrapper({
-  apiUrl = 'http://localhost:8420',
+  apiUrl = 'http://localhost:57374',
   projectId,
   theme = 'light',
   readonly = false,

@@ -2,11 +2,11 @@
 
 Complete installation instructions for all platforms and use cases.
 
-**Version:** v5.38.0
+**Version:** v5.39.0
 
 ---
 
-## What's New in v5.38.0
+## What's New in v5.39.0
 
 ### Enterprise Security (v5.36.0-v5.37.1)
 - TLS/HTTPS support for dashboard connections

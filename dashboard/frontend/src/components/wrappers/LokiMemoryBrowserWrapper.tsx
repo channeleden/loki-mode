@@ -80,7 +80,7 @@ export type MemoryBrowserTab = 'summary' | 'episodes' | 'patterns' | 'skills';
  * Props for the LokiMemoryBrowserWrapper component
  */
 export interface LokiMemoryBrowserWrapperProps {
-  /** API base URL (default: http://localhost:8420) */
+  /** API base URL (default: http://localhost:57374) */
   apiUrl?: string;
   /** Theme name for styling */
   theme?: ThemeName;
@@ -122,7 +122,7 @@ declare global {
  * @example
  * ```tsx
  * <LokiMemoryBrowserWrapper
- *   apiUrl="http://localhost:8420"
+ *   apiUrl="http://localhost:57374"
  *   theme="dark"
  *   tab="episodes"
  *   onEpisodeSelect={(episode) => {
@@ -138,7 +138,7 @@ declare global {
  * ```
  */
 export function LokiMemoryBrowserWrapper({
-  apiUrl = 'http://localhost:8420',
+  apiUrl = 'http://localhost:57374',
   theme = 'light',
   tab = 'summary',
   onEpisodeSelect,

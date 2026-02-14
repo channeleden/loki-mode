@@ -45,6 +45,63 @@ _SYSLOG_PROTO = os.environ.get("LOKI_AUDIT_SYSLOG_PROTO", "udp").lower().strip()
 INTEGRITY_ENABLED = os.environ.get("LOKI_AUDIT_NO_INTEGRITY", "").lower() not in ("true", "1", "yes")
 _last_hash: str = "0" * 64  # Genesis hash
 
+
+def _recover_last_hash() -> str:
+    """Recover the last integrity hash from the most recent audit log file.
+
+    On server restart, the in-memory _last_hash resets to the genesis hash.
+    This function reads the last entry from the most recent log file and
+    extracts its _integrity_hash so the chain continues unbroken.
+
+    Returns:
+        The last hash found, or the genesis hash if no log entries exist.
+    """
+    genesis = "0" * 64
+    if not AUDIT_DIR.exists():
+        return genesis
+
+    log_files = sorted(AUDIT_DIR.glob("audit-*.jsonl"), reverse=True)
+    for log_file in log_files:
+        try:
+            # Read the last non-empty line from the file
+            last_line = ""
+            with open(log_file, "rb") as f:
+                # Seek to end and scan backward for last line
+                f.seek(0, 2)  # Seek to end
+                pos = f.tell()
+                if pos == 0:
+                    continue
+                # Read from end to find last non-empty line
+                lines = []
+                while pos > 0:
+                    read_size = min(4096, pos)
+                    pos -= read_size
+                    f.seek(pos)
+                    chunk = f.read(read_size).decode("utf-8", errors="replace")
+                    lines = chunk.split("\n") + lines
+                    # Check if we have at least one non-empty line
+                    non_empty = [ln for ln in lines if ln.strip()]
+                    if non_empty:
+                        last_line = non_empty[-1].strip()
+                        break
+
+            if not last_line:
+                continue
+
+            entry = json.loads(last_line)
+            stored_hash = entry.get("_integrity_hash")
+            if stored_hash:
+                return stored_hash
+        except (json.JSONDecodeError, IOError, OSError):
+            continue
+
+    return genesis
+
+
+# Recover chain hash from existing logs on startup
+if INTEGRITY_ENABLED:
+    _last_hash = _recover_last_hash()
+
 # Actions considered security-relevant (logged at WARNING level in syslog)
 _SECURITY_ACTIONS = frozenset({
     "delete", "kill", "stop", "login", "logout",

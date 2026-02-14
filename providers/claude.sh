@@ -63,7 +63,7 @@ else
 fi
 
 # Context and Limits
-PROVIDER_CONTEXT_WINDOW=200000  # 1M token context available in beta
+PROVIDER_CONTEXT_WINDOW=200000  # 200K default; 1M available in extended context beta
 PROVIDER_MAX_OUTPUT_TOKENS=128000
 PROVIDER_RATE_LIMIT_RPM=50
 

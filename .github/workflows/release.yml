@@ -103,6 +103,12 @@ jobs:
           cp -r memory release/loki-mode/
           cp -r skills release/loki-mode/
           cp -r providers release/loki-mode/
+          cp -r events release/loki-mode/
+          cp -r templates release/loki-mode/
+          cp -r learning release/loki-mode/
+          cp -r mcp release/loki-mode/
+          cp -r completions release/loki-mode/
+          cp -r integrations release/loki-mode/
 
           cd release
           zip -r loki-mode-claude-code-${{ steps.version.outputs.version }}.zip loki-mode

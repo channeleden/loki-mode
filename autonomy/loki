@@ -112,6 +112,13 @@ EMIT_SH="$SKILL_DIR/events/emit.sh"
 LEARNING_EMIT_SH="$SKILL_DIR/learning/emit.sh"
 LOKI_DIR=".loki"
 
+# Anonymous usage telemetry
+PROJECT_DIR="$SKILL_DIR"
+_TELEMETRY_SCRIPT="$SKILL_DIR/autonomy/telemetry.sh"
+if [ -f "$_TELEMETRY_SCRIPT" ]; then
+    source "$_TELEMETRY_SCRIPT"
+fi
+
 # Get version from VERSION file
 get_version() {
     if [ -f "$SKILL_DIR/VERSION" ]; then
@@ -321,6 +328,10 @@ show_help() {
     echo "  memory [cmd]     Cross-project learnings (list|show|search|stats)"
     echo "  compound [cmd]   Knowledge compounding (list|show|search|run|stats)"
     echo "  council [cmd]    Completion council (status|verdicts|convergence|force-review|report)"
+    echo "  checkpoint|cp    Save/restore session checkpoints"
+    echo "  projects         Multi-project registry management"
+    echo "  audit            Agent action audit log"
+    echo "  enterprise       Enterprise feature management (tokens, OIDC)"
     echo "  metrics          Prometheus/OpenMetrics metrics from dashboard"
     echo "  dogfood          Show self-development statistics"
     echo "  secrets [cmd]    API key status and validation (status|validate)"
@@ -4219,6 +4230,8 @@ main() {
     local command="$1"
     shift
 
+    loki_telemetry "cli_command" "command=$command" 2>/dev/null || true
+
     case "$command" in
         start)
             cmd_start "$@"
@@ -7079,8 +7092,8 @@ cmd_metrics() {
             # Fetch metrics from dashboard
             local url="http://${host}:${port}/metrics"
             local response
-            response=$(curl -sf "$url" 2>/dev/null)
-            if [ $? -ne 0 ]; then
+            response=$(curl -sf "$url" 2>/dev/null) || true
+            if [ -z "$response" ]; then
                 echo -e "${RED}Error: Could not connect to dashboard at ${url}${NC}"
                 echo "Make sure the dashboard is running: loki serve"
                 exit 1

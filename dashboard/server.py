@@ -47,6 +47,12 @@ from . import registry
 from . import auth
 from . import audit
 from . import secrets as secrets_mod
+from . import telemetry as _telemetry
+
+try:
+    from . import __version__ as _version
+except ImportError:
+    _version = "5.39.0"
 
 # ---------------------------------------------------------------------------
 # TLS Configuration (optional - disabled by default)
@@ -231,6 +237,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     # Startup
     await init_db()
+    _telemetry.send_telemetry("dashboard_start")
     yield
     # Shutdown
     await close_db()
@@ -240,7 +247,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Loki Mode Dashboard API",
     description="REST API for Loki Mode project and task management",
-    version="0.1.0",
+    version=_version,
     lifespan=lifespan,
 )
 
@@ -787,7 +794,7 @@ async def delete_task(
     })
 
 
-@app.post("/api/tasks/{task_id}/move", response_model=TaskResponse)
+@app.post("/api/tasks/{task_id}/move", response_model=TaskResponse, dependencies=[Depends(auth.require_scope("control"))])
 async def move_task(
     task_id: int,
     move: TaskMove,
@@ -1413,7 +1420,7 @@ async def get_token_economics():
     return {"discoveryTokens": 0, "readTokens": 0, "savingsPercent": 0}
 
 
-@app.post("/api/memory/consolidate")
+@app.post("/api/memory/consolidate", dependencies=[Depends(auth.require_scope("control"))])
 async def consolidate_memory(hours: int = 24):
     """Trigger memory consolidation (stub - returns current state)."""
     return {"status": "ok", "message": f"Consolidation for last {hours}h", "consolidated": 0, "patternsCreated": 0, "patternsMerged": 0, "episodesProcessed": 0}
@@ -1552,7 +1559,7 @@ async def get_learning_aggregation():
     return {"preferences": [], "error_patterns": [], "success_patterns": [], "tool_efficiencies": []}
 
 
-@app.post("/api/learning/aggregate")
+@app.post("/api/learning/aggregate", dependencies=[Depends(auth.require_scope("control"))])
 async def trigger_aggregation():
     """Aggregate learning signals from events.jsonl into structured metrics."""
     events_file = _get_loki_dir() / "events.jsonl"
@@ -2155,7 +2162,7 @@ async def get_council_report():
     return {"report": None}
 
 
-@app.post("/api/council/force-review")
+@app.post("/api/council/force-review", dependencies=[Depends(auth.require_scope("control"))])
 async def force_council_review():
     """Force an immediate council review (writes signal file)."""
     signal_dir = _get_loki_dir() / "signals"
@@ -2224,7 +2231,7 @@ async def get_checkpoint(checkpoint_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to read checkpoint: {e}")
 
 
-@app.post("/api/checkpoints", status_code=201)
+@app.post("/api/checkpoints", status_code=201, dependencies=[Depends(auth.require_scope("control"))])
 async def create_checkpoint(body: CheckpointCreate = None):
     """Create a new checkpoint capturing current state."""
     import subprocess

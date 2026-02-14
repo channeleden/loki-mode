@@ -922,7 +922,7 @@ document.addEventListener('DOMContentLoaded', function() {
       case 't':
         e.preventDefault();
         LokiDashboard.UnifiedThemeManager.toggle();
-        updateThemeLabel();
+        updateThemeUI();
         break;
 
       // Session controls

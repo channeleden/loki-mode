@@ -45,7 +45,7 @@ PROJECT_DIR="${PROJECT_DIR%/}"
 
 # Container name includes path hash to avoid collisions between similarly-named projects
 # macOS uses md5 instead of md5sum
-PROJECT_HASH=$(echo "$PROJECT_DIR" | md5sum 2>/dev/null | cut -c1-8 || md5 2>/dev/null | cut -c1-8 || echo "$$")
+PROJECT_HASH=$(echo "$PROJECT_DIR" | (md5sum 2>/dev/null || md5 -r 2>/dev/null || echo "$$") | cut -c1-8)
 CONTAINER_NAME="loki-sandbox-$(basename "$PROJECT_DIR" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')-${PROJECT_HASH}"
 
 # Sandbox settings

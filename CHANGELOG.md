@@ -5,6 +5,43 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.39.0] - 2026-02-12
+
+### Added
+- Anonymous usage telemetry via PostHog (opt-out: LOKI_TELEMETRY_DISABLED=true or DO_NOT_TRACK=1)
+- Telemetry tracks: installs, session starts/ends, CLI commands, dashboard starts (anonymous, no PII)
+- New files: autonomy/telemetry.sh (bash), dashboard/telemetry.py (Python)
+- Telemetry integrated in: run.sh, loki CLI, dashboard server, npm postinstall
+- Self-hosted endpoint support via LOKI_TELEMETRY_ENDPOINT env var
+
+### Security
+- Fixed JSON injection in audit_log() and save_learning() functions (run.sh) - user input now escaped via jq or sed fallback
+- Added auth protection (require_scope("control")) to 5 unprotected POST endpoints in dashboard server
+- Fixed Dockerfile: replaced curl-pipe-bash NodeSource install with GPG-verified approach matching Dockerfile.sandbox
+- Fixed budget.json written before numeric validation (could produce malformed JSON)
+- Fixed sandbox.sh md5sum/md5 pipeline fallback (empty hash on macOS)
+
+### Fixed
+- Docker: docker-compose.yml volume mounts target /home/loki/ instead of /root/ (non-root user since v5.36.0)
+- Docker: dashboard/Dockerfile and docker-compose.yml updated from stale port 8420 to unified 57374
+- Docker: dashboard/Dockerfile now copies secrets.py, control.py, run.py (was crashing on startup)
+- Docker: dashboard docker-compose.yml healthcheck uses python instead of missing curl
+- Docker: Added COPY integrations/ to both Dockerfiles and EXPOSE 57374 to main Dockerfile
+- Docker: Added --chown=loki:loki to all COPY directives in main Dockerfile
+- npm: Added mcp/ and completions/ to package.json files array (were missing from npm installs)
+- CLI: Added 4 missing subcommands to loki help (checkpoint, projects, audit, enterprise)
+- CLI: Fixed loki metrics curl crash under set -euo pipefail
+- CLI: Fixed stale port 8420 in dashboard/run.py and 13 frontend wrapper files
+- Dashboard: Fixed updateThemeLabel() -> updateThemeUI() JS runtime error on keyboard shortcut
+- Dashboard: FastAPI version now reads from __version__ instead of hardcoded 0.1.0
+- Dashboard: Audit log integrity chain now recovers last hash on server restart
+- Dashboard: dashboard-ui package.json version synced to 1.3.0
+- Release: GitHub release zip now includes events/, templates/, learning/, mcp/, completions/, integrations/
+- run.sh: Fixed unreliable $? after || chain in create_worktree
+- run.sh: Replaced useless cat|head with direct head in PRD loading
+- docker-compose.yml version comment updated from v5.32.2 to v5.39.0
+- providers/claude.sh context window comment clarified
+
 ## [5.38.0] - 2026-02-12
 
 ### Added

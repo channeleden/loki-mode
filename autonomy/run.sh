@@ -534,6 +534,13 @@ if [ -f "$COUNCIL_SCRIPT" ]; then
     source "$COUNCIL_SCRIPT"
 fi
 
+# Anonymous usage telemetry (opt-out: LOKI_TELEMETRY_DISABLED=true or DO_NOT_TRACK=1)
+TELEMETRY_SCRIPT="$SCRIPT_DIR/telemetry.sh"
+if [ -f "$TELEMETRY_SCRIPT" ]; then
+    # shellcheck source=telemetry.sh
+    source "$TELEMETRY_SCRIPT"
+fi
+
 # 2026 Research Enhancements (minimal additions)
 PROMPT_REPETITION=${LOKI_PROMPT_REPETITION:-true}
 CONFIDENCE_ROUTING=${LOKI_CONFIDENCE_ROUTING:-true}
@@ -1542,17 +1549,18 @@ create_worktree() {
 
     log_step "Creating worktree: $stream_name"
 
+    local wt_exit=1
     if [ -n "$branch_name" ]; then
         # Create new branch
-        git -C "$TARGET_DIR" worktree add "$worktree_path" -b "$branch_name" 2>/dev/null || \
-        git -C "$TARGET_DIR" worktree add "$worktree_path" "$branch_name" 2>/dev/null
+        git -C "$TARGET_DIR" worktree add "$worktree_path" -b "$branch_name" 2>/dev/null && wt_exit=0 || \
+        { git -C "$TARGET_DIR" worktree add "$worktree_path" "$branch_name" 2>/dev/null && wt_exit=0; }
     else
         # Track main branch
-        git -C "$TARGET_DIR" worktree add "$worktree_path" main 2>/dev/null || \
-        git -C "$TARGET_DIR" worktree add "$worktree_path" HEAD 2>/dev/null
+        git -C "$TARGET_DIR" worktree add "$worktree_path" main 2>/dev/null && wt_exit=0 || \
+        { git -C "$TARGET_DIR" worktree add "$worktree_path" HEAD 2>/dev/null && wt_exit=0; }
     fi
 
-    if [ $? -eq 0 ]; then
+    if [ $wt_exit -eq 0 ]; then
         WORKTREE_PATHS[$stream_name]="$worktree_path"
 
         # Copy .loki state to worktree
@@ -2180,6 +2188,11 @@ EOF
 
     # Write budget.json if a budget limit is configured
     if [ -n "$BUDGET_LIMIT" ]; then
+        # Validate budget limit is numeric before writing JSON
+        if ! echo "$BUDGET_LIMIT" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+            log_warn "Invalid BUDGET_LIMIT '$BUDGET_LIMIT', defaulting to 0"
+            BUDGET_LIMIT=0
+        fi
         cat > ".loki/metrics/budget.json" << BUDGET_EOF
 {
   "limit": $BUDGET_LIMIT,
@@ -3402,10 +3415,15 @@ audit_log() {
 
     mkdir -p .loki/logs
 
-    local log_entry=$(cat << EOF
-{"timestamp":"$(date -u +%Y-%m-%dT%H:%M:%SZ)","event":"$event_type","data":"$event_data","user":"$(whoami)","pid":$$}
-EOF
-)
+    local log_entry
+    if command -v jq >/dev/null 2>&1; then
+        log_entry=$(jq -n --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg evt "$event_type" --arg data "$event_data" --arg user "$(whoami)" --argjson pid "$$" '{timestamp:$ts,event:$evt,data:$data,user:$user,pid:$pid}')
+    else
+        local safe_type safe_data
+        safe_type=$(printf '%s' "$event_type" | sed 's/["\\]/\\&/g; s/\n/\\n/g')
+        safe_data=$(printf '%s' "$event_data" | sed 's/["\\]/\\&/g; s/\n/\\n/g')
+        log_entry="{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"event\":\"$safe_type\",\"data\":\"$safe_data\",\"user\":\"$(whoami)\",\"pid\":$$}"
+    fi
     echo "$log_entry" >> "$audit_file"
 }
 
@@ -3644,10 +3662,16 @@ save_learning() {
         init_learnings_db
     fi
 
-    local learning_entry=$(cat << EOF
-{"timestamp":"$(date -u +%Y-%m-%dT%H:%M:%SZ)","project":"$project","category":"$category","description":"$description"}
-EOF
-)
+    local learning_entry
+    if command -v jq >/dev/null 2>&1; then
+        learning_entry=$(jq -n --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg proj "$project" --arg cat "$category" --arg desc "$description" '{timestamp:$ts,project:$proj,category:$cat,description:$desc}')
+    else
+        local safe_proj safe_cat safe_desc
+        safe_proj=$(printf '%s' "$project" | sed 's/["\\]/\\&/g; s/\n/\\n/g')
+        safe_cat=$(printf '%s' "$category" | sed 's/["\\]/\\&/g; s/\n/\\n/g')
+        safe_desc=$(printf '%s' "$description" | sed 's/["\\]/\\&/g; s/\n/\\n/g')
+        learning_entry="{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"project\":\"$safe_proj\",\"category\":\"$safe_cat\",\"description\":\"$safe_desc\"}"
+    fi
     echo "$learning_entry" >> "$target_file"
     log_info "Saved $learning_type: $category"
 }
@@ -6653,6 +6677,7 @@ except (json.JSONDecodeError, OSError): pass
 
 main() {
     trap cleanup INT TERM
+    SESSION_START_EPOCH=$(date +%s)
 
     echo ""
     echo -e "${BOLD}${BLUE}"
@@ -6904,8 +6929,8 @@ main() {
 
     # Load relevant learnings for this project context
     if [ -n "$PRD_PATH" ] && [ -f "$PRD_PATH" ]; then
-        get_relevant_learnings "$(cat "$PRD_PATH" | head -100)"
-        load_solutions_context "$(cat "$PRD_PATH" | head -100)"
+        get_relevant_learnings "$(head -100 "$PRD_PATH")"
+        load_solutions_context "$(head -100 "$PRD_PATH")"
     else
         get_relevant_learnings "general development"
         load_solutions_context "general development"
@@ -6925,6 +6950,12 @@ main() {
         "parallel=${PARALLEL_MODE:-false}" \
         "complexity=${DETECTED_COMPLEXITY:-standard}" \
         "pid=$$"
+
+    # Anonymous usage telemetry
+    loki_telemetry "session_start" \
+        "provider=${PROVIDER_NAME:-claude}" \
+        "complexity=${DETECTED_COMPLEXITY:-standard}" \
+        "parallel=${PARALLEL_MODE:-false}" 2>/dev/null || true
 
     # Run in appropriate mode
     local result=0
@@ -6984,6 +7015,14 @@ main() {
         "result=$result" \
         "provider=${PROVIDER_NAME:-claude}" \
         "iterations=$ITERATION_COUNT"
+
+    # Anonymous usage telemetry
+    local session_duration=$(($(date +%s) - ${SESSION_START_EPOCH:-$(date +%s)}))
+    loki_telemetry "session_end" \
+        "provider=${PROVIDER_NAME:-claude}" \
+        "duration=$session_duration" \
+        "iterations=$ITERATION_COUNT" \
+        "result=$result" 2>/dev/null || true
 
     # Emit learning signal for session completion (SYN-018)
     if [ "$result" = "0" ]; then

@@ -1,6 +1,6 @@
 {
   "name": "loki-mode",
-  "version": "5.38.0",
+  "version": "5.39.0",
   "description": "Multi-agent autonomous startup system for Claude Code, Codex CLI, and Gemini CLI",
   "keywords": [
     "claude",
@@ -41,7 +41,9 @@
     "templates/",
     "dashboard/*.py",
     "dashboard/static/",
-    "dashboard/requirements.txt"
+    "dashboard/requirements.txt",
+    "mcp/",
+    "completions/"
   ],
   "scripts": {
     "postinstall": "node bin/postinstall.js",

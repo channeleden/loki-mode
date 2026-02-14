@@ -17,19 +17,19 @@
  *   return (
  *     <div>
  *       <LokiSessionControlWrapper
- *         apiUrl="http://localhost:8420"
+ *         apiUrl="http://localhost:57374"
  *         theme="dark"
  *         onSessionStart={() => console.log('Started')}
  *       />
  *       <LokiTaskBoardWrapper
- *         apiUrl="http://localhost:8420"
+ *         apiUrl="http://localhost:57374"
  *         theme="dark"
  *         onTaskMoved={({ taskId, newStatus }) => {
  *           console.log(`Task ${taskId} moved to ${newStatus}`);
  *         }}
  *       />
  *       <LokiMemoryBrowserWrapper
- *         apiUrl="http://localhost:8420"
+ *         apiUrl="http://localhost:57374"
  *         theme="dark"
  *         tab="episodes"
  *       />

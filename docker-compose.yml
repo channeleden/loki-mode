@@ -1,4 +1,4 @@
-# Loki Mode Docker Compose (v5.32.2)
+# Loki Mode Docker Compose (v5.39.0)
 # Usage: docker-compose run loki start
 # Note: version key removed - deprecated in Docker Compose v2+
 
@@ -10,11 +10,11 @@ services:
       # Mount current directory as workspace
       - .:/workspace:rw
       # Share git config for commits
-      - ~/.gitconfig:/root/.gitconfig:ro
+      - ~/.gitconfig:/home/loki/.gitconfig:ro
       # Share SSH keys for git operations
-      - ~/.ssh:/root/.ssh:ro
+      - ~/.ssh:/home/loki/.ssh:ro
       # Share GitHub CLI auth
-      - ~/.config/gh:/root/.config/gh:ro
+      - ~/.config/gh:/home/loki/.config/gh:ro
     environment:
       # Loki Mode configuration
       - LOKI_NOTIFICATIONS=false  # No desktop notifications in container

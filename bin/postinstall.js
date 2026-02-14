@@ -89,3 +89,40 @@ console.log('Or in Claude Code:');
 console.log('  claude --dangerously-skip-permissions');
 console.log('  Then say: "Loki Mode"');
 console.log('');
+
+// Anonymous install telemetry (fire-and-forget, silent)
+try {
+  if (process.env.LOKI_TELEMETRY_DISABLED !== 'true' && process.env.DO_NOT_TRACK !== '1') {
+    const https = require('https');
+    const crypto = require('crypto');
+    const idFile = path.join(homeDir, '.loki-telemetry-id');
+    let distinctId;
+    try {
+      distinctId = fs.readFileSync(idFile, 'utf8').trim();
+    } catch {
+      distinctId = crypto.randomUUID();
+      try { fs.writeFileSync(idFile, distinctId + '\n'); } catch {}
+    }
+    const payload = JSON.stringify({
+      api_key: 'phc_ya0vGBru41AJWtGNfZZ8H9W4yjoZy4KON0nnayS7s87',
+      event: 'install',
+      distinct_id: distinctId,
+      properties: {
+        os: os.platform(),
+        arch: os.arch(),
+        version: version,
+        channel: 'npm',
+        node_version: process.version,
+      },
+    });
+    const req = https.request({
+      hostname: 'us.i.posthog.com',
+      path: '/capture/',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': payload.length },
+      timeout: 3000,
+    });
+    req.on('error', () => {});
+    req.end(payload);
+  }
+} catch {}
