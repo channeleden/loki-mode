@@ -1,6 +1,6 @@
 # Loki Mode Documentation
 
-**Multi-agent autonomous development system for Claude Code, OpenAI Codex CLI, and Google Gemini CLI.**
+**The flagship product of [Autonomi](https://www.autonomi.dev/) -- Multi-agent autonomous development system for Claude Code, OpenAI Codex CLI, and Google Gemini CLI.**
 
 > Transform a Product Requirements Document (PRD) into a fully deployed, production-ready application with zero human intervention.
 

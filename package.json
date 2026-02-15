@@ -1,8 +1,10 @@
 {
   "name": "loki-mode",
   "version": "5.42.1",
-  "description": "Multi-agent autonomous startup system for Claude Code, Codex CLI, and Gemini CLI",
+  "description": "Loki Mode by Autonomi - Multi-agent autonomous startup system for Claude Code, Codex CLI, and Gemini CLI",
   "keywords": [
+    "autonomi",
+    "loki-mode",
     "claude",
     "claude-code",
     "ai",
@@ -11,7 +13,7 @@
     "startup",
     "multi-agent"
   ],
-  "homepage": "https://asklokesh.github.io/loki-mode",
+  "homepage": "https://www.autonomi.dev/",
   "bugs": {
     "url": "https://github.com/asklokesh/loki-mode/issues"
   },

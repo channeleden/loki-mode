@@ -1,6 +1,6 @@
 # Loki Mode Installation Guide
 
-Complete installation instructions for all platforms and use cases.
+The flagship product of [Autonomi](https://www.autonomi.dev/). Complete installation instructions for all platforms and use cases.
 
 **Version:** v5.42.1
 

@@ -262,4 +262,4 @@ The following features are documented in skill modules but not yet fully automat
 | Quality gates 3-reviewer system | Implemented (v5.35.0) | 5 specialist reviewers in `skills/quality-gates.md`; execution in run.sh |
 | Benchmarks (HumanEval, SWE-bench) | Infrastructure only | Runner scripts and datasets exist in `benchmarks/`; no published results |
 
-**v5.42.1 | feat: GitHub sync-back, PR creation, export (fully wired) | ~260 lines core**
+**v5.42.1 | [Autonomi](https://www.autonomi.dev/) flagship product | ~260 lines core**

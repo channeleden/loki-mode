@@ -1,21 +1,21 @@
 # Loki Mode
 
-**The First Truly Autonomous Multi-Agent Startup System**
+**The Flagship Product of [Autonomi](https://www.autonomi.dev/) -- The First Truly Autonomous Multi-Agent Startup System**
 
 [![npm version](https://img.shields.io/npm/v/loki-mode)](https://www.npmjs.com/package/loki-mode)
 [![npm downloads](https://img.shields.io/npm/dw/loki-mode)](https://www.npmjs.com/package/loki-mode)
 [![GitHub stars](https://img.shields.io/github/stars/asklokesh/loki-mode)](https://github.com/asklokesh/loki-mode)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Marketplace](https://img.shields.io/badge/Marketplace-Loki%20Mode-purple?logo=github)](https://github.com/marketplace/actions/loki-mode-code-review)
-[![Claude Code](https://img.shields.io/badge/Claude-Code-orange)](https://claude.ai)
+[![Autonomi](https://img.shields.io/badge/Autonomi-autonomi.dev-5B4EEA)](https://www.autonomi.dev/)
 [![Agent Types](https://img.shields.io/badge/Agent%20Types-41-blue)]()
 [![Loki Mode](https://img.shields.io/badge/Loki%20Mode-98.78%25%20Pass%401-blueviolet)](benchmarks/results/)
 [![HumanEval](https://img.shields.io/badge/HumanEval-98.17%25%20Pass%401-brightgreen)](benchmarks/results/)
 [![SWE-bench](https://img.shields.io/badge/SWE--bench-99.67%25%20Patch%20Gen-brightgreen)](benchmarks/results/)
 
-**Current Version: v5.40.0**
+**Current Version: v5.42.1**
 
-**[Documentation Website](https://asklokesh.github.io/loki-mode/)** | **[Architecture](https://asklokesh.github.io/loki-mode/blog/#architecture)** | **[Research](https://asklokesh.github.io/loki-mode/blog/#research)** | **[Comparisons](https://asklokesh.github.io/loki-mode/blog/#comparisons)**
+**[Autonomi](https://www.autonomi.dev/)** | **[Documentation](https://www.autonomi.dev/)** | **[GitHub](https://github.com/asklokesh/loki-mode)**
 
 > **PRD → Deployed Product in Zero Human Intervention**
 >
@@ -977,6 +977,18 @@ Built for the [Claude Code](https://claude.ai) ecosystem, powered by Anthropic's
 
 ---
 
+## Autonomi
+
+Loki Mode is the flagship product of **[Autonomi](https://www.autonomi.dev/)** -- a platform for autonomous AI systems. Like Alphabet is to Google, Autonomi is the parent brand under which Loki Mode and future products operate.
+
+**Why Autonomi?** Loki Mode proved that multi-agent autonomous systems can build real software from a PRD with zero human intervention. Autonomi is the expansion of that vision into a broader platform of autonomous services and products.
+
+- **[autonomi.dev](https://www.autonomi.dev/)** -- Main website and documentation
+- **Loki Mode** -- Autonomous multi-agent startup system (this repo)
+- More products coming soon
+
+---
+
 **Ready to build a startup while you sleep?**
 
 ```bash
@@ -986,4 +998,4 @@ git clone https://github.com/asklokesh/loki-mode.git ~/.claude/skills/loki-mode
 
 ---
 
-**Keywords:** claude-code, claude-skills, ai-agents, autonomous-development, multi-agent-system, sdlc-automation, startup-automation, devops, mlops, deployment-automation, self-healing, perpetual-improvement
+**Keywords:** autonomi, loki-mode, claude-code, claude-skills, ai-agents, autonomous-development, multi-agent-system, sdlc-automation, startup-automation, devops, mlops, deployment-automation, self-healing, perpetual-improvement

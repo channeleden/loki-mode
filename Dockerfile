@@ -6,7 +6,8 @@ FROM ubuntu:24.04
 
 LABEL maintainer="Lokesh Mure"
 LABEL version="5.42.1"
-LABEL description="Multi-agent autonomous startup system for Claude Code, Codex CLI, and Gemini CLI"
+LABEL description="Loki Mode by Autonomi - Multi-agent autonomous startup system for Claude Code, Codex CLI, and Gemini CLI"
+LABEL url="https://www.autonomi.dev/"
 
 # Prevent interactive prompts during install
 ENV DEBIAN_FRONTEND=noninteractive
