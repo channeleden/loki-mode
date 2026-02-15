@@ -443,7 +443,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .quick-start code {
-    color: var(--color-green);
+    color: var(--color-mint);
     font-family: 'Monaco', 'Courier New', monospace;
     font-size: 0.95rem;
     line-height: 1.6;
@@ -624,7 +624,7 @@ h1, h2, h3, h4, h5, h6 {
 #docContent pre code {
     background-color: transparent;
     padding: 0;
-    color: var(--color-green);
+    color: var(--color-mint);
 }
 
 #docContent a {
