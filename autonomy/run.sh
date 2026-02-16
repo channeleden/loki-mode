@@ -546,6 +546,12 @@ if [ -f "${SCRIPT_DIR}/app-runner.sh" ]; then
     source "${SCRIPT_DIR}/app-runner.sh"
 fi
 
+# Playwright Smoke Test module (v5.46.0)
+if [ -f "${SCRIPT_DIR}/playwright-verify.sh" ]; then
+    # shellcheck source=playwright-verify.sh
+    source "${SCRIPT_DIR}/playwright-verify.sh"
+fi
+
 # Anonymous usage telemetry (opt-out: LOKI_TELEMETRY_DISABLED=true or DO_NOT_TRACK=1)
 TELEMETRY_SCRIPT="$SCRIPT_DIR/telemetry.sh"
 if [ -f "$TELEMETRY_SCRIPT" ]; then
@@ -2651,6 +2657,12 @@ write_dashboard_state() {
         app_runner_state=$(cat ".loki/app-runner/state.json" 2>/dev/null || echo '{"status":"error"}')
     fi
 
+    # Playwright verification results (v5.46.0)
+    local playwright_results='null'
+    if [ -f ".loki/verification/playwright-results.json" ]; then
+        playwright_results=$(cat ".loki/verification/playwright-results.json" 2>/dev/null || echo "null")
+    fi
+
     # Get budget status (if configured)
     local budget_json="null"
     if [ -f ".loki/metrics/budget.json" ]; then
@@ -2729,6 +2741,7 @@ except: print('{\"total\":0,\"unacknowledged\":0}')
   "council": $council_state,
   "checklist": $checklist_summary,
   "appRunner": $app_runner_state,
+  "playwright": $playwright_results,
   "budget": $budget_json,
   "context": $context_state,
   "tokens": $(python3 -c "
@@ -6101,17 +6114,35 @@ except: pass
 " 2>/dev/null || true)
     fi
 
+    # Playwright verification status injection (v5.46.0)
+    local playwright_info=""
+    if [ -f ".loki/verification/playwright-results.json" ]; then
+        playwright_info=$(python3 -c "
+import json
+try:
+    d = json.load(open('.loki/verification/playwright-results.json'))
+    if d.get('passed'):
+        print('PLAYWRIGHT_SMOKE_TEST: PASSED - App loads correctly.')
+    else:
+        errors = d.get('errors', [])
+        checks = d.get('checks', {})
+        failing = [k for k, v in checks.items() if not v]
+        print('PLAYWRIGHT_SMOKE_TEST: FAILED - ' + ', '.join(failing[:3]) + ('. Errors: ' + '; '.join(errors[:3]) if errors else ''))
+except: pass
+" 2>/dev/null || true)
+    fi
+
     if [ $retry -eq 0 ]; then
         if [ -n "$prd" ]; then
-            echo "Loki Mode with PRD at $prd. $human_directive $queue_tasks $checklist_status $app_runner_info $memory_context_section $rarv_instruction $memory_instruction $compaction_reminder $completion_instruction $sdlc_instruction $autonomous_suffix"
+            echo "Loki Mode with PRD at $prd. $human_directive $queue_tasks $checklist_status $app_runner_info $playwright_info $memory_context_section $rarv_instruction $memory_instruction $compaction_reminder $completion_instruction $sdlc_instruction $autonomous_suffix"
         else
-            echo "Loki Mode. $human_directive $queue_tasks $checklist_status $app_runner_info $memory_context_section $analysis_instruction $rarv_instruction $memory_instruction $compaction_reminder $completion_instruction $sdlc_instruction $autonomous_suffix"
+            echo "Loki Mode. $human_directive $queue_tasks $checklist_status $app_runner_info $playwright_info $memory_context_section $analysis_instruction $rarv_instruction $memory_instruction $compaction_reminder $completion_instruction $sdlc_instruction $autonomous_suffix"
         fi
     else
         if [ -n "$prd" ]; then
-            echo "Loki Mode - Resume iteration #$iteration (retry #$retry). PRD: $prd. $human_directive $queue_tasks $checklist_status $app_runner_info $memory_context_section $rarv_instruction $memory_instruction $compaction_reminder $completion_instruction $sdlc_instruction $autonomous_suffix"
+            echo "Loki Mode - Resume iteration #$iteration (retry #$retry). PRD: $prd. $human_directive $queue_tasks $checklist_status $app_runner_info $playwright_info $memory_context_section $rarv_instruction $memory_instruction $compaction_reminder $completion_instruction $sdlc_instruction $autonomous_suffix"
         else
-            echo "Loki Mode - Resume iteration #$iteration (retry #$retry). $human_directive $queue_tasks $checklist_status $app_runner_info $memory_context_section Use .loki/generated-prd.md if exists. $rarv_instruction $memory_instruction $compaction_reminder $completion_instruction $sdlc_instruction $autonomous_suffix"
+            echo "Loki Mode - Resume iteration #$iteration (retry #$retry). $human_directive $queue_tasks $checklist_status $app_runner_info $playwright_info $memory_context_section Use .loki/generated-prd.md if exists. $rarv_instruction $memory_instruction $compaction_reminder $completion_instruction $sdlc_instruction $autonomous_suffix"
         fi
     fi
 }
@@ -6599,6 +6630,17 @@ if __name__ == "__main__":
         # App Runner: watchdog check (v5.45.0)
         if [ "${APP_RUNNER_INITIALIZED:-}" = "true" ] && type app_runner_watchdog &>/dev/null; then
             app_runner_watchdog
+        fi
+
+        # Playwright smoke test on interval (v5.46.0)
+        if type playwright_verify_should_run &>/dev/null && playwright_verify_should_run; then
+            if [ -f ".loki/app-runner/state.json" ]; then
+                local app_url
+                app_url=$(python3 -c "import json; d=json.load(open('.loki/app-runner/state.json')); print(d.get('url','') if d.get('status')=='running' else '')" 2>/dev/null || true)
+                if [ -n "$app_url" ]; then
+                    playwright_verify_app "$app_url" || true
+                fi
+            fi
         fi
 
         # App Runner: check for dashboard control signals (v5.45.0)

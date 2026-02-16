@@ -3460,6 +3460,37 @@ async def control_app_stop(request: Request):
 
 
 # =============================================================================
+# Playwright Verification Endpoints (v5.46.0)
+# =============================================================================
+
+@app.get("/api/playwright/results")
+async def get_playwright_results():
+    """Get latest Playwright smoke test results."""
+    loki_dir = _get_loki_dir()
+    results_file = loki_dir / "verification" / "playwright-results.json"
+    if not results_file.exists():
+        return {"status": "not_run"}
+    try:
+        return json.loads(results_file.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {"status": "error"}
+
+
+@app.get("/api/playwright/screenshot")
+async def get_playwright_screenshot():
+    """Get path to latest Playwright screenshot."""
+    loki_dir = _get_loki_dir()
+    screenshots_dir = loki_dir / "verification" / "screenshots"
+    if not screenshots_dir.exists():
+        return {"screenshot": None}
+    # Get most recent screenshot
+    screenshots = sorted(screenshots_dir.glob("*.png"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not screenshots:
+        return {"screenshot": None}
+    return {"screenshot": str(screenshots[0])}
+
+
+# =============================================================================
 # Static File Serving (Production/Docker)
 # =============================================================================
 # Must be configured AFTER all API routes to avoid conflicts

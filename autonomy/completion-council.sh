@@ -440,6 +440,27 @@ EVIDENCE_SECTION
         echo "## PRD Checklist Verification Results" >> "$evidence_file"
         echo "No PRD checklist has been created yet." >> "$evidence_file"
     fi
+
+    # Playwright smoke test results (v5.46.0 - advisory only)
+    if type playwright_verify_as_evidence &>/dev/null; then
+        playwright_verify_as_evidence "$evidence_file"
+    elif [ -f ".loki/verification/playwright-results.json" ]; then
+        echo "" >> "$evidence_file"
+        echo "## Playwright Smoke Test Results" >> "$evidence_file"
+        _PW_RESULTS=".loki/verification/playwright-results.json" python3 -c "
+import json, os
+try:
+    d = json.load(open(os.environ['_PW_RESULTS']))
+    status = 'PASSED' if d.get('passed') else 'FAILED'
+    print(f'Status: {status}')
+    for k, v in d.get('checks', {}).items():
+        icon = '[PASS]' if v else '[FAIL]'
+        print(f'  {icon} {k}')
+    for e in d.get('errors', [])[:5]:
+        print(f'  Error: {e}')
+except: print('Results unavailable')
+" >> "$evidence_file" 2>/dev/null || echo "Playwright data unavailable" >> "$evidence_file"
+    fi
 }
 
 #===============================================================================

@@ -1074,6 +1074,24 @@ export class LokiApiClient extends EventTarget {
     return this._post('/api/control/app-stop');
   }
 
+  // ==============================================
+  // Playwright Verification API (v5.46.0)
+  // ==============================================
+
+  /**
+   * Get latest Playwright smoke test results
+   */
+  async getPlaywrightResults() {
+    return this._get('/api/playwright/results');
+  }
+
+  /**
+   * Get path to latest Playwright screenshot
+   */
+  async getPlaywrightScreenshot() {
+    return this._get('/api/playwright/screenshot');
+  }
+
   // ============================================
   // Polling Mode (Fallback)
   // ============================================

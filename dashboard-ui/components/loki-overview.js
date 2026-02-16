@@ -44,6 +44,7 @@ export class LokiOverview extends LokiElement {
     this._disconnectedHandler = null;
     this._checklistSummary = null;
     this._appRunnerStatus = null;
+    this._playwrightResults = null;
   }
 
   connectedCallback() {
@@ -90,10 +91,11 @@ export class LokiOverview extends LokiElement {
 
   async _loadStatus() {
     try {
-      const [status, checklistSummary, appRunnerStatus] = await Promise.allSettled([
+      const [status, checklistSummary, appRunnerStatus, playwrightResults] = await Promise.allSettled([
         this._api.getStatus(),
         this._api.getChecklistSummary(),
         this._api.getAppRunnerStatus(),
+        this._api.getPlaywrightResults(),
       ]);
       if (status.status === 'fulfilled') {
         this._updateFromStatus(status.value);
@@ -106,6 +108,9 @@ export class LokiOverview extends LokiElement {
       }
       if (appRunnerStatus.status === 'fulfilled') {
         this._appRunnerStatus = appRunnerStatus.value;
+      }
+      if (playwrightResults.status === 'fulfilled') {
+        this._playwrightResults = playwrightResults.value;
       }
       this.render();
     } catch (error) {
@@ -218,6 +223,34 @@ export class LokiOverview extends LokiElement {
           ${label}${port}
         </div>
         ${s.method ? `<div style="font-size:10px;color:var(--loki-text-muted);margin-top:2px;">${this._escapeHtml(s.method)}</div>` : ''}
+      </div>
+    `;
+  }
+
+  _renderPlaywrightCard() {
+    const r = this._playwrightResults;
+    if (!r || r === 'null' || !r.verified_at) {
+      return `
+        <div class="overview-card">
+          <div class="card-label">Verification</div>
+          <div class="card-value small-text">--</div>
+        </div>
+      `;
+    }
+    const passed = r.passed === true;
+    const color = passed ? 'var(--loki-green, #22c55e)' : 'var(--loki-red, #ef4444)';
+    const label = passed ? 'PASSED' : 'FAILED';
+    const dotClass = passed ? 'active' : 'error';
+    const checks = r.checks || {};
+    const failCount = Object.values(checks).filter(v => !v).length;
+    return `
+      <div class="overview-card">
+        <div class="card-label">Verification</div>
+        <div class="card-value small-text">
+          <span class="status-dot ${dotClass}"></span>
+          ${label}
+        </div>
+        ${!passed && failCount > 0 ? `<div style="font-size:10px;color:var(--loki-red,#ef4444);margin-top:2px;">${failCount} check(s) failed</div>` : ''}
       </div>
     `;
   }
@@ -416,6 +449,8 @@ export class LokiOverview extends LokiElement {
           ${this._renderChecklistCard()}
 
           ${this._renderAppRunnerCard()}
+
+          ${this._renderPlaywrightCard()}
 
           <div class="overview-card">
             <div class="card-label">Uptime</div>

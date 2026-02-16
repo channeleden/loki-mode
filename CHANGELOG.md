@@ -5,6 +5,33 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.46.0] - 2026-02-16
+
+### Added
+- PRD Checklist system: automated requirement tracking from PRD analysis (`autonomy/prd-checklist.sh`, `autonomy/checklist-verify.py`)
+- PRD Analyzer: quality scoring, gap detection, assumption tracking (`autonomy/prd-analyzer.py`)
+- App Runner: auto-detect, start, restart, and health-check user applications locally (`autonomy/app-runner.sh`)
+- App Runner: 10-method detection cascade (Docker Compose, Dockerfile, npm, Python, Go, Rust, Makefile)
+- App Runner: watchdog with circuit breaker (5 crash limit), auto-restart on code changes
+- Playwright smoke tests: page load verification, JS error detection, screenshot capture (`autonomy/playwright-verify.sh`)
+- Dashboard: PRD Checklist viewer component with category accordions, priority badges, verification dots
+- Dashboard: App Status component with live status, port/URL display, restart/stop controls
+- Dashboard: Verification card on overview showing Playwright pass/fail status
+- API: 9 new endpoints (checklist, checklist summary, PRD observations, app-runner status/logs, app restart/stop, Playwright results/screenshot)
+- API client: 8 new methods for checklist, app runner, and Playwright APIs
+- Council integration: checklist verification and Playwright results as advisory evidence
+- Sidebar navigation: PRD Checklist and App Runner pages with keyboard shortcuts
+
+### Fixed
+- GitHub Actions: removed invalid example-loki-review.yml that failed on every push (renamed to .yml.example)
+- Security: added auth scope requirement on app-runner control endpoints
+- Security: command injection prevention in app-runner via _validate_app_command()
+- Security: JSON injection prevention in app-runner via _json_escape() helper
+- Security: file handle leak in checklist-verify.py http_check
+
+### Changed
+- Version bump from 5.43.0 to 5.46.0 across all distribution files (npm, Docker, Homebrew, VSCode, wiki)
+
 ## [5.43.0] - 2026-02-15
 
 ### Fixed
