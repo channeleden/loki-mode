@@ -568,13 +568,24 @@ class TokenEconomics:
 
         Writes to {base_path}/token_economics.json
         """
+        import tempfile
+
         file_path = Path(self.base_path) / "token_economics.json"
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         data = self.get_summary()
 
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=str(file_path.parent), suffix='.tmp')
+        try:
+            with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+            os.replace(tmp_path, str(file_path))
+        except Exception:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
 
     def load(self) -> None:
         """

@@ -820,6 +820,14 @@ cmd_resume() {
 
 # Show current status
 cmd_status() {
+    # Check for --json flag
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --json) cmd_status_json; return $? ;;
+            *) shift ;;
+        esac
+    done
+
     require_jq
 
     if [ ! -d "$LOKI_DIR" ]; then
@@ -3123,7 +3131,7 @@ cmd_api() {
             if [ -n "${LOKI_TLS_CERT:-}" ] && [ -n "${LOKI_TLS_KEY:-}" ]; then
                 uvicorn_args="$uvicorn_args --ssl-certfile ${LOKI_TLS_CERT} --ssl-keyfile ${LOKI_TLS_KEY}"
             fi
-            LOKI_DIR="$LOKI_DIR" nohup python3 -m uvicorn dashboard.server:app $uvicorn_args > "$LOKI_DIR/logs/api.log" 2>&1 &
+            LOKI_DIR="$LOKI_DIR" PYTHONPATH="$SKILL_DIR" nohup python3 -m uvicorn dashboard.server:app $uvicorn_args > "$LOKI_DIR/logs/api.log" 2>&1 &
             local new_pid=$!
             echo "$new_pid" > "$pid_file"
 

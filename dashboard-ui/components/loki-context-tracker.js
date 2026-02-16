@@ -78,12 +78,30 @@ export class LokiContextTracker extends LokiElement {
     this._pollInterval = setInterval(() => {
       this._loadContext();
     }, 5000);
+    this._visibilityHandler = () => {
+      if (document.hidden) {
+        if (this._pollInterval) {
+          clearInterval(this._pollInterval);
+          this._pollInterval = null;
+        }
+      } else {
+        if (!this._pollInterval) {
+          this._loadContext();
+          this._pollInterval = setInterval(() => this._loadContext(), 5000);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', this._visibilityHandler);
   }
 
   _stopPolling() {
     if (this._pollInterval) {
       clearInterval(this._pollInterval);
       this._pollInterval = null;
+    }
+    if (this._visibilityHandler) {
+      document.removeEventListener('visibilitychange', this._visibilityHandler);
+      this._visibilityHandler = null;
     }
   }
 

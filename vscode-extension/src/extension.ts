@@ -577,7 +577,7 @@ async function startLokiMode(): Promise<void> {
 
     try {
         learningCollector?.addWorkflowStep('loki_session_start', 'api_request');
-        await apiRequest('/start', 'POST', {
+        await apiRequest('/api/control/start', 'POST', {
             provider: Config.provider,
             prd: prdPath || undefined
         });
@@ -648,7 +648,7 @@ async function stopLokiMode(): Promise<void> {
     learningCollector?.trackCommand('loki.stop', ['loki.pause', 'loki.resume']);
 
     try {
-        await apiRequest('/stop', 'POST');
+        await apiRequest('/api/control/stop', 'POST');
 
         isRunning = false;
         isPaused = false;
@@ -700,7 +700,7 @@ async function pauseLokiMode(): Promise<void> {
     learningCollector?.trackCommand('loki.pause', ['loki.stop', 'loki.resume']);
 
     try {
-        await apiRequest('/pause', 'POST');
+        await apiRequest('/api/control/pause', 'POST');
 
         isPaused = true;
         updateStatusBar();
@@ -740,7 +740,7 @@ async function resumeLokiMode(): Promise<void> {
     learningCollector?.trackCommand('loki.resume', ['loki.stop', 'loki.pause']);
 
     try {
-        await apiRequest('/resume', 'POST');
+        await apiRequest('/api/control/resume', 'POST');
 
         isPaused = false;
         updateStatusBar();
@@ -1072,6 +1072,14 @@ export function activate(context: vscode.ExtensionContext): void {
                 stopPolling();
                 startPolling();
             }
+        }
+
+        if (Config.didChange(e, 'apiPort') || Config.didChange(e, 'apiHost')) {
+            logger.info(`API endpoint changed to ${Config.apiBaseUrl}`);
+            stopPolling();
+            apiClient.dispose();
+            apiClient = new LokiApiClient(Config.apiBaseUrl, { pollingInterval: Config.pollingInterval });
+            startPolling();
         }
     });
 

@@ -62,6 +62,15 @@ except ImportError:
 LOKI_TLS_CERT = os.environ.get("LOKI_TLS_CERT", "")  # Path to PEM certificate
 LOKI_TLS_KEY = os.environ.get("LOKI_TLS_KEY", "")    # Path to PEM private key
 
+
+def _safe_int_env(name: str, default: int) -> int:
+    """Read an integer from an environment variable, returning *default* on bad values."""
+    try:
+        return int(os.environ.get(name, str(default)))
+    except (ValueError, TypeError):
+        return default
+
+
 # ---------------------------------------------------------------------------
 # Simple in-memory rate limiter for control endpoints
 # ---------------------------------------------------------------------------
@@ -214,7 +223,10 @@ class StatusResponse(BaseModel):
 class ConnectionManager:
     """Manages WebSocket connections for real-time updates."""
 
-    MAX_CONNECTIONS = int(os.environ.get("LOKI_MAX_WS_CONNECTIONS", "100"))
+    try:
+        MAX_CONNECTIONS = int(os.environ.get("LOKI_MAX_WS_CONNECTIONS", "100"))
+    except (ValueError, TypeError):
+        MAX_CONNECTIONS = 100
 
     def __init__(self):
         self.active_connections: list[WebSocket] = []
@@ -493,7 +505,7 @@ async def list_projects(
     return response
 
 
-@app.post("/api/projects", response_model=ProjectResponse, status_code=201)
+@app.post("/api/projects", response_model=ProjectResponse, status_code=201, dependencies=[Depends(auth.require_scope("control"))])
 async def create_project(
     project: ProjectCreate,
     db: AsyncSession = Depends(get_db),
@@ -718,7 +730,7 @@ async def list_tasks(
     return all_tasks
 
 
-@app.post("/api/tasks", response_model=TaskResponse, status_code=201)
+@app.post("/api/tasks", response_model=TaskResponse, status_code=201, dependencies=[Depends(auth.require_scope("control"))])
 async def create_task(
     task: TaskCreate,
     db: AsyncSession = Depends(get_db),
@@ -1041,7 +1053,7 @@ async def list_registered_projects(include_inactive: bool = False):
     return projects
 
 
-@app.post("/api/registry/projects", response_model=RegisteredProjectResponse, status_code=201)
+@app.post("/api/registry/projects", response_model=RegisteredProjectResponse, status_code=201, dependencies=[Depends(auth.require_scope("control"))])
 async def register_project(request: RegisterProjectRequest):
     """Register a new project."""
     try:
@@ -1087,7 +1099,7 @@ async def get_project_health(identifier: str):
     return health
 
 
-@app.post("/api/registry/projects/{identifier}/access")
+@app.post("/api/registry/projects/{identifier}/access", dependencies=[Depends(auth.require_scope("control"))])
 async def update_project_access(identifier: str):
     """Update the last accessed timestamp for a project."""
     project = registry.update_last_accessed(identifier)
@@ -1104,7 +1116,7 @@ async def discover_projects(max_depth: int = Query(default=3, ge=1, le=10)):
     return discovered
 
 
-@app.post("/api/registry/sync", response_model=SyncResponse)
+@app.post("/api/registry/sync", response_model=SyncResponse, dependencies=[Depends(auth.require_scope("control"))])
 async def sync_registry():
     """Sync the registry with discovered projects."""
     if not _read_limiter.check("registry_sync"):
@@ -1792,7 +1804,17 @@ async def trigger_aggregation():
 
     if events_file.exists():
         try:
-            for raw_line in events_file.read_text().strip().split("\n"):
+            # Guard against unbounded reads: if file > 10 MB, read only the tail
+            _MAX_EVENTS_BYTES = 10 * 1024 * 1024  # 10 MB
+            _fsize = events_file.stat().st_size
+            if _fsize > _MAX_EVENTS_BYTES:
+                with open(events_file, "rb") as _fh:
+                    _fh.seek(-_MAX_EVENTS_BYTES, 2)
+                    _fh.readline()  # discard partial first line
+                    _raw_text = _fh.read().decode("utf-8", errors="replace")
+            else:
+                _raw_text = events_file.read_text()
+            for raw_line in _raw_text.strip().split("\n"):
                 if not raw_line.strip():
                     continue
                 try:
@@ -2396,8 +2418,8 @@ async def get_council_convergence():
     convergence_file = _get_loki_dir() / "council" / "convergence.log"
     data_points = []
     if convergence_file.exists():
-        try:
-            for line in convergence_file.read_text().strip().split("\n"):
+        for line in convergence_file.read_text().strip().split("\n"):
+            try:
                 parts = line.split("|")
                 if len(parts) >= 5:
                     data_points.append({
@@ -2407,8 +2429,8 @@ async def get_council_convergence():
                         "no_change_streak": int(parts[3]),
                         "done_signals": int(parts[4]),
                     })
-        except Exception:
-            pass
+            except Exception:
+                continue
     return {"dataPoints": data_points}
 
 
@@ -3002,7 +3024,7 @@ async def get_github_status(token: Optional[dict] = Depends(auth.get_current_tok
         "pr_enabled": os.environ.get("LOKI_GITHUB_PR", "false") == "true",
         "labels_filter": os.environ.get("LOKI_GITHUB_LABELS", ""),
         "milestone_filter": os.environ.get("LOKI_GITHUB_MILESTONE", ""),
-        "limit": int(os.environ.get("LOKI_GITHUB_LIMIT", "100")),
+        "limit": _safe_int_env("LOKI_GITHUB_LIMIT", 100),
         "imported_tasks": 0,
         "synced_updates": 0,
         "repo": None,
@@ -3232,7 +3254,7 @@ def _build_metrics_text() -> str:
     lines.append("")
 
     # 3. loki_iteration_max (gauge) -------------------------------------------
-    max_iterations = int(os.environ.get("LOKI_MAX_ITERATIONS", "1000"))
+    max_iterations = _safe_int_env("LOKI_MAX_ITERATIONS", 1000)
     lines.append("# HELP loki_iteration_max Maximum configured iterations")
     lines.append("# TYPE loki_iteration_max gauge")
     lines.append(f"loki_iteration_max {max_iterations}")
@@ -3720,7 +3742,7 @@ def run_server(host: str = None, port: int = None) -> None:
         # Default to localhost-only for security
         host = os.environ.get("LOKI_DASHBOARD_HOST", "127.0.0.1")
     if port is None:
-        port = int(os.environ.get("LOKI_DASHBOARD_PORT", "57374"))
+        port = _safe_int_env("LOKI_DASHBOARD_PORT", 57374)
 
     uvicorn_kwargs = {
         "host": host,

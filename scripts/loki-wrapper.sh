@@ -34,11 +34,9 @@ if [[ -f "$PROJECT_ROOT/providers/loader.sh" ]]; then
         exit 1
     fi
 else
-    # Fallback to hardcoded claude if providers not available
-    PROVIDER_CLI="claude"
-    PROVIDER_AUTONOMOUS_FLAG="--dangerously-skip-permissions"
-    PROVIDER_PROMPT_FLAG="-p"
-    PROVIDER_DISPLAY_NAME="Claude Code"
+    echo "ERROR: Provider loader not found. Cannot load provider: ${LOKI_PROVIDER:-claude}" >&2
+    echo "Expected: $PROJECT_ROOT/providers/loader.sh" >&2
+    exit 1
 fi
 
 # Configuration

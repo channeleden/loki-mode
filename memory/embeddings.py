@@ -819,6 +819,7 @@ class EmbeddingEngine:
 
         # Cache
         self._cache: Dict[str, np.ndarray] = {}
+        self._max_cache_size = 10000
         self._quality_cache: Dict[str, EmbeddingQuality] = {}
 
         # Metrics
@@ -1008,6 +1009,10 @@ class EmbeddingEngine:
 
         # Cache result
         if self.config.cache_enabled:
+            if len(self._cache) >= self._max_cache_size:
+                # Remove oldest entry (first key in dict - insertion order in Python 3.7+)
+                oldest_key = next(iter(self._cache))
+                del self._cache[oldest_key]
             self._cache[cache_key] = embedding
 
         # Track latency

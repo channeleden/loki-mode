@@ -912,6 +912,7 @@ class MemoryRetrieval:
 
         for collection, items in results_by_collection.items():
             for item in items:
+                item = dict(item)  # shallow copy to avoid mutating original
                 # Ensure source is set
                 if "_source" not in item:
                     item["_source"] = collection

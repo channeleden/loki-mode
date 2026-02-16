@@ -95,12 +95,13 @@ export interface ApiResponse {
 }
 
 /**
- * Health check response (matches dashboard/server.py /api/health endpoint)
- * Server returns: { status: 'ok', version: '...' }
+ * Health check response (matches dashboard/server.py /health endpoint)
+ * Server returns: { status: 'healthy', service: 'loki-dashboard' }
  */
 export interface HealthResponse {
-    status: 'ok' | 'error';
-    version: string;
+    status: 'healthy' | 'error';
+    service: string;
+    version?: string;
 }
 
 /**
@@ -122,30 +123,30 @@ export interface StartResponse {
 }
 
 /**
- * Stop session response (flat format from server)
- * Server returns: { stopped: true }
+ * Stop session response (matches dashboard/server.py /api/control/stop)
+ * Server returns: { success: true, message: "Stop signal sent" }
  */
 export interface StopResponse {
-    stopped: boolean;
-    error?: string;
+    success: boolean;
+    message: string;
 }
 
 /**
- * Pause session response (flat format from server)
- * Server returns: { paused: true }
+ * Pause session response (matches dashboard/server.py /api/control/pause)
+ * Server returns: { success: true, message: "Session paused" }
  */
 export interface PauseResponse {
-    paused: boolean;
-    error?: string;
+    success: boolean;
+    message: string;
 }
 
 /**
- * Resume session response (flat format from server)
- * Server returns: { resumed: true }
+ * Resume session response (matches dashboard/server.py /api/control/resume)
+ * Server returns: { success: true, message: "Session resumed" }
  */
 export interface ResumeResponse {
-    resumed: boolean;
-    error?: string;
+    success: boolean;
+    message: string;
 }
 
 /**

@@ -216,7 +216,7 @@ export class LokiApiClient {
     async health(): Promise<boolean> {
         try {
             const response = await this.request<HealthResponse>('GET', '/health', undefined, { retries: 0 });
-            return response.status === 'ok';
+            return response.status === 'healthy';
         } catch {
             return false;
         }
@@ -254,7 +254,7 @@ export class LokiApiClient {
         provider: Provider = 'claude',
         options?: StartOptions
     ): Promise<StartResponse> {
-        return this.request<StartResponse>('POST', '/start', {
+        return this.request<StartResponse>('POST', '/api/control/start', {
             prd,
             provider,
             options,
@@ -266,7 +266,7 @@ export class LokiApiClient {
      * @returns Stop response with completion stats
      */
     async stopSession(): Promise<StopResponse> {
-        return this.request<StopResponse>('POST', '/stop');
+        return this.request<StopResponse>('POST', '/api/control/stop');
     }
 
     /**
@@ -274,7 +274,7 @@ export class LokiApiClient {
      * @returns Pause response with current phase
      */
     async pauseSession(): Promise<PauseResponse> {
-        return this.request<PauseResponse>('POST', '/pause');
+        return this.request<PauseResponse>('POST', '/api/control/pause');
     }
 
     /**
@@ -282,7 +282,7 @@ export class LokiApiClient {
      * @returns Resume response with current phase
      */
     async resumeSession(): Promise<ResumeResponse> {
-        return this.request<ResumeResponse>('POST', '/resume');
+        return this.request<ResumeResponse>('POST', '/api/control/resume');
     }
 
     /**

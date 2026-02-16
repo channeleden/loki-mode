@@ -820,7 +820,8 @@ class MemoryEngine:
             })
 
         index["last_updated"] = datetime.now(timezone.utc).isoformat()
-        index["total_memories"] = index.get("total_memories", 0) + 1
+        if not topic_found:
+            index["total_memories"] = index.get("total_memories", 0) + 1
 
         self.storage.write_json("index.json", index)
 

@@ -56,7 +56,7 @@ For full functionality, mount your API credentials:
 ```bash
 docker run -it \
   -v $(pwd):/workspace \
-  -v ~/.claude:/root/.claude:ro \
+  -v ~/.claude:/home/loki/.claude:ro \
   asklokesh/loki-mode
 ```
 

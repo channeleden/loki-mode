@@ -110,7 +110,7 @@ sandbox:
   mounts:
     - "./:/workspace:rw"           # Project directory
     - "~/.npm:/root/.npm:ro"       # npm cache (read-only)
-    - "~/.claude:/root/.claude:ro" # Claude auth (read-only)
+    - "~/.claude:/home/loki/.claude:ro" # Claude auth (read-only)
 
   # Environment variables to pass
   env:
@@ -193,7 +193,7 @@ sandbox:
 | Host Path | Container Path | Mode | Purpose |
 |-----------|----------------|------|---------|
 | `.` | `/workspace` | rw | Project files |
-| `~/.claude` | `/root/.claude` | ro | Claude auth |
+| `~/.claude` | `/home/loki/.claude` | ro | Claude auth |
 
 ### Adding Custom Mounts
 
@@ -202,7 +202,7 @@ sandbox:
   mounts:
     - "./:/workspace:rw"
     - "/path/to/data:/data:ro"
-    - "~/.aws:/root/.aws:ro"
+    - "~/.aws:/home/loki/.aws:ro"
 ```
 
 ---

@@ -148,12 +148,38 @@ export class LokiCostDashboard extends LokiElement {
         this.render();
       }
     }, 5000);
+    this._visibilityHandler = () => {
+      if (document.hidden) {
+        if (this._pollInterval) {
+          clearInterval(this._pollInterval);
+          this._pollInterval = null;
+        }
+      } else {
+        if (!this._pollInterval) {
+          this._loadCost();
+          this._pollInterval = setInterval(async () => {
+            try {
+              const cost = await this._api.getCost();
+              this._updateFromCost(cost);
+            } catch (error) {
+              this._data.connected = false;
+              this.render();
+            }
+          }, 5000);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', this._visibilityHandler);
   }
 
   _stopPolling() {
     if (this._pollInterval) {
       clearInterval(this._pollInterval);
       this._pollInterval = null;
+    }
+    if (this._visibilityHandler) {
+      document.removeEventListener('visibilitychange', this._visibilityHandler);
+      this._visibilityHandler = null;
     }
   }
 

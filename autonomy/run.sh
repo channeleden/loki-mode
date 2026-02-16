@@ -698,7 +698,7 @@ print(json.dumps(event))
     if [ -z "$json_event" ]; then
         # Escape quotes and special chars for JSON
         local escaped_data
-        escaped_data=$(echo "$event_data" | sed 's/"/\\"/g' | tr -d '\n')
+        escaped_data=$(printf '%s' "$event_data" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g' | tr -d '\n')
         json_event="{\"timestamp\":\"$timestamp\",\"type\":\"$event_type\",\"data\":\"$escaped_data\"}"
     fi
 
@@ -733,8 +733,8 @@ emit_event_json() {
         if [[ "$value" =~ ^[0-9]+$ ]] || [[ "$value" =~ ^(true|false|null)$ ]]; then
             json_data+="\"$key\":$value"
         else
-            # Escape quotes in value
-            value=$(echo "$value" | sed 's/"/\\"/g')
+            # Escape backslashes, quotes, and special chars in value
+            value=$(printf '%s' "$value" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g')
             json_data+="\"$key\":\"$value\""
         fi
         shift
@@ -3511,8 +3511,10 @@ update_agents_state() {
 
     agents_json="${agents_json}]"
 
-    # Write aggregated data
-    echo "$agents_json" > "$output_file"
+    # Write aggregated data (atomic via temp file + mv)
+    local tmp_file="${output_file}.tmp.$$"
+    echo "$agents_json" > "$tmp_file"
+    mv -f "$tmp_file" "$output_file" 2>/dev/null || rm -f "$tmp_file"
 }
 
 #===============================================================================
@@ -5874,7 +5876,7 @@ save_state() {
     "status": "$status",
     "lastExitCode": $exit_code,
     "lastRun": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-    "prdPath": "${PRD_PATH:-}",
+    "prdPath": "$(printf '%s' "${PRD_PATH:-}" | sed 's/\\/\\\\/g; s/"/\\"/g')",
     "pid": $$,
     "maxRetries": $MAX_RETRIES,
     "baseWait": $BASE_WAIT

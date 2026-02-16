@@ -31,6 +31,8 @@ tests/
 **/*.test.ts
 **/*.spec.js
 **/*.spec.ts
+**/*_test.js
+**/*_test.ts
 
 # Development files
 .git/
