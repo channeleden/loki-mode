@@ -5,6 +5,13 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.48.1] - 2026-02-16
+
+### Fixed
+- Dashboard server auto-installs Python dependencies (fastapi/uvicorn/pydantic/websockets) before starting
+- Fixes ModuleNotFoundError on fresh npm/Homebrew installations where FastAPI is not pre-installed
+- Applied to all entry points: run.sh start_dashboard, loki dashboard start, loki api start, loki serve
+
 ## [5.48.0] - 2026-02-16
 
 ### Fixed
