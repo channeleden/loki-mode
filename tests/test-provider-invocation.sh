@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test: Provider Invocation Functions
 # Tests provider_invoke(), provider_invoke_with_tier(), and provider_get_tier_param()
 

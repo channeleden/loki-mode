@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Provider Loader for loki-mode
 # Sources the appropriate provider configuration based on LOKI_PROVIDER
 

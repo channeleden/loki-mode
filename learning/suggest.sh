@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Loki Mode Learning Suggestions - Bash CLI helper
 #
 # Shows context-aware suggestions based on aggregated learnings.

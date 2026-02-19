@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #===============================================================================
 # Loki Mode CLI Wrapper
 # Command-line interface for Loki Mode
@@ -1460,9 +1460,12 @@ cmd_dashboard_start() {
         exit 1
     fi
 
-    # Determine python command
+    # Determine python command -- prefer dashboard venv if available
     local python_cmd="python3"
-    if ! command -v python3 &> /dev/null; then
+    local dashboard_venv="${SKILL_DIR}/dashboard/.venv"
+    if [ -x "${dashboard_venv}/bin/python3" ]; then
+        python_cmd="${dashboard_venv}/bin/python3"
+    elif ! command -v python3 &> /dev/null; then
         python_cmd="python"
     fi
 
@@ -1510,19 +1513,29 @@ cmd_dashboard_start() {
         tls_info=" (TLS enabled)"
     fi
 
-    # Ensure dashboard Python dependencies are installed
+    # Ensure dashboard Python dependencies via virtualenv (PEP 668 safe)
     if ! "$python_cmd" -c "import fastapi" 2>/dev/null; then
-        echo -e "${YELLOW}Installing dashboard dependencies...${NC}"
+        echo -e "${YELLOW}Setting up dashboard virtualenv...${NC}"
         local req_file="${SKILL_DIR}/dashboard/requirements.txt"
-        if [ -f "$req_file" ]; then
-            pip3 install -q -r "$req_file" 2>/dev/null || pip install -q -r "$req_file" 2>/dev/null || {
-                echo -e "${RED}Failed to install dashboard dependencies${NC}"
-                echo "Run manually: pip install fastapi uvicorn pydantic websockets"
-                exit 1
-            }
+        if ! [ -d "$dashboard_venv" ]; then
+            python3 -m venv "$dashboard_venv" 2>/dev/null || python3.13 -m venv "$dashboard_venv" 2>/dev/null || true
+        fi
+        if [ -x "${dashboard_venv}/bin/python3" ]; then
+            python_cmd="${dashboard_venv}/bin/python3"
+            echo -e "${YELLOW}Installing dashboard dependencies into venv...${NC}"
+            if [ -f "$req_file" ]; then
+                "${dashboard_venv}/bin/pip" install -q -r "$req_file" 2>/dev/null || {
+                    echo -e "${YELLOW}Pinned deps failed, installing core deps...${NC}"
+                    "${dashboard_venv}/bin/pip" install -q fastapi uvicorn pydantic websockets 2>/dev/null || true
+                }
+            else
+                "${dashboard_venv}/bin/pip" install -q fastapi uvicorn pydantic websockets 2>/dev/null || true
+            fi
         else
+            # Fallback: try direct pip (may fail on PEP 668 systems)
             pip3 install -q fastapi uvicorn pydantic websockets 2>/dev/null || pip install -q fastapi uvicorn pydantic websockets 2>/dev/null || {
                 echo -e "${RED}Failed to install dashboard dependencies${NC}"
+                echo "Run manually: python3 -m venv ${dashboard_venv} && ${dashboard_venv}/bin/pip install fastapi uvicorn pydantic websockets"
                 exit 1
             }
         fi
@@ -3143,19 +3156,31 @@ cmd_api() {
                 fi
             fi
 
-            # Ensure dashboard Python dependencies are installed
-            if ! python3 -c "import fastapi" 2>/dev/null; then
-                echo -e "${YELLOW}Installing dashboard dependencies...${NC}"
-                local req_file="${SKILL_DIR}/dashboard/requirements.txt"
-                if [ -f "$req_file" ]; then
-                    pip3 install -q -r "$req_file" 2>/dev/null || pip install -q -r "$req_file" 2>/dev/null || {
-                        echo -e "${RED}Failed to install dashboard dependencies${NC}"
-                        echo "Run manually: pip install fastapi uvicorn pydantic websockets"
-                        exit 1
-                    }
+            # Ensure dashboard Python dependencies via virtualenv (PEP 668 safe)
+            local dashboard_venv="${SKILL_DIR}/dashboard/.venv"
+            local api_python="python3"
+            if [ -x "${dashboard_venv}/bin/python3" ]; then
+                api_python="${dashboard_venv}/bin/python3"
+            fi
+            if ! "$api_python" -c "import fastapi" 2>/dev/null; then
+                echo -e "${YELLOW}Setting up dashboard virtualenv...${NC}"
+                if ! [ -d "$dashboard_venv" ]; then
+                    python3 -m venv "$dashboard_venv" 2>/dev/null || python3.13 -m venv "$dashboard_venv" 2>/dev/null || true
+                fi
+                if [ -x "${dashboard_venv}/bin/python3" ]; then
+                    api_python="${dashboard_venv}/bin/python3"
+                    local req_file="${SKILL_DIR}/dashboard/requirements.txt"
+                    if [ -f "$req_file" ]; then
+                        "${dashboard_venv}/bin/pip" install -q -r "$req_file" 2>/dev/null || {
+                            "${dashboard_venv}/bin/pip" install -q fastapi uvicorn pydantic websockets 2>/dev/null || true
+                        }
+                    else
+                        "${dashboard_venv}/bin/pip" install -q fastapi uvicorn pydantic websockets 2>/dev/null || true
+                    fi
                 else
                     pip3 install -q fastapi uvicorn pydantic websockets 2>/dev/null || {
                         echo -e "${RED}Failed to install dashboard dependencies${NC}"
+                        echo "Run manually: python3 -m venv ${dashboard_venv} && ${dashboard_venv}/bin/pip install fastapi uvicorn pydantic websockets"
                         exit 1
                     }
                 fi
@@ -3168,7 +3193,7 @@ cmd_api() {
             if [ -n "${LOKI_TLS_CERT:-}" ] && [ -n "${LOKI_TLS_KEY:-}" ]; then
                 uvicorn_args="$uvicorn_args --ssl-certfile ${LOKI_TLS_CERT} --ssl-keyfile ${LOKI_TLS_KEY}"
             fi
-            LOKI_DIR="$LOKI_DIR" PYTHONPATH="$SKILL_DIR" nohup python3 -m uvicorn dashboard.server:app $uvicorn_args > "$LOKI_DIR/logs/api.log" 2>&1 &
+            LOKI_DIR="$LOKI_DIR" PYTHONPATH="$SKILL_DIR" nohup "$api_python" -m uvicorn dashboard.server:app $uvicorn_args > "$LOKI_DIR/logs/api.log" 2>&1 &
             local new_pid=$!
             echo "$new_pid" > "$pid_file"
 

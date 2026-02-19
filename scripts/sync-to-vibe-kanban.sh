@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Sync Loki Mode tasks to Vibe Kanban SQLite database
 # Works on macOS and Linux, auto-detects project name from current directory
 

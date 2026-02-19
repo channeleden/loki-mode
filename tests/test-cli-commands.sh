@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test: Loki CLI Commands
 # Tests non-destructive CLI commands that are safe to run without an active session.
 # These verify exit codes and expected output patterns.

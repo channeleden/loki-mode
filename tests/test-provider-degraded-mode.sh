@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test: Provider Degraded Mode Functionality
 # Tests degraded mode flags, reasons, and capability constraints for all providers
 

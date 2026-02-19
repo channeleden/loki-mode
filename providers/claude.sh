@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Claude Code Provider Configuration
 # Shell-sourceable config for loki-mode multi-provider support
 

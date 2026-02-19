@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #===============================================================================
 # Test suite for issue-parser.sh
 # Run from project root: ./tests/test-issue-parser.sh

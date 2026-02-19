@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # shellcheck disable=SC2034  # Many variables are used by sourced scripts
 # shellcheck disable=SC2155  # Declare and assign separately (acceptable in this codebase)
 # shellcheck disable=SC2329  # Functions may be invoked indirectly or via dynamic dispatch
@@ -5147,19 +5147,40 @@ start_dashboard() {
         log_info "TLS enabled for dashboard"
     fi
 
-    # Ensure dashboard Python dependencies are installed
+    # Ensure dashboard Python dependencies via virtualenv (PEP 668 safe)
     local skill_dir="${SCRIPT_DIR%/*}"
     local req_file="${skill_dir}/dashboard/requirements.txt"
-    if ! python3 -c "import fastapi" 2>/dev/null; then
-        log_step "Installing dashboard dependencies..."
-        if [ -f "$req_file" ]; then
-            pip3 install -q -r "$req_file" 2>/dev/null || pip install -q -r "$req_file" 2>/dev/null || {
-                log_warn "Failed to install dashboard dependencies"
-                log_warn "Run manually: pip install fastapi uvicorn pydantic websockets"
+    local dashboard_venv="${skill_dir}/dashboard/.venv"
+    local python_cmd="python3"
+
+    # Use venv python if available, otherwise set one up
+    if [ -x "${dashboard_venv}/bin/python3" ]; then
+        python_cmd="${dashboard_venv}/bin/python3"
+    fi
+
+    if ! "$python_cmd" -c "import fastapi" 2>/dev/null; then
+        log_step "Setting up dashboard virtualenv..."
+        if ! [ -d "$dashboard_venv" ]; then
+            python3 -m venv "$dashboard_venv" 2>/dev/null || python3.13 -m venv "$dashboard_venv" 2>/dev/null || {
+                log_warn "Failed to create virtualenv, trying direct pip install..."
             }
+        fi
+        if [ -x "${dashboard_venv}/bin/python3" ]; then
+            python_cmd="${dashboard_venv}/bin/python3"
+            log_step "Installing dashboard dependencies into venv..."
+            if [ -f "$req_file" ]; then
+                "${dashboard_venv}/bin/pip" install -q -r "$req_file" 2>/dev/null || {
+                    log_warn "Pinned deps failed, installing core deps..."
+                    "${dashboard_venv}/bin/pip" install -q fastapi uvicorn pydantic websockets 2>/dev/null || true
+                }
+            else
+                "${dashboard_venv}/bin/pip" install -q fastapi uvicorn pydantic websockets 2>/dev/null || true
+            fi
         else
+            # Fallback: try direct pip (may fail on PEP 668 systems)
             pip3 install -q fastapi uvicorn pydantic websockets 2>/dev/null || pip install -q fastapi uvicorn pydantic websockets 2>/dev/null || {
                 log_warn "Failed to install dashboard dependencies"
+                log_warn "Run manually: python3 -m venv ${dashboard_venv} && ${dashboard_venv}/bin/pip install fastapi uvicorn pydantic websockets"
             }
         fi
     fi
@@ -5168,7 +5189,7 @@ start_dashboard() {
     # Dashboard module is at project root (parent of autonomy/)
     # LOKI_SKILL_DIR tells server.py where to find static files
     LOKI_TLS_CERT="${LOKI_TLS_CERT:-}" LOKI_TLS_KEY="${LOKI_TLS_KEY:-}" \
-        LOKI_SKILL_DIR="${skill_dir}" PYTHONPATH="${skill_dir}" nohup python3 -m dashboard.server > "$log_file" 2>&1 &
+        LOKI_SKILL_DIR="${skill_dir}" PYTHONPATH="${skill_dir}" nohup "$python_cmd" -m dashboard.server > "$log_file" 2>&1 &
     DASHBOARD_PID=$!
 
     # Save PID for later cleanup

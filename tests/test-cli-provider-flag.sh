@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test: CLI Provider Flag Parsing
 # Tests --provider flag, LOKI_PROVIDER env var, default provider, and precedence
 #

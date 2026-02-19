@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Loki Mode v5.42 Complete Demo - All features showcase
 # Usage: ./demo/run-demo-auto.sh
 # shellcheck disable=SC2034

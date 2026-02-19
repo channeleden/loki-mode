@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # shellcheck disable=SC2034  # Variables may be used in sourced scripts
 #===============================================================================
 # Prepare SWE-bench Submission

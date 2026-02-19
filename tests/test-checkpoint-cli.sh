@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # shellcheck disable=SC2034  # Variables may be unused in test context
 # shellcheck disable=SC2155  # Declare and assign separately
 # Test: Checkpoint CLI Commands

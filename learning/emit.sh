@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Loki Mode Learning Signal Emitter - Bash helper
 #
 # Emits learning signals by calling the Python learning emitter.

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Loki Mode Test Suite Runner
 # Runs all test cases for the Loki Mode skill
 

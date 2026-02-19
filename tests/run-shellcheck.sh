@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test: ShellCheck Linting
 # Runs shellcheck on all .sh files in the project
 # Only fails on errors and warnings - info/style issues are reported but don't fail

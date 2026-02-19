@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test learning-based suggestions
 #
 # This test verifies that the learning suggestions system correctly:

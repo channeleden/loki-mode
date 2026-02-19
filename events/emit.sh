@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Loki Mode Event Emitter - Bash helper for emitting events
 #
 # Usage:

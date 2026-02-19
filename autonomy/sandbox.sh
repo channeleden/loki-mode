@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #===============================================================================
 # Loki Mode - Docker Sandbox Manager
 # Provides isolated container execution for enhanced security

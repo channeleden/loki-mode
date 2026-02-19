@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Loki Mode PostToolUse Hook - Metrics Tracking
 # Tracks tool usage for efficiency metrics (async)
 

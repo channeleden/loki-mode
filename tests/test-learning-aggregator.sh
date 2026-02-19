@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test learning signal aggregation
 #
 # This test verifies that the learning aggregator correctly:

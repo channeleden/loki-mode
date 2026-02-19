@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Record Loki Mode demo with asciinema
 # Usage: ./demo/record-demo.sh [simple-todo|full-stack]
 

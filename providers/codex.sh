@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # OpenAI Codex CLI Provider Configuration
 # Shell-sourceable config for loki-mode multi-provider support
 

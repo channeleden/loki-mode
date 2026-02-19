@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test Loki Mode MCP server
 
 set -uo pipefail

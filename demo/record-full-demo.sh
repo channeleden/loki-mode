@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # shellcheck disable=SC2034  # Unused color vars are for consistency
 #===============================================================================
 # Record Full Loki Mode End-to-End Demo

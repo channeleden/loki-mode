@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test learning signal emission from bash helper
 #
 # This test verifies that the learning/emit.sh helper correctly

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Export Loki Mode tasks to Vibe Kanban format
 # Usage: ./scripts/export-to-vibe-kanban.sh [export_dir]
 

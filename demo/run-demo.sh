@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Loki Mode Demo Runner
 # Usage: ./demo/run-demo.sh [simple-todo|full-stack]
 

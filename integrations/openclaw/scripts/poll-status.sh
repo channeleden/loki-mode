@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Poll loki status and output structured progress for OpenClaw channel routing
 # Usage: poll-status.sh [workdir]
 #

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test Loki Mode Event Bus
 
 set -uo pipefail

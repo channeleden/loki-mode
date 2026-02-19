@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Loki Mode SessionStart Hook
 # Loads memory context and initializes session state
 

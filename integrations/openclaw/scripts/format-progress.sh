@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Format loki status into human-readable progress message
 # Reads JSON from stdin (output of poll-status.sh), outputs formatted text
 # suitable for posting to Slack, Discord, or web channels.

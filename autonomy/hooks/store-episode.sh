@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Loki Mode SessionEnd Hook - Episode Storage
 # Stores session as episodic memory
 

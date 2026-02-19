@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Loki Mode Stop Hook - Quality Gate Verification
 # Runs quality checks before allowing completion
 

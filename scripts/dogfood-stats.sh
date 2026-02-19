@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #===============================================================================
 # Loki Mode - Dogfooding Statistics
 # Calculates what percentage of loki-mode code was written by loki-mode itself

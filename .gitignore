@@ -3,6 +3,10 @@
 # OS files
 *.DS_Store
 
+# Python virtualenv
+.venv/
+dashboard/.venv/
+
 # Node.js
 node_modules/
 *.log

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Loki Mode Learning Aggregator - Bash CLI helper
 #
 # Runs learning signal aggregation and displays results.

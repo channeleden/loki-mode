@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Loki Mode PreToolUse Hook - Bash Command Validation
 # Blocks dangerous commands, logs all executions
 

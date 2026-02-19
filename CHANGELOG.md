@@ -5,6 +5,16 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.48.2] - 2026-02-18
+
+### Fixed
+- Issue #41: Changed all shell script shebangs from `#!/bin/bash` to `#!/usr/bin/env bash` for macOS Homebrew bash 5.x compatibility
+- Issue #41: Dashboard now creates a Python virtualenv at `dashboard/.venv` for PEP 668 compliance (externally-managed-environment)
+- Issue #41: All dashboard startup paths (run.sh, loki dashboard start, loki api start, loki serve) use venv with fallback chain
+- Issue #42: Softened SKILL.md autonomy rules to prevent agents from ignoring test failures
+- Issue #42: Added "Tests are sacred" rule -- agents must never delete or skip failing tests
+- Issue #42: Replaced absolute "NEVER ask/wait/stop" directives with constructive guidance that preserves test integrity
+
 ## [5.48.1] - 2026-02-16
 
 ### Fixed

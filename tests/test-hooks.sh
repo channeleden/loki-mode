@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test Loki Mode hooks system
 
 set -uo pipefail

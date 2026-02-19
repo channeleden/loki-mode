@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test MCP learning collector signal emission
 #
 # This test verifies that the MCP learning collector correctly

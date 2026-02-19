@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Google Gemini CLI Provider Configuration
 # Shell-sourceable config for loki-mode multi-provider support
 

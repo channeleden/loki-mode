@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test: Provider Loader Functionality
 # Tests the provider loading, validation, and auto-detection
 
