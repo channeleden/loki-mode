@@ -65,13 +65,30 @@ function execute(params) {
     };
   }
 
+  // Session guard: check for active run
+  const lokiDir = path.resolve(process.cwd(), '.loki');
+  const stateDir = path.join(lokiDir, 'state');
+  const sessionPath = path.join(stateDir, 'session.json');
+  if (fs.existsSync(sessionPath)) {
+    try {
+      const existing = JSON.parse(fs.readFileSync(sessionPath, 'utf8'));
+      if (existing.status === 'running') {
+        return {
+          success: false,
+          error: 'A project is already running',
+          activeProject: existing.projectId,
+          startedAt: existing.startedAt,
+          hint: 'Use loki/project-status to check progress, or stop the current run first'
+        };
+      }
+    } catch (e) { /* corrupted session file, safe to overwrite */ }
+  }
+
   // Generate project ID
   const projectId = 'proj-' + crypto.randomBytes(4).toString('hex');
   const timestamp = new Date().toISOString();
 
-  // Initialize .loki directory structure
-  const lokiDir = path.resolve(process.cwd(), '.loki');
-  const stateDir = path.join(lokiDir, 'state');
+  // Initialize .loki directory structure (lokiDir, stateDir declared above for session guard)
   const queueDir = path.join(lokiDir, 'queue');
 
   try {
