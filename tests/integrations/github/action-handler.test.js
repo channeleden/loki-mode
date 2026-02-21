@@ -291,3 +291,62 @@ test('issue with priority label sets config', function () {
   var config = handler.mapLabelsToConfig(['loki-mode', 'loki-priority-high']);
   assert.equal(config.priority, 'high');
 });
+
+// ============================================================
+// Provider validation in workflow_dispatch (security fix)
+// ============================================================
+
+test('parseWorkflowDispatchEvent - valid provider is passed through', function () {
+  var payload = { sender: { login: 'user' }, repository: { full_name: 'org/repo' } };
+
+  var ctx1 = handler.parseTriggerContext({ eventName: 'workflow_dispatch', payload: payload, inputs: { prd_content: 'x', provider: 'claude' } });
+  assert.equal(ctx1.provider, 'claude');
+
+  var ctx2 = handler.parseTriggerContext({ eventName: 'workflow_dispatch', payload: payload, inputs: { prd_content: 'x', provider: 'codex' } });
+  assert.equal(ctx2.provider, 'codex');
+
+  var ctx3 = handler.parseTriggerContext({ eventName: 'workflow_dispatch', payload: payload, inputs: { prd_content: 'x', provider: 'gemini' } });
+  assert.equal(ctx3.provider, 'gemini');
+});
+
+test('parseWorkflowDispatchEvent - invalid provider falls back to claude', function () {
+  var payload = { sender: { login: 'user' }, repository: { full_name: 'org/repo' } };
+
+  // Simulate REST API bypassing the choice constraint with shell metacharacters
+  var ctx = handler.parseTriggerContext({
+    eventName: 'workflow_dispatch',
+    payload: payload,
+    inputs: { prd_content: 'x', provider: '; rm -rf /' },
+  });
+  assert.equal(ctx.provider, 'claude');
+});
+
+test('parseWorkflowDispatchEvent - unknown provider string falls back to claude', function () {
+  var payload = { sender: {}, repository: { full_name: 'org/repo' } };
+  var ctx = handler.parseTriggerContext({
+    eventName: 'workflow_dispatch',
+    payload: payload,
+    inputs: { prd_content: 'x', provider: 'gpt-9000' },
+  });
+  assert.equal(ctx.provider, 'claude');
+});
+
+test('ALLOWED_PROVIDERS contains exactly claude, codex, gemini', function () {
+  assert.deepEqual(handler.ALLOWED_PROVIDERS, ['claude', 'codex', 'gemini']);
+});
+
+// ============================================================
+// PRD section regex edge case (correctness fix)
+// ============================================================
+
+test('extractPrdFromBody - section regex captures multi-paragraph PRD correctly', function () {
+  // Reproduces the bug where /m flag caused $ to match end-of-line,
+  // stopping at the first blank line instead of the next ## heading.
+  var body = '## PRD\n\nLine one\nLine two\n\nLine three after blank\n\n## Next Heading\nOther stuff';
+  var result = handler.extractPrdFromBody(body);
+  assert.ok(result.indexOf('Line one') !== -1, 'Should include line one');
+  assert.ok(result.indexOf('Line two') !== -1, 'Should include line two');
+  assert.ok(result.indexOf('Line three after blank') !== -1, 'Should include content after blank line');
+  assert.ok(result.indexOf('Next Heading') === -1, 'Should not include next heading');
+  assert.ok(result.indexOf('Other stuff') === -1, 'Should not include content after next heading');
+});
