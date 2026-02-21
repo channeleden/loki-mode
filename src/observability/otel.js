@@ -12,6 +12,7 @@
  */
 
 const crypto = require('crypto');
+const path = require('path');
 
 // -------------------------------------------------------------------
 // Trace ID / Span ID generation (W3C Trace Context compatible)
@@ -29,15 +30,29 @@ function generateSpanId() {
 // Timestamp helpers (nanoseconds as string for OTLP JSON)
 // -------------------------------------------------------------------
 
-function hrTimeToNanos(hrTime) {
-  // hrTime is [seconds, nanoseconds] from process.hrtime()
-  const ns = BigInt(hrTime[0]) * 1000000000n + BigInt(hrTime[1]);
-  return ns.toString();
-}
+// Anchor hrtime to wall-clock so we get absolute nanosecond timestamps
+const _hrtimeAnchorNs = process.hrtime.bigint();
+const _wallAnchorNs = BigInt(Date.now()) * 1000000n;
 
 function nowNanos() {
-  const ms = Date.now();
-  return (BigInt(ms) * 1000000n).toString();
+  const elapsed = process.hrtime.bigint() - _hrtimeAnchorNs;
+  return (_wallAnchorNs + elapsed).toString();
+}
+
+// -------------------------------------------------------------------
+// Configuration
+// -------------------------------------------------------------------
+
+// Maximum number of distinct label combinations per metric before eviction
+const MAX_METRIC_CARDINALITY = 1000;
+
+// Read scope version from package.json
+let _scopeVersion = '0.0.0';
+try {
+  const pkg = require(path.join(__dirname, '..', '..', 'package.json'));
+  _scopeVersion = pkg.version || '0.0.0';
+} catch (_) {
+  // Fallback if package.json is not found
 }
 
 // -------------------------------------------------------------------
@@ -150,6 +165,11 @@ class Counter {
     if (value < 0) return; // counters are monotonic
     if (labels) {
       const key = JSON.stringify(labels);
+      if (!(key in this._labeledValues) && Object.keys(this._labeledValues).length >= MAX_METRIC_CARDINALITY) {
+        // Evict oldest entry to prevent unbounded growth
+        const firstKey = Object.keys(this._labeledValues)[0];
+        delete this._labeledValues[firstKey];
+      }
       this._labeledValues[key] = (this._labeledValues[key] || 0) + value;
     } else {
       this._value += value;
@@ -167,23 +187,23 @@ class Counter {
   toOTLP() {
     const dataPoints = [];
 
-    if (Object.keys(this._labeledValues).length > 0) {
-      for (const [key, value] of Object.entries(this._labeledValues)) {
-        const labels = JSON.parse(key);
-        const attrs = Object.entries(labels).map(([k, v]) => ({
-          key: k,
-          value: { stringValue: String(v) },
-        }));
-        dataPoints.push({
-          attributes: attrs,
-          asInt: String(value),
-          timeUnixNano: nowNanos(),
-        });
-      }
-    } else {
+    // Always include unlabeled data point
+    dataPoints.push({
+      attributes: [],
+      asInt: String(this._value),
+      timeUnixNano: nowNanos(),
+    });
+
+    // Include all labeled data points
+    for (const [key, value] of Object.entries(this._labeledValues)) {
+      const labels = JSON.parse(key);
+      const attrs = Object.entries(labels).map(([k, v]) => ({
+        key: k,
+        value: { stringValue: String(v) },
+      }));
       dataPoints.push({
-        attributes: [],
-        asInt: String(this._value),
+        attributes: attrs,
+        asInt: String(value),
         timeUnixNano: nowNanos(),
       });
     }
@@ -213,6 +233,10 @@ class Gauge {
   set(value, labels) {
     if (labels) {
       const key = JSON.stringify(labels);
+      if (!(key in this._labeledValues) && Object.keys(this._labeledValues).length >= MAX_METRIC_CARDINALITY) {
+        const firstKey = Object.keys(this._labeledValues)[0];
+        delete this._labeledValues[firstKey];
+      }
       this._labeledValues[key] = value;
     } else {
       this._value = value;
@@ -230,23 +254,23 @@ class Gauge {
   toOTLP() {
     const dataPoints = [];
 
-    if (Object.keys(this._labeledValues).length > 0) {
-      for (const [key, value] of Object.entries(this._labeledValues)) {
-        const labels = JSON.parse(key);
-        const attrs = Object.entries(labels).map(([k, v]) => ({
-          key: k,
-          value: { stringValue: String(v) },
-        }));
-        dataPoints.push({
-          attributes: attrs,
-          asDouble: value,
-          timeUnixNano: nowNanos(),
-        });
-      }
-    } else {
+    // Always include unlabeled data point
+    dataPoints.push({
+      attributes: [],
+      asDouble: this._value,
+      timeUnixNano: nowNanos(),
+    });
+
+    // Include all labeled data points
+    for (const [key, value] of Object.entries(this._labeledValues)) {
+      const labels = JSON.parse(key);
+      const attrs = Object.entries(labels).map(([k, v]) => ({
+        key: k,
+        value: { stringValue: String(v) },
+      }));
       dataPoints.push({
-        attributes: [],
-        asDouble: this._value,
+        attributes: attrs,
+        asDouble: value,
         timeUnixNano: nowNanos(),
       });
     }
@@ -273,6 +297,10 @@ class Histogram {
   record(value, labels) {
     if (labels) {
       const key = JSON.stringify(labels);
+      if (!(key in this._labeledValues) && Object.keys(this._labeledValues).length >= MAX_METRIC_CARDINALITY) {
+        const firstKey = Object.keys(this._labeledValues)[0];
+        delete this._labeledValues[firstKey];
+      }
       if (!this._labeledValues[key]) {
         this._labeledValues[key] = [];
       }
@@ -357,12 +385,32 @@ let _activeExporter = null;
 
 class OTLPExporter {
   constructor(endpoint) {
+    // SSRF protection: only allow http: and https: schemes
+    const parsedUrl = new URL(endpoint);
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      throw new Error(
+        `Invalid OTEL endpoint scheme "${parsedUrl.protocol}". Only http: and https: are allowed.`
+      );
+    }
     this._endpoint = endpoint.replace(/\/$/, '');
     this._pendingSpans = [];
     this._flushTimer = null;
     this._flushIntervalMs = 5000;
     this._serviceName = process.env.LOKI_SERVICE_NAME || 'loki-mode';
+    this._errorHandler = OTLPExporter._defaultErrorHandler;
     this._startFlushTimer();
+  }
+
+  static _defaultErrorHandler(err) {
+    process.stderr.write(`[loki-otel] export error: ${err.message}\n`);
+  }
+
+  /**
+   * Set a custom error handler for export failures.
+   * @param {Function} handler - function(err) called on network errors
+   */
+  setErrorHandler(handler) {
+    this._errorHandler = handler || OTLPExporter._defaultErrorHandler;
   }
 
   addSpan(span) {
@@ -402,7 +450,7 @@ class OTLPExporter {
           },
           scopeSpans: [
             {
-              scope: { name: 'loki-mode-otel', version: '1.0.0' },
+              scope: { name: 'loki-mode-otel', version: _scopeVersion },
               spans: spans.map((s) => s.toOTLP()),
             },
           ],
@@ -431,7 +479,7 @@ class OTLPExporter {
           },
           scopeMetrics: [
             {
-              scope: { name: 'loki-mode-otel', version: '1.0.0' },
+              scope: { name: 'loki-mode-otel', version: _scopeVersion },
               metrics,
             },
           ],
@@ -465,8 +513,13 @@ class OTLPExporter {
       res.resume();
     });
 
-    req.on('error', () => {
-      // Silently drop - observability should never break the application
+    req.on('error', (err) => {
+      // Log but never throw - observability should never break the application
+      try {
+        this._errorHandler(err);
+      } catch (_) {
+        // Error handler itself failed; swallow to protect the app
+      }
     });
 
     req.write(body);
@@ -498,6 +551,7 @@ function initialize() {
     throw new Error('LOKI_OTEL_ENDPOINT is not set. Use index.js for conditional loading.');
   }
 
+  // OTLPExporter constructor validates the URL scheme (http/https only)
   _activeExporter = new OTLPExporter(endpoint);
   _tracerProvider = {
     getTracer: (name) => ({
@@ -526,9 +580,10 @@ function initialize() {
 
 function shutdown() {
   if (_activeExporter) {
+    // Flush pending spans before nullifying to prevent data loss
     _activeExporter.shutdown();
-    _activeExporter = null;
   }
+  _activeExporter = null;
   _initialized = false;
   _tracerProvider = null;
   _meterProvider = null;
@@ -562,4 +617,6 @@ module.exports = {
   OTLPExporter,
   generateTraceId,
   generateSpanId,
+  nowNanos,
+  MAX_METRIC_CARDINALITY,
 };

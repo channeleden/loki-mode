@@ -14,9 +14,15 @@
  * Compatible with Prometheus naming conventions.
  */
 
-const otel = require('./otel');
-
+let _otel = null;
 let _metrics = null;
+
+function _getOtel() {
+  if (!_otel) {
+    _otel = require('./otel');
+  }
+  return _otel;
+}
 
 /**
  * Initialize all metrics. Must be called after otel.initialize().
@@ -25,6 +31,7 @@ let _metrics = null;
 function initMetrics() {
   if (_metrics) return _metrics;
 
+  const otel = _getOtel();
   const meter = otel.meterProvider.getMeter('loki-mode');
 
   _metrics = {
@@ -128,7 +135,9 @@ function recordTokensConsumed(tokens, model, agentType) {
  */
 function setCouncilApprovalRate(rate) {
   if (!_metrics) return;
-  _metrics.councilApprovalRate.set(rate);
+  // Clamp to valid range [0.0, 1.0]
+  const clamped = Math.max(0.0, Math.min(1.0, rate));
+  _metrics.councilApprovalRate.set(clamped);
 }
 
 /**
@@ -137,7 +146,7 @@ function setCouncilApprovalRate(rate) {
 function flushMetrics() {
   if (!_metrics) return;
 
-  const exporter = otel.getExporter();
+  const exporter = _getOtel().getExporter();
   if (!exporter) return;
 
   const metricsList = [
