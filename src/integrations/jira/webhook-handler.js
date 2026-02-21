@@ -58,10 +58,14 @@ class WebhookHandler {
     }
 
     // Dispatch to callbacks
-    if (event.eventType === 'jira:issue_created' && issueType === 'Epic' && this._onEpicCreated) {
-      this._onEpicCreated(event.issue);
-    } else if (event.eventType === 'jira:issue_updated' && this._onIssueUpdated) {
-      this._onIssueUpdated(event.issue, event.changelog);
+    try {
+      if (event.eventType === 'jira:issue_created' && issueType === 'Epic' && this._onEpicCreated) {
+        this._onEpicCreated(event.issue);
+      } else if (event.eventType === 'jira:issue_updated' && this._onIssueUpdated) {
+        this._onIssueUpdated(event.issue, event.changelog);
+      }
+    } catch (callbackErr) {
+      return { status: 500, response: { error: 'Callback error: ' + callbackErr.message } };
     }
 
     return { status: 200, response: { processed: true, eventType: event.eventType } };

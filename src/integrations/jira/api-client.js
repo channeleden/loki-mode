@@ -48,7 +48,8 @@ class JiraApiClient {
   }
 
   getEpicChildren(epicKey) {
-    return this.searchIssues('"Epic Link" = ' + epicKey + ' ORDER BY rank ASC');
+    var escaped = String(epicKey).replace(/"/g, '\\"');
+    return this.searchIssues('"Epic Link" = "' + escaped + '" ORDER BY rank ASC');
   }
 
   createIssue(fields) {
@@ -113,9 +114,18 @@ class JiraApiClient {
           path: parsed.pathname + parsed.search,
           headers: headers,
         };
+        var MAX_RESPONSE_SIZE = 10 * 1024 * 1024; // 10 MB
         var req = mod.request(opts, function (res) {
           var chunks = [];
-          res.on('data', function (c) { chunks.push(c); });
+          var totalSize = 0;
+          res.on('data', function (c) {
+            totalSize += c.length;
+            if (totalSize > MAX_RESPONSE_SIZE) {
+              res.destroy(new Error('Response size exceeds 10 MB limit'));
+              return;
+            }
+            chunks.push(c);
+          });
           res.on('end', function () {
             var raw = Buffer.concat(chunks).toString();
             if (res.statusCode >= 400) {
@@ -128,6 +138,7 @@ class JiraApiClient {
           });
         });
         req.on('error', reject);
+        req.setTimeout(30000, function () { req.destroy(new Error('Request timeout')); });
         if (bodyStr) req.write(bodyStr);
         req.end();
       }, delay);
