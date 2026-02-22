@@ -46,7 +46,7 @@ from .models import (
 from . import registry
 from . import auth
 from . import audit
-from . import secrets as secrets_mod
+from . import app_secrets as secrets_mod
 from . import telemetry as _telemetry
 from .control import atomic_write_json
 
